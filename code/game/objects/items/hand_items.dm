@@ -557,11 +557,12 @@
 
 /obj/projectile/kiss/fire(angle, atom/direct_target)
 	if(firer && !silent_blown)
+		ru_names_rename(ru_names_toml(name, prefix = "воздушный ", suffix = " от [firer.declent_ru(GENITIVE)]", override_base = "[name] blown by [firer]"))
 		name = "[name] blown by [firer]"
 
 	return ..()
 
-/obj/projectile/kiss/Impact(atom/A)
+/obj/projectile/kiss/impact(atom/A)
 	def_zone = BODY_ZONE_HEAD // let's keep it PG, people
 
 	if(damage > 0 || !isliving(A)) // if we do damage or we hit a nonliving thing, we don't have to worry about a harmless hit because we can't wrongly do damage anyway

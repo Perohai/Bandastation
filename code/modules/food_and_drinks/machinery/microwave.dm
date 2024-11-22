@@ -19,7 +19,6 @@
 
 /obj/machinery/microwave
 	name = "microwave oven"
-	RU_NAMES_LIST_INIT("microwave oven", "микроволновка", "микроволновки", "микроволновке", "микроволновку", "микроволновкой", "микроволновке")
 	desc = "Cooks and boils stuff."
 	icon = 'icons/obj/machines/microwave.dmi'
 	base_icon_state = ""
@@ -114,7 +113,7 @@
 /obj/machinery/microwave/Destroy()
 	QDEL_LIST(ingredients)
 	QDEL_NULL(soundloop)
-	QDEL_NULL(particles)
+	remove_shared_particles(/particles/smoke)
 	if(!isnull(cell))
 		QDEL_NULL(cell)
 	return ..()
@@ -708,16 +707,13 @@
 				if(HAS_TRAIT(smeller, TRAIT_ANOSMIA))
 					cant_smell += smeller
 			visible_message(span_danger("You smell a burnt smell coming from [src]!"), ignored_mobs = cant_smell)
-			particles = new /particles/smoke()
-			addtimer(CALLBACK(src, PROC_REF(remove_smoke)), 10 SECONDS)
+			add_shared_particles(/particles/smoke)
+			addtimer(CALLBACK(src, TYPE_PROC_REF(/atom/movable, remove_shared_particles), /particles/smoke), 10 SECONDS)
 			Shake(duration = 1 SECONDS)
 
 	cycles--
 	use_energy(active_power_usage)
 	addtimer(CALLBACK(src, PROC_REF(cook_loop), type, cycles, wait, cooker), wait)
-
-/obj/machinery/microwave/proc/remove_smoke()
-	QDEL_NULL(particles)
 
 /obj/machinery/microwave/power_change()
 	. = ..()
@@ -919,7 +915,6 @@
 
 /obj/machinery/microwave/engineering
 	name = "wireless microwave oven"
-	RU_NAMES_LIST_INIT("wireless microwave oven", "беспроводная микроволновка", "беспроводной микроволновки", "беспроводной микроволновке", "беспроводную микроволновку", "беспроводной микроволновкой", "беспроводной микроволновке")
 	desc = "For the hard-working tradesperson who's in the middle of nowhere and just wants to warm up their pastry-based savoury item from an overpriced vending machine."
 	base_icon_state = "engi_"
 	icon_state = "engi_mw_complete"

@@ -270,7 +270,7 @@
 	if(!filter_name_ic(trimmed)) // Contains IC chat prohibited words
 		return
 
-	return trimtext(trimmed)
+	return trim(trimmed)
 
 
 /// Helper proc to check if a name is valid for the IC filter
@@ -357,14 +357,11 @@
 /proc/trim(text, max_length)
 	if(max_length)
 		text = copytext_char(text, 1, max_length)
-	return trimtext(text)
+	return trimtext(text) || "" //users expect atleast an empty string
 
 //Returns a string with the first element of the string capitalized.
 /proc/capitalize(t)
-	// BANDASTATION EDIT START - Declents
-	t = replacetext_char(t, "\improper", "")
-	t = replacetext_char(t, "\proper", "")
-	// BANDASTATION EDIT END
+	t = format_text(t) // BANDASTATION ADDITION - Declents
 	. = t
 	if(t)
 		. = t[1]

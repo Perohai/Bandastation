@@ -2,10 +2,9 @@
 // It functions almost identically (see code/datums/diseases/alien_embryo.dm)
 /obj/item/organ/body_egg/alien_embryo
 	name = "alien embryo"
-	RU_NAMES_LIST_INIT("alien embryo", "эмбрион Чужих", "эмбриона Чужих", "эмбриону Чужих", "эмбрион Чужих", "эмбрионом Чужих", "эмбрионе Чужих")
 	icon = 'icons/mob/nonhuman-player/alien.dmi'
 	icon_state = "larva0_dead"
-	food_reagents = list(/datum/reagent/consumable/nutriment = 5, /datum/reagent/toxin/acid = 10)
+	food_reagents = list(/datum/reagent/consumable/nutriment/organ_tissue = 5, /datum/reagent/toxin/acid = 10)
 	///What stage of growth the embryo is at. Developed embryos give the host symptoms suggesting that an embryo is inside them.
 	var/stage = 0
 	/// Are we bursting out of the poor sucker who's the xeno mom?
@@ -79,7 +78,7 @@
 		for(var/datum/surgery/operations as anything in owner.surgeries)
 			if(operations.location != BODY_ZONE_CHEST)
 				continue
-			if(!istype(operations.get_surgery_step(), /datum/surgery_step/manipulate_organs/internal))
+			if(!ispath(operations.steps[operations.status], /datum/surgery_step/manipulate_organs/internal))
 				continue
 			attempt_grow(gib_on_success = FALSE)
 			return

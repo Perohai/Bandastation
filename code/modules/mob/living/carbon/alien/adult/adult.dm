@@ -1,6 +1,5 @@
 /mob/living/carbon/alien/adult
 	name = "alien"
-	RU_NAMES_LIST_INIT("alien", "чужой", "чужого", "чужому", "чужого", "чужим", "чужом")
 	icon_state = "alien"
 	pass_flags = PASSTABLE
 	butcher_results = list(/obj/item/food/meat/slab/xeno = 5, /obj/item/stack/sheet/animalhide/xeno = 1)
@@ -57,14 +56,16 @@ GLOBAL_LIST_INIT(strippable_alien_humanoid_items, create_strippable_list(list(
 	..()
 
 //For alien evolution/promotion/queen finder procs. Checks for an active alien of that type
-/proc/get_alien_type(alienpath)
-	for(var/mob/living/carbon/alien/adult/A in GLOB.alive_mob_list)
-		if(!istype(A, alienpath))
+/proc/get_alien_type(alien_path, mob/ignored)
+	for(var/mob/living/carbon/alien/alien in GLOB.carbon_list)
+		if(alien == ignored)
 			continue
-		if(!A.key || A.stat == DEAD) //Only living aliens with a ckey are valid.
+		if(!istype(alien, alien_path))
 			continue
-		return A
-	return FALSE
+		if(!alien.key || alien.stat == DEAD) //Only living aliens with a ckey are valid.
+			continue
+		return alien
+	return null
 
 /mob/living/carbon/alien/adult/check_breath(datum/gas_mixture/breath)
 	if(breath?.total_moles() > 0 && !HAS_TRAIT(src, TRAIT_SNEAK))

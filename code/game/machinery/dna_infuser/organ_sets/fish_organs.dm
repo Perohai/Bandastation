@@ -190,6 +190,7 @@
 	. = ..()
 	owner.AddElementTrait(TRAIT_WADDLING, type, /datum/element/waddling)
 	RegisterSignal(owner, COMSIG_MOVABLE_MOVED, PROC_REF(check_location))
+	RegisterSignal(owner, COMSIG_LIVING_GIBBER_ACT, PROC_REF(on_gibber_processed))
 	check_location(owner, null)
 
 /obj/item/organ/tail/fish/on_mob_remove(mob/living/carbon/owner)
@@ -197,7 +198,12 @@
 	owner.remove_traits(list(TRAIT_WADDLING, TRAIT_NO_STAGGER), type)
 	owner.remove_movespeed_modifier(/datum/movespeed_modifier/fish_on_water)
 	owner.remove_actionspeed_modifier(/datum/actionspeed_modifier/fish_on_water)
-	UnregisterSignal(owner, COMSIG_MOVABLE_MOVED)
+	UnregisterSignal(owner, list(COMSIG_MOVABLE_MOVED, COMSIG_LIVING_GIBBER_ACT))
+
+/obj/item/organ/tail/fish/proc/on_gibber_processed(mob/living/carbon/owner, mob/living/user, obj/machinery/gibber, list/results)
+	SIGNAL_HANDLER
+	for(var/iteration in 1 to fillet_amount * 0.5)
+		results += new fillet_type
 
 /obj/item/organ/tail/fish/get_greyscale_color_from_draw_color()
 	set_greyscale(bodypart_overlay.draw_color)
@@ -418,7 +424,7 @@
 
 	organ_traits = list(TRAIT_TETRODOTOXIN_HEALING, TRAIT_ALCOHOL_TOLERANCE) //drink like a fish :^)
 	liver_resistance = parent_type::liver_resistance * 1.5
-	food_reagents = list(/datum/reagent/consumable/nutriment = 5, /datum/reagent/iron = 5, /datum/reagent/toxin/tetrodotoxin = 5)
+	food_reagents = list(/datum/reagent/consumable/nutriment/organ_tissue = 5, /datum/reagent/iron = 5, /datum/reagent/toxin/tetrodotoxin = 5)
 	grind_results = list(/datum/reagent/consumable/nutriment/peptides = 5, /datum/reagent/toxin/tetrodotoxin = 5)
 
 	// Seafood instead of meat, because it's a fish organ
