@@ -114,6 +114,8 @@
 		return SFX_SNORE_FEMALE
 	return SFX_SNORE_MALE
 
+/datum/species/human/felinid/get_hiss_sound(mob/living/carbon/human/felinid)
+	return 'sound/mobs/humanoids/felinid/felinid_hiss.ogg'
 
 /proc/mass_purrbation()
 	for(var/mob in GLOB.human_list)
@@ -237,28 +239,28 @@
 		list(
 			SPECIES_PERK_TYPE = SPECIES_POSITIVE_PERK,
 			SPECIES_PERK_ICON = "grin-tongue",
-			SPECIES_PERK_NAME = "Grooming",
-			SPECIES_PERK_DESC = "Felinids can lick wounds to reduce bleeding.",
+			SPECIES_PERK_NAME = "Уход за собой",
+			SPECIES_PERK_DESC = "Фелиниды могут лизать раны, чтобы остановить кровотечение.",
 		),
 		list(
 			SPECIES_PERK_TYPE = SPECIES_NEUTRAL_PERK,
 			SPECIES_PERK_ICON = FA_ICON_PERSON_FALLING,
-			SPECIES_PERK_NAME = "Catlike Grace",
-			SPECIES_PERK_DESC = "Felinids have catlike instincts allowing them to land upright on their feet.  \
-				Instead of being knocked down from falling, you only receive a short slowdown. \
-				However, they do not have catlike legs, and the fall will deal additional damage.",
+			SPECIES_PERK_NAME = "Кошачья грация",
+			SPECIES_PERK_DESC = "Фелиниды обладают кошачьими инстинктами, позволяющими им приземляться на ноги.  \
+				Вместо того, чтобы быть сбитым с ног при падении, вы получите только короткое замедление. \
+				Однако у них нет кошачьих лап, и падение наносит повышенный урон.",
 		),
 		list(
 			SPECIES_PERK_TYPE = SPECIES_NEGATIVE_PERK,
 			SPECIES_PERK_ICON = "assistive-listening-systems",
-			SPECIES_PERK_NAME = "Sensitive Hearing",
-			SPECIES_PERK_DESC = "Felinids are more sensitive to loud sounds, such as flashbangs.",
+			SPECIES_PERK_NAME = "Чувствительный слух",
+			SPECIES_PERK_DESC = "Фелиниды более чувствительны к громким звукам, например от светошумовых гранат.",
 		),
 		list(
 			SPECIES_PERK_TYPE = SPECIES_NEGATIVE_PERK,
 			SPECIES_PERK_ICON = "shower",
-			SPECIES_PERK_NAME = "Hydrophobia",
-			SPECIES_PERK_DESC = "Felinids don't like getting soaked with water.",
+			SPECIES_PERK_NAME = "Гидрофобия",
+			SPECIES_PERK_DESC = "Фелиниды не любят, когда на них попадает вода.",
 		),
 	)
 

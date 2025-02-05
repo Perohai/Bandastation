@@ -93,6 +93,9 @@
 		return SFX_SNORE_FEMALE
 	return SFX_SNORE_MALE
 
+/datum/species/human/get_hiss_sound(mob/living/carbon/human/human)
+	return 'sound/mobs/humanoids/human/hiss/human_hiss.ogg'
+
 /datum/species/human/get_species_description()
 	return "Humans are the dominant species in the known galaxy. \
 		Their kind extend from old Earth to the edges of known space."
@@ -124,9 +127,9 @@
 		to_add += list(list(
 			SPECIES_PERK_TYPE = SPECIES_POSITIVE_PERK,
 			SPECIES_PERK_ICON = "robot",
-			SPECIES_PERK_NAME = "Asimov Superiority",
-			SPECIES_PERK_DESC = "The AI and their cyborgs are, by default, subservient only \
-				to humans. As a human, silicons are required to both protect and obey you.",
+			SPECIES_PERK_NAME = "Превосходство Азимова",
+			SPECIES_PERK_DESC = "ИИ и киборги, по-умолчанию, подчиняются только людям \
+				Будучи человеком, синтетики обязаны защищать и выполнять ваши указания.",
 		))
 
 	var/human_authority_setting = CONFIG_GET(string/human_authority)
@@ -135,8 +138,8 @@
 		to_add += list(list(
 			SPECIES_PERK_TYPE = SPECIES_POSITIVE_PERK,
 			SPECIES_PERK_ICON = "bullhorn",
-			SPECIES_PERK_NAME = "Chain of Command",
-			SPECIES_PERK_DESC = "Nanotrasen only recognizes humans for command roles, such as Captain.",
+			SPECIES_PERK_NAME = "Цепь командования",
+			SPECIES_PERK_DESC = "Нанотрейзен признает только людей на роли командования, таких как Капитана.",
 		))
 
 	return to_add

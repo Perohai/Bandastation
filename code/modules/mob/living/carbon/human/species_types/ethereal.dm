@@ -3,6 +3,7 @@
 	id = SPECIES_ETHEREAL
 	meat = /obj/item/food/meat/slab/human/mutant/ethereal
 	mutantlungs = /obj/item/organ/lungs/ethereal
+	smoker_lungs = /obj/item/organ/lungs/ethereal/ethereal_smoker
 	mutantstomach = /obj/item/organ/stomach/ethereal
 	mutanttongue = /obj/item/organ/tongue/ethereal
 	mutantheart = /obj/item/organ/heart/ethereal
@@ -181,6 +182,9 @@
 		'sound/mobs/humanoids/ethereal/ethereal_scream_3.ogg',
 	)
 
+/datum/species/ethereal/get_hiss_sound(mob/living/carbon/human/ethereal)
+	return 'sound/mobs/humanoids/ethereal/ethereal_hiss.ogg'
+
 /datum/species/ethereal/get_physical_attributes()
 	return "Ethereals process electricity as their power supply, not food, and are somewhat resistant to it.\
 		They do so via their crystal core, their equivalent of a human heart, which will also encase them in a reviving crystal if they die.\
@@ -205,33 +209,33 @@
 		list(
 			SPECIES_PERK_TYPE = SPECIES_POSITIVE_PERK,
 			SPECIES_PERK_ICON = "bolt",
-			SPECIES_PERK_NAME = "Shockingly Tasty",
-			SPECIES_PERK_DESC = "Ethereals can feed on electricity from APCs, and do not otherwise need to eat.",
+			SPECIES_PERK_NAME = "Шокирующе вкусно",
+			SPECIES_PERK_DESC = "Эфириалы могут питаться от электричества с ЛКП, и другая пища им не подходит.",
 		),
 		list(
 			SPECIES_PERK_TYPE = SPECIES_POSITIVE_PERK,
 			SPECIES_PERK_ICON = "lightbulb",
-			SPECIES_PERK_NAME = "Disco Ball",
-			SPECIES_PERK_DESC = "Ethereals passively generate their own light.",
+			SPECIES_PERK_NAME = "Дискошар",
+			SPECIES_PERK_DESC = "Эфириалы пассивно излучают свой собственный свет.",
 		),
 		list(
 			SPECIES_PERK_TYPE = SPECIES_NEUTRAL_PERK,
 			SPECIES_PERK_ICON = "gem",
-			SPECIES_PERK_NAME = "Crystal Core",
-			SPECIES_PERK_DESC = "The Ethereal's heart will encase them in crystal should they die, returning them to life after a time - \
-				at the cost of a permanent brain trauma.",
+			SPECIES_PERK_NAME = "Кристаллическое ядро",
+			SPECIES_PERK_DESC = "В случае смерти, сердце эфириала заключит тело в кристалл, который вернет его к жизни через некоторое время \
+				ценой постоянной травмы мозга.",
 		),
 		list(
 			SPECIES_PERK_TYPE = SPECIES_NEUTRAL_PERK,
 			SPECIES_PERK_ICON = "fist-raised",
-			SPECIES_PERK_NAME = "Elemental Attacker",
-			SPECIES_PERK_DESC = "Ethereals deal burn damage with their punches instead of brute.",
+			SPECIES_PERK_NAME = "Элементальный атакующий",
+			SPECIES_PERK_DESC = "Эфириалы наносят урон ожогами своими ударами, вместо физического.",
 		),
 		list(
 			SPECIES_PERK_TYPE = SPECIES_NEGATIVE_PERK,
 			SPECIES_PERK_ICON = "biohazard",
-			SPECIES_PERK_NAME = "Starving Artist",
-			SPECIES_PERK_DESC = "Ethereals take toxin damage while starving.",
+			SPECIES_PERK_NAME = "Голодающий художник",
+			SPECIES_PERK_DESC = "Эфириалы получают урон токсинами во время голодания.",
 		),
 	)
 

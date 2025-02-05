@@ -136,12 +136,12 @@
 /obj/item/traitor_spraycan/suicide_act(mob/living/user)
 	if(expended)
 		user.visible_message(span_suicide("[user] shakes up [src] with a rattle and lifts it to [user.p_their()] mouth, but nothing happens!"))
-		user.say("MEDIOCRE!!", forced="spraycan suicide")
+		user.say("БЕЗДАРНОСТЬ!!!", forced="spraycan suicide")
 		return SHAME
 
 	var/mob/living/carbon/human/suicider = user
 	user.visible_message(span_suicide("[user] shakes up [src] with a rattle and lifts it to [user.p_their()] mouth, spraying paint across [user.p_their()] teeth!"))
-	user.say("WITNESS ME!!", forced="spraycan suicide")
+	user.say("ОСВИДЕТЕЛЬСТВУЙТЕ МЕНЯ!!!", forced="spraycan suicide")
 	playsound(src, 'sound/effects/spray.ogg', 5, TRUE, 5)
 	suicider.AddComponent(/datum/component/face_decal, "spray", EXTERNAL_ADJACENT, paint_color)
 	return OXYLOSS
@@ -171,7 +171,7 @@
 	/// Timer until the rune can be cleaned up off the floor
 	var/protected_timer
 
-/obj/effect/decal/cleanable/traitor_rune/traitor/Destroy()
+/obj/effect/decal/cleanable/traitor_rune/Destroy()
 	deltimer(protected_timer)
 	QDEL_NULL(demoraliser)
 	return ..()

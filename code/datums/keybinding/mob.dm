@@ -15,7 +15,7 @@
 		return
 	var/mob/M = user.mob
 	if(!M.pulling)
-		to_chat(user, span_notice("You are not pulling anything."))
+		to_chat(user, span_notice("Вы ничего не тащите."))
 	else
 		M.stop_pulling()
 	return TRUE
@@ -66,7 +66,7 @@
 	var/mob/M = user.mob
 	var/obj/item/I = M.get_active_held_item()
 	if(!I)
-		to_chat(user, span_warning("You have nothing to drop in your hand!"))
+		to_chat(user, span_warning("Вам нечего выбрасывать из руки!"))
 	else
 		user.mob.dropItemToGround(I)
 	return TRUE
@@ -191,3 +191,10 @@
 	if(.)
 		return
 	user.movement_locked = FALSE
+
+/datum/keybinding/living/view_pet_data
+	hotkey_keys = list("Shift")
+	name = "view_pet_commands"
+	full_name = "View Pet Commands"
+	description = "Hold down to see all the commands you can give your pets!"
+	keybind_signal = COMSIG_KB_LIVING_VIEW_PET_COMMANDS

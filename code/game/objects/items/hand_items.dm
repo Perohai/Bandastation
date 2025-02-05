@@ -94,7 +94,7 @@
 
 	if(HAS_TRAIT(owner, TRAIT_HULK))
 		owner.visible_message(span_danger("[owner] bops [sucker] with [owner.p_their()] [src.name] much harder than intended, sending [sucker.p_them()] flying!"), \
-			span_danger("You bop [sucker] with your [src.name] much harder than intended, sending [sucker.p_them()] flying!"), span_hear("You hear a sickening sound of flesh hitting flesh!"), ignored_mobs=list(sucker))
+			span_danger("You bop [sucker] with your [src.name] much harder than intended, sending [sucker.p_them()] flying!"), span_hear("Вы слышите противный звук удара плоти о плоть!"), ignored_mobs=list(sucker))
 		to_chat(sucker, span_userdanger("[owner] bops you incredibly hard with [owner.p_their()] [src.name], sending you flying!"))
 		sucker.apply_damage(50, STAMINA)
 		sucker.Knockdown(50)
@@ -487,7 +487,7 @@
 		kiss_type = /obj/projectile/kiss/chef
 
 	var/obj/projectile/blown_kiss = new kiss_type(get_turf(user))
-	user.visible_message("<b>[user]</b> blows \a [blown_kiss] at [target]!", span_notice("You blow \a [blown_kiss] at [target]!"))
+	user.visible_message("<b>[capitalize(user.declent_ru(NOMINATIVE))]</b> отправляет [blown_kiss.declent_ru(ACCUSATIVE)] [target.declent_ru(DATIVE)]!", span_notice("Вы отправляете [blown_kiss.declent_ru(ACCUSATIVE)] [target.declent_ru(DATIVE)]!"))
 
 	//Shooting Code:
 	blown_kiss.original = target
@@ -515,7 +515,7 @@
 	to_chat(taker, span_nicegreen("[offerer] gives you \a [blown_kiss][cheek_kiss ? " on the cheek" : ""]!"))
 	offerer.face_atom(taker)
 	taker.face_atom(offerer)
-	offerer.do_item_attack_animation(taker, used_item=src)
+	offerer.do_item_attack_animation(taker, used_item = src)
 	//We're still firing a shot here because I don't want to deal with some weird edgecase where direct impacting them with the projectile causes it to freak out because there's no angle or something
 	blown_kiss.original = taker
 	blown_kiss.fired_from = offerer
@@ -538,6 +538,12 @@
 	desc = "oooooo you like syndicate ur a syndiekisser"
 	color = COLOR_SYNDIE_RED
 	kiss_type = /obj/projectile/kiss/syndie
+
+/obj/item/hand_item/kisser/ink
+	name = "ink kiss"
+	desc = "Is that a blot of ink in your pocket or are you just happy to see me?"
+	color = COLOR_ALMOST_BLACK
+	kiss_type = /obj/projectile/kiss/ink
 
 /obj/projectile/kiss
 	name = "kiss"
@@ -581,7 +587,7 @@
 /obj/projectile/kiss/proc/harmless_on_hit(mob/living/living_target)
 	playsound(get_turf(living_target), hitsound, 100, TRUE)
 	if(!suppressed)  // direct
-		living_target.visible_message(span_danger("[living_target] is hit by \a [src]."), span_userdanger("You're hit by \a [src]!"), vision_distance=COMBAT_MESSAGE_RANGE)
+		living_target.visible_message(span_danger("[capitalize(declent_ru(NOMINATIVE))] попадает по [living_target.declent_ru(DATIVE)]."), span_userdanger("[capitalize(declent_ru(NOMINATIVE))] попадает по вам!"), vision_distance=COMBAT_MESSAGE_RANGE)
 
 	living_target.add_mob_memory(/datum/memory/kissed, deuteragonist = firer)
 	living_target.add_mood_event("kiss", /datum/mood_event/kiss, firer, suppressed)
@@ -639,6 +645,24 @@
 	var/mob/living/carbon/heartbreakee = target
 	var/obj/item/organ/heart/dont_go_breakin_my_heart = heartbreakee.get_organ_slot(ORGAN_SLOT_HEART)
 	dont_go_breakin_my_heart.apply_organ_damage(999)
+
+/obj/projectile/kiss/ink
+	name = "ink kiss"
+	color = COLOR_ALMOST_BLACK
+	damage = /obj/projectile/ink_spit::damage
+	damage_type = /obj/projectile/ink_spit::damage_type
+	armor_flag = /obj/projectile/ink_spit::armor_flag
+	armour_penetration = /obj/projectile/ink_spit::armour_penetration
+	impact_effect_type = /obj/projectile/ink_spit::impact_effect_type
+	hitsound = /obj/projectile/ink_spit::hitsound
+	hitsound_wall = /obj/projectile/ink_spit::hitsound_wall
+
+/obj/projectile/kiss/ink/on_hit(atom/target, blocked, pierce_hit)
+	. = ..()
+	var/obj/projectile/ink_spit/ink_spit =  new (target)
+	ink_spit.on_hit(target)
+	if(!QDELETED(ink_spit)) // in case it somehow remains around
+		qdel(ink_spit)
 
 // Based on energy gun characteristics
 /obj/projectile/kiss/syndie

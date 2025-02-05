@@ -10,6 +10,7 @@ GLOBAL_LIST_INIT(freqtospan, list(
 	"[FREQ_SUPPLY]" = "suppradio",
 	"[FREQ_SERVICE]" = "servradio",
 	"[FREQ_SECURITY]" = "secradio",
+	"[FREQ_JUSTICE]" = "justiceradio", // BANDASTAION ADD - Jobs Module
 	"[FREQ_COMMAND]" = "comradio",
 	"[FREQ_AI_PRIVATE]" = "aiprivradio",
 	"[FREQ_ENTERTAINMENT]" = "enteradio",
@@ -134,7 +135,8 @@ GLOBAL_LIST_INIT(freqtospan, list(
 		filter += tts_filter.Join(",")
 
 	if(voice && found_client)
-		INVOKE_ASYNC(SStts, TYPE_PROC_REF(/datum/controller/subsystem/tts, queue_tts_message), src, html_decode(tts_message_to_use), message_language, voice, filter.Join(","), listened, message_range = range, pitch = pitch)
+		if (!CONFIG_GET(flag/tts_no_whisper) || (CONFIG_GET(flag/tts_no_whisper) && !message_mods[WHISPER_MODE]))
+			INVOKE_ASYNC(SStts, TYPE_PROC_REF(/datum/controller/subsystem/tts, queue_tts_message), src, html_decode(tts_message_to_use), message_language, voice, filter.Join(","), listened, message_range = range, pitch = pitch)
 
 /atom/movable/proc/compose_message(atom/movable/speaker, datum/language/message_language, raw_message, radio_freq, list/spans, list/message_mods = list(), visible_name = FALSE)
 	//This proc uses [] because it is faster than continually appending strings. Thanks BYOND.
@@ -147,8 +149,19 @@ GLOBAL_LIST_INIT(freqtospan, list(
 	//Speaker name
 	var/namepart
 	var/list/stored_name = list(null)
-	SEND_SIGNAL(speaker, COMSIG_MOVABLE_MESSAGE_GET_NAME_PART, stored_name, visible_name)
-	namepart = stored_name[NAME_PART_INDEX] || "[speaker.GetVoice()]"
+
+	if(iscarbon(speaker)) //First, try to pull the modified title from a carbon's ID. This will override both visual and audible names.
+		var/mob/living/carbon/carbon_human = speaker
+		var/obj/item/id_slot = carbon_human.get_item_by_slot(ITEM_SLOT_ID)
+		if(id_slot)
+			var/obj/item/card/id/id_card = id_slot?.GetID()
+			if(id_card)
+				SEND_SIGNAL(id_card, COMSIG_ID_GET_HONORIFIC, stored_name, carbon_human)
+
+	if(!stored_name[NAME_PART_INDEX]) //Otherwise, we just use whatever the name signal gives us.
+		SEND_SIGNAL(speaker, COMSIG_MOVABLE_MESSAGE_GET_NAME_PART, stored_name, visible_name)
+
+	namepart = "<span style='color: [speaker.chat_color]'>[stored_name[NAME_PART_INDEX] || speaker.GetVoice()]</span>" // Bandastation Addition: span with color
 
 	//End name span.
 	var/endspanpart = "</span>"
@@ -165,7 +178,7 @@ GLOBAL_LIST_INIT(freqtospan, list(
 		if(istype(dialect) && dialect.display_icon(src))
 			languageicon = "[dialect.get_icon()] "
 
-	messagepart = " <span class='message'>[say_emphasis(messagepart)]</span></span>"
+	messagepart = " <span class='message'>[messagepart]</span></span>"
 
 	return "[spanpart1][spanpart2][freqpart][languageicon][compose_track_href(speaker, namepart)][namepart][compose_job(speaker, message_language, raw_message, radio_freq)][endspanpart][messagepart]"
 
@@ -202,7 +215,7 @@ GLOBAL_LIST_INIT(freqtospan, list(
  * like human_say.dm's tongue-based verb_say changes.
  */
 /atom/movable/proc/get_default_say_verb()
-	return verb_say
+	return ru_say_verb(verb_say)
 
 /**
  * This prock is used to generate a message for chat
@@ -223,8 +236,14 @@ GLOBAL_LIST_INIT(freqtospan, list(
 	if(copytext_char(input, -2) == "!!")
 		spans |= SPAN_YELL
 
-	var/spanned = attach_spans(input, spans)
-	return "[say_mod], \"[spanned]\""
+	/* all inputs should be fully figured out past this point */
+
+	var/processed_input = say_emphasis(input) //This MUST be done first so that we don't get clipped by spans
+	processed_input = attach_spans(processed_input, spans)
+
+	var/processed_say_mod = say_emphasis(say_mod)
+
+	return "[processed_say_mod], \"[processed_input]\""
 
 /// Transforms the speech emphasis mods from [/atom/movable/proc/say_emphasis] into the appropriate HTML tags. Includes escaping.
 #define ENCODE_HTML_EMPHASIS(input, char, html, varname) \
@@ -235,8 +254,8 @@ GLOBAL_LIST_INIT(freqtospan, list(
 /atom/movable/proc/say_emphasis(input)
 	ENCODE_HTML_EMPHASIS(input, "\\|", "i", italics)
 	ENCODE_HTML_EMPHASIS(input, "\\+", "b", bold)
-	ENCODE_HTML_EMPHASIS(input, "_", "u", underline)
-	var/static/regex/remove_escape_backlashes = regex("\\\\(_|\\+|\\|)", "g") // Removes backslashes used to escape text modification.
+	ENCODE_HTML_EMPHASIS(input, "\\_", "u", underline)
+	var/static/regex/remove_escape_backlashes = regex("\\\\(\\_|\\+|\\|)", "g") // Removes backslashes used to escape text modification.
 	input = remove_escape_backlashes.Replace_char(input, "$1")
 	return input
 
@@ -284,7 +303,7 @@ GLOBAL_LIST_INIT(freqtospan, list(
 	return "0"
 
 /atom/proc/GetVoice()
-	return "[src]" //Returns the atom's name, prepended with 'The' if it's not a proper noun
+	return "[capitalize(declent_ru(NOMINATIVE))]" //Returns the atom's name, prepended with 'The' if it's not a proper noun
 
 //HACKY VIRTUALSPEAKER STUFF BEYOND THIS POINT
 //these exist mostly to deal with the AIs hrefs and job stuff.

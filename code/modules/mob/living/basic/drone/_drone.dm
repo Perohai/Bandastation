@@ -219,19 +219,18 @@
 	listener.RegisterSignal(src, COMSIG_LIVING_REVIVE, TYPE_PROC_REF(/datum/alarm_listener, allow_alarm_changes))
 
 /mob/living/basic/drone/med_hud_set_health()
-	var/image/holder = hud_list[DIAG_HUD]
-	holder.pixel_y = get_cached_height() - ICON_SIZE_Y
-	holder.icon_state = "huddiag[RoundDiagBar(health/maxHealth)]"
+	set_hud_image_state(DIAG_HUD, "huddiag[RoundDiagBar(health/maxHealth)]")
 
 /mob/living/basic/drone/med_hud_set_status()
-	var/image/holder = hud_list[DIAG_STAT_HUD]
-	holder.pixel_y = get_cached_height() - ICON_SIZE_Y
 	if(stat == DEAD)
-		holder.icon_state = "huddead2"
-	else if(incapacitated)
-		holder.icon_state = "hudoffline"
-	else
-		holder.icon_state = "hudstat"
+		set_hud_image_state(DIAG_STAT_HUD, "huddead2")
+		return
+
+	if(incapacitated)
+		set_hud_image_state(DIAG_STAT_HUD, "hudoffline")
+		return
+
+	set_hud_image_state(DIAG_STAT_HUD, "hudstat")
 
 /mob/living/basic/drone/Destroy()
 	GLOB.drones_list -= src
@@ -369,7 +368,7 @@
 		LoadComponent(/datum/component/shy, mob_whitelist=not_shy_of, shy_range=3, message="Your laws prevent this action near %TARGET.", keyless_shy=FALSE, clientless_shy=TRUE, dead_shy=FALSE, dead_shy_immediate=TRUE, machine_whitelist=shy_machine_whitelist)
 		init_shy_in_room_component(drone_bad_areas)
 		LoadComponent(/datum/component/technoshy, 20 SECONDS, "%TARGET was touched by a being recently, using it could break your laws.")
-		LoadComponent(/datum/component/itempicky, drone_good_items, "Using %TARGET could break your laws.")
+		LoadComponent(/datum/component/itempicky, drone_good_items, "Использование %TARGET может нарушить ваши законы.")
 		RegisterSignal(src, COMSIG_TRY_USE_MACHINE, PROC_REF(blacklist_on_try_use_machine))
 		RegisterSignal(src, COMSIG_TRY_WIRES_INTERACT, PROC_REF(blacklist_on_try_wires_interact))
 	else

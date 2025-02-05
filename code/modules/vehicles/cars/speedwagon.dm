@@ -14,9 +14,11 @@
 	///Determines whether we throw all things away when ramming them or just mobs, varedit only
 	var/crash_all = FALSE
 
-/obj/vehicle/sealed/car/speedwagon/Initialize(mapload)
+/obj/vehicle/sealed/car/speedwagon/update_overlays()
 	. = ..()
-	add_overlay(image(icon, "speedwagon_cover", ABOVE_MOB_LAYER))
+	var/mutable_appearance/cover_overlay = mutable_appearance(icon, "speedwagon_cover", ABOVE_MOB_LAYER, src, appearance_flags = KEEP_APART)
+	cover_overlay = color_atom_overlay(cover_overlay)
+	. += cover_overlay
 
 /obj/vehicle/sealed/car/speedwagon/Bump(atom/bumped)
 	. = ..()
@@ -27,7 +29,7 @@
 		if(ismovable(bumped))
 			var/atom/movable/flying_debris = bumped
 			flying_debris.throw_at(get_edge_target_turf(bumped, dir), 4, 3)
-		visible_message(span_danger("[src] crashes into [bumped]!"))
+		visible_message(span_danger("[capitalize(declent_ru(NOMINATIVE))] врезается в [bumped.declent_ru(ACCUSATIVE)]!"))
 		playsound(src, 'sound/effects/bang.ogg', 50, TRUE)
 	if(!ishuman(bumped))
 		return
@@ -37,7 +39,7 @@
 	rammed.apply_damage(rand(20,35), BRUTE)
 	if(!crash_all)
 		rammed.throw_at(get_edge_target_turf(bumped, dir), 4, 3)
-		visible_message(span_danger("[src] crashes into [rammed]!"))
+		visible_message(span_danger("[capitalize(declent_ru(NOMINATIVE))] врезается в [rammed.declent_ru(ACCUSATIVE)]!"))
 		playsound(src, 'sound/effects/bang.ogg', 50, TRUE)
 
 /obj/vehicle/sealed/car/speedwagon/Moved(atom/old_loc, movement_dir, forced, list/old_locs, momentum_change = TRUE)

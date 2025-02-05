@@ -105,7 +105,7 @@
 
 
 /obj/item/weldingtool/suicide_act(mob/living/user)
-	user.visible_message(span_suicide("[user] welds [user.p_their()] every orifice closed! It looks like [user.p_theyre()] trying to commit suicide!"))
+	user.visible_message(span_suicide("[user] welds [user.p_their()] every orifice closed! Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 	return FIRELOSS
 
 /obj/item/weldingtool/screwdriver_act(mob/living/user, obj/item/tool)
@@ -127,9 +127,9 @@
 /obj/item/weldingtool/use_tool(atom/target, mob/living/user, delay, amount, volume, datum/callback/extra_checks)
 	var/mutable_appearance/sparks = mutable_appearance('icons/effects/welding_effect.dmi', "welding_sparks", GASFIRE_LAYER, src, ABOVE_LIGHTING_PLANE)
 	target.add_overlay(sparks)
-	LAZYADD(update_overlays_on_z, sparks)
+	LAZYADD(target.update_overlays_on_z, sparks)
 	. = ..()
-	LAZYREMOVE(update_overlays_on_z, sparks)
+	LAZYREMOVE(target.update_overlays_on_z, sparks)
 	target.cut_overlay(sparks)
 
 /obj/item/weldingtool/interact_with_atom(atom/interacting_with, mob/living/user, list/modifiers)
@@ -164,7 +164,7 @@
 	if(!use_tool(attacked_humanoid, user, use_delay, volume=50, amount=1))
 		return ITEM_INTERACT_BLOCKING
 
-	if (!attacked_humanoid.item_heal(user, brute_heal = 15, burn_heal = 0, heal_message_brute = "dents", heal_message_burn = "burnt wires", required_bodytype = BODYTYPE_ROBOTIC))
+	if (!attacked_humanoid.item_heal(user, brute_heal = 15, burn_heal = 0, heal_message_brute = "вмятины", heal_message_burn = "сожженную проводку", required_bodytype = BODYTYPE_ROBOTIC))
 		return ITEM_INTERACT_BLOCKING
 
 	INVOKE_ASYNC(src, PROC_REF(try_heal_loop), interacting_with, user, TRUE)
@@ -317,7 +317,7 @@
 
 /obj/item/weldingtool/ignition_effect(atom/ignitable_atom, mob/user)
 	if(use_tool(ignitable_atom, user, 0))
-		return span_notice("[user] casually lights [ignitable_atom] with [src], what a badass.")
+		return span_rose("[user] casually lights [ignitable_atom] with [src], what a badass.")
 	else
 		return ""
 

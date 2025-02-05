@@ -92,11 +92,11 @@
 	var/turf/T = get_turf(user)
 
 	if(!isopenturf(T)) // Oh fuck
-		user.visible_message(span_suicide("[user] is beating [user.p_them()]self to death with [src]! It looks like [user.p_theyre()] trying to commit suicide!"))
+		user.visible_message(span_suicide("[user] is beating [user.p_them()]self to death with [src]! Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 		return BRUTELOSS
 
 	mode = RCD_TURF
-	user.visible_message(span_suicide("[user] sets the RCD to 'Wall' and points it down [user.p_their()] throat! It looks like [user.p_theyre()] trying to commit suicide!"))
+	user.visible_message(span_suicide("[user] sets the RCD to 'Wall' and points it down [user.p_their()] throat! Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 	if(checkResource(16, user)) // It takes 16 resources to construct a wall
 		var/success = T.rcd_act(user, src, list("[RCD_DESIGN_MODE]" = RCD_TURF, "[RCD_DESIGN_PATH]" = /turf/open/floor/plating/rcd))
 		T = get_turf(user)
@@ -564,6 +564,18 @@
 	if(ismecha(owner))
 		return owner.ui_status(user)
 	return UI_CLOSE
+
+/obj/item/construction/rcd/exosuit/build_delay(mob/user, delay, atom/target)
+	if(delay <= 0)
+		return TRUE
+
+	var/obj/item/mecha_parts/mecha_equipment/rcd/module = loc
+
+	//deconstruction can't be cancelled by ui changes
+	if(mode != RCD_DECONSTRUCT)
+		blueprint_changed = FALSE
+
+	return module.do_after_mecha(target, user, delay)
 
 /obj/item/construction/rcd/exosuit/get_matter(mob/user)
 	if(silo_link)

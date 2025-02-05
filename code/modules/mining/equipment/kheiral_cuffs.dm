@@ -93,7 +93,6 @@
 		if(isliving(loc))
 			connect_kheiral_network(loc)
 
-// LEMON AND HERE
 /obj/item/kheiral_cuffs/worn_overlays(mutable_appearance/standing, isinhands, icon_file)
 	. = ..()
 	if(!isinhands)
@@ -108,7 +107,7 @@
 		return
 
 	var/mob/living/carbon/human/victim = user
-	victim.visible_message(span_suicide("[user] locks [src] around their neck, wrinkles forming across their face. It looks like [user.p_theyre()] trying to commit suicide!"))
+	victim.visible_message(span_suicide("[user] locks [src] around their neck, wrinkles forming across their face. Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 	for(var/mult in 1 to 5) // Rapidly age
 		if(!do_after(victim, 0.5 SECONDS)) // just to space out the aging, either way you still dust.
 			break

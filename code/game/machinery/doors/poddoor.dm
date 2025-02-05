@@ -22,6 +22,12 @@
 	var/id = 1
 	/// The sound that plays when the door opens/closes
 	var/animation_sound = 'sound/machines/blastdoor.ogg'
+	var/show_nav_computer_icon = TRUE
+
+/obj/machinery/door/poddoor/Initialize(mapload)
+	. = ..()
+	if(show_nav_computer_icon)
+		AddElement(/datum/element/nav_computer_icon, 'icons/effects/nav_computer_indicators.dmi', "airlock", TRUE)
 
 /datum/armor/door_poddoor
 	melee = 50
@@ -108,7 +114,7 @@
 			balloon_alert(user, "open the door first!")
 			return ITEM_INTERACT_BLOCKING
 		if(!panel_open)
-			balloon_alert(user, "open the panel first!")
+			balloon_alert(user, "нужно открыть панель!")
 			return ITEM_INTERACT_BLOCKING
 		var/obj/item/assembly/control/controller_item = tool
 		id = controller_item.id
@@ -131,7 +137,7 @@
 		balloon_alert(user, "open the door first!")
 		return ITEM_INTERACT_SUCCESS
 	if (!panel_open)
-		balloon_alert(user, "open the panel first!")
+		balloon_alert(user, "нужно открыть панель!")
 		return ITEM_INTERACT_SUCCESS
 	if (deconstruction != BLASTDOOR_FINISHED)
 		return
@@ -152,7 +158,7 @@
 		balloon_alert(user, "open the door first!")
 		return ITEM_INTERACT_SUCCESS
 	if (!panel_open)
-		balloon_alert(user, "open the panel first!")
+		balloon_alert(user, "нужно открыть панель!")
 		return ITEM_INTERACT_SUCCESS
 	if (deconstruction != BLASTDOOR_FINISHED)
 		return
@@ -170,7 +176,7 @@
 		balloon_alert(user, "open the door first!")
 		return ITEM_INTERACT_SUCCESS
 	if (!panel_open)
-		balloon_alert(user, "open the panel first!")
+		balloon_alert(user, "нужно открыть панель!")
 		return ITEM_INTERACT_SUCCESS
 	if (deconstruction != BLASTDOOR_NEEDS_ELECTRONICS)
 		return
@@ -189,7 +195,7 @@
 		balloon_alert(user, "open the door first!")
 		return ITEM_INTERACT_SUCCESS
 	if (!panel_open)
-		balloon_alert(user, "open the panel first!")
+		balloon_alert(user, "нужно открыть панель!")
 		return ITEM_INTERACT_SUCCESS
 	if (deconstruction != BLASTDOOR_NEEDS_WIRES)
 		return

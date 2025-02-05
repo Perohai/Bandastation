@@ -4,6 +4,7 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "crowbar"
 	inhand_icon_state = "crowbar"
+	icon_angle = -45
 	lefthand_file = 'icons/mob/inhands/equipment/tools_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/tools_righthand.dmi'
 	usesound = 'sound/items/tools/crowbar.ogg'
@@ -34,7 +35,7 @@
 	AddElement(/datum/element/falling_hazard, damage = force, wound_bonus = wound_bonus, hardhat_safety = TRUE, crushes = FALSE, impact_sound = hitsound)
 
 /obj/item/crowbar/suicide_act(mob/living/user)
-	user.visible_message(span_suicide("[user] is beating [user.p_them()]self to death with [src]! It looks like [user.p_theyre()] trying to commit suicide!"))
+	user.visible_message(span_suicide("[user] is beating [user.p_them()]self to death with [src]! Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 	playsound(loc, 'sound/items/weapons/genhit.ogg', 50, TRUE, -1)
 	return BRUTELOSS
 
@@ -77,6 +78,7 @@
 	w_class = WEIGHT_CLASS_NORMAL
 	icon = 'icons/obj/weapons/hammer.dmi'
 	icon_state = "clawhammer"
+	icon_angle = -45
 	lefthand_file = 'icons/mob/inhands/weapons/hammers_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/hammers_righthand.dmi'
 	inhand_icon_state = "clawhammer"
@@ -88,7 +90,7 @@
 	custom_materials = list(/datum/material/wood=SMALL_MATERIAL_AMOUNT*0.5, /datum/material/iron=SMALL_MATERIAL_AMOUNT*0.7)
 	wound_bonus = 35
 
-/obj/item/crowbar/large/heavy //from space ruin
+/obj/item/crowbar/large/twenty_force //from space ruin
 	name = "heavy crowbar"
 	desc = "It's a big crowbar. It doesn't fit in your pockets, because it's big. It feels oddly heavy.."
 	force = 20
@@ -112,6 +114,7 @@
 	icon_state = "jaws"
 	inhand_icon_state = "jawsoflife"
 	worn_icon_state = "jawsoflife"
+	icon_angle = 180
 	lefthand_file = 'icons/mob/inhands/equipment/tools_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/tools_righthand.dmi'
 	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT*2.25, /datum/material/silver = SHEET_MATERIAL_AMOUNT*1.25, /datum/material/titanium = SHEET_MATERIAL_AMOUNT*1.75)
@@ -173,7 +176,7 @@
 
 /obj/item/crowbar/power/suicide_act(mob/living/user)
 	if(tool_behaviour == TOOL_CROWBAR)
-		user.visible_message(span_suicide("[user] is putting [user.p_their()] head in [src], it looks like [user.p_theyre()] trying to commit suicide!"))
+		user.visible_message(span_suicide("[user] is putting [user.p_their()] head in [src], Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 		playsound(loc, 'sound/items/tools/jaws_pry.ogg', 50, TRUE, -1)
 	else
 		user.visible_message(span_suicide("[user] is wrapping \the [src] around [user.p_their()] neck. It looks like [user.p_theyre()] trying to rip [user.p_their()] head off!"))
@@ -192,6 +195,7 @@
 	icon = 'icons/obj/items_cyborg.dmi'
 	icon_state = "toolkit_engiborg_crowbar"
 	worn_icon_state = "toolkit_engiborg_crowbar" //error sprite - this shouldn't have been dropped
+	icon_angle = 0
 	usesound = 'sound/items/tools/jaws_pry.ogg'
 	force = 10
 	toolspeed = 0.5
@@ -203,6 +207,7 @@
 	base_icon_state = "mechremoval"
 	inhand_icon_state = null
 	icon = 'icons/obj/mechremoval.dmi'
+	icon_angle = -65
 	w_class = WEIGHT_CLASS_HUGE
 	slot_flags = NONE
 	toolspeed = 1.25

@@ -122,11 +122,12 @@
 	. = ..()
 	if(clickable_glow)
 		add_filter("clickglow", 2, outline_filter(color = COLOR_GOLD, size = 1))
+		mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/alert/MouseEntered(location,control,params)
 	. = ..()
 	if(!QDELETED(src))
-		openToolTip(usr,src,params,title = name,content = desc,theme = alerttooltipstyle)
+		openToolTip(usr,src,params,title = declent_ru(NOMINATIVE),content = desc,theme = alerttooltipstyle)
 
 
 /atom/movable/screen/alert/MouseExited()
@@ -265,8 +266,7 @@
 		return
 
 	var/mob/living/carbon/carbon_owner = owner
-
-	return carbon_owner.help_shake_act(carbon_owner)
+	return carbon_owner.check_self_for_injuries()
 
 /atom/movable/screen/alert/negative
 	name = "Negative Gravity"
@@ -318,7 +318,7 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 	/// The offer we're linked to, yes this is suspiciously like a status effect alert
 	var/datum/status_effect/offering/offer
 	/// Additional text displayed in the description of the alert.
-	var/additional_desc_text = "Click this alert to take it, or shift click it to examiante it."
+	var/additional_desc_text = "Click this alert to take it, or shift click it to examine it."
 	/// Text to override what appears in screentips for the alert
 	var/screentip_override_text
 	/// Whether the offered item can be examined by shift-clicking the alert
@@ -861,7 +861,7 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 	ghost_owner.observer_view(target)
 
 /atom/movable/screen/alert/poll_alert
-	name = "Looking for candidates"
+	name = "Выбор кандидатов"
 	icon_state = "template"
 	timeout = 30 SECONDS
 	ghost_screentips = TRUE
@@ -910,17 +910,17 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 	var/left_click_text
 	if(poll)
 		if(owner in poll.signed_up)
-			left_click_text = "Leave"
+			left_click_text = "Отказаться"
 		else
-			left_click_text = "Enter"
-		context[SCREENTIP_CONTEXT_LMB] = "[left_click_text] Poll"
+			left_click_text = "Принять"
+		context[SCREENTIP_CONTEXT_LMB] = "[left_click_text]"
 		if(poll.ignoring_category)
 			var/selected_never = FALSE
 			if(owner.ckey in GLOB.poll_ignore[poll.ignoring_category])
 				selected_never = TRUE
-			context[SCREENTIP_CONTEXT_ALT_LMB] = "[selected_never ? "Cancel " : ""]Never For This Round"
+			context[SCREENTIP_CONTEXT_ALT_LMB] = "[selected_never ? "Начать " : "Не "]приглашать в этом раунде"
 		if(poll.jump_to_me && isobserver(owner))
-			context[SCREENTIP_CONTEXT_CTRL_LMB] = "Jump To"
+			context[SCREENTIP_CONTEXT_CTRL_LMB] = "Прыгнуть"
 	return CONTEXTUAL_SCREENTIP_SET
 
 /atom/movable/screen/alert/poll_alert/process()
@@ -1012,8 +1012,8 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 //OBJECT-BASED
 
 /atom/movable/screen/alert/buckled
-	name = "Buckled"
-	desc = "You've been buckled to something. Click the alert to unbuckle unless you're handcuffed."
+	name = "Пристегнуты"
+	desc = "Вы были к чему-то пристегнуты. Нажмите на это уведомление, чтобы отстегнуться, если вы не в наручниках."
 	icon_state = ALERT_BUCKLED
 	clickable_glow = TRUE
 
@@ -1135,7 +1135,7 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 		return FALSE
 	var/list/modifiers = params2list(params)
 	if(LAZYACCESS(modifiers, SHIFT_CLICK)) // screen objects don't do the normal Click() stuff so we'll cheat
-		to_chat(usr, examine_block(jointext(examine(usr), "\n")))
+		to_chat(usr, boxed_message(jointext(examine(usr), "\n")))
 		return FALSE
 	var/datum/our_master = master_ref?.resolve()
 	if(our_master && click_master)

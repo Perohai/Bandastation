@@ -9,7 +9,7 @@
 		designation = trim_left(player.designation + " " + player.job)
 
 	if(HAS_TRAIT(mind, TRAIT_DISPLAY_JOB_IN_BINARY))
-		designation = mind.assigned_role.title
+		designation = job_title_ru(mind.assigned_role.title)
 
 	if(isAI(src))
 		// AIs are loud and ugly
@@ -32,7 +32,7 @@
 					M,
 					span_binarysay("\
 						Robotic Talk, \
-						<a href='?src=[REF(M)];track=[html_encode(namepart)]'>[span_name("[namepart] ([designation])")]</a> \
+						<a href='byond://?src=[REF(M)];track=[html_encode(namepart)]'>[span_name("[namepart] ([designation])")]</a> \
 						<span class='message'>[quoted_message]</span>\
 					"),
 					avoid_highlighting = src == M

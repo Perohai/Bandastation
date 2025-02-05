@@ -17,7 +17,7 @@
 	///This component's personal uid
 	var/personal_uid
 
-/datum/component/seethrough_mob/Initialize(target_alpha = 100, animation_time = 0.5 SECONDS, clickthrough = TRUE)
+/datum/component/seethrough_mob/Initialize(target_alpha = 100, animation_time = 0.5 SECONDS, clickthrough = TRUE, keep_color = FALSE)
 	. = ..()
 
 	if(!ismob(parent))
@@ -33,9 +33,9 @@
 	uid++
 	src.personal_uid = uid
 
-	render_source_atom.appearance_flags |= ( RESET_COLOR | RESET_TRANSFORM)
+	render_source_atom.appearance_flags |= KEEP_APART
 
-	render_source_atom.vis_flags |= (VIS_INHERIT_ID | VIS_INHERIT_PLANE | VIS_INHERIT_LAYER)
+	render_source_atom.vis_flags |= (VIS_INHERIT_ID|VIS_INHERIT_PLANE|VIS_INHERIT_LAYER)
 
 	render_source_atom.render_source = "*transparent_bigmob[personal_uid]"
 
@@ -56,7 +56,7 @@
 		seethrough.unhide_plane(fool)
 
 	render_source_atom.pixel_x = -fool.pixel_x
-	render_source_atom.pixel_y = (fool.get_cached_height() - ICON_SIZE_Y * 0.5)
+	render_source_atom.pixel_y = ((fool.get_cached_height() - ICON_SIZE_Y) * 0.5)
 
 	initial_render_target_value = fool.render_target
 	fool.render_target = "*transparent_bigmob[personal_uid]"
@@ -115,7 +115,7 @@
 
 /datum/action/cooldown/toggle_seethrough
 	name = "Toggle Seethrough"
-	desc = "Allows you to see behind your massive body and click through it."
+	desc = "Позволяет видеть сквозь ваше огромное тело и кликать за ним."
 	button_icon = 'icons/mob/actions/actions_xeno.dmi'
 	button_icon_state = "alien_sneak"
 	background_icon_state = "bg_alien"

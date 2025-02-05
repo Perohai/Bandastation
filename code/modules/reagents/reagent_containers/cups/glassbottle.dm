@@ -10,6 +10,7 @@
 	icon = 'icons/obj/drinks/bottles.dmi'
 	icon_state = "glassbottle"
 	worn_icon_state = "bottle"
+	icon_angle = 90
 	fill_icon_thresholds = list(0, 10, 20, 30, 40, 50, 60, 70, 80, 90)
 	custom_price = PAYCHECK_CREW * 1.1
 	amount_per_transfer_from_this = 10
@@ -699,7 +700,7 @@
 	if(spillable)
 		return
 
-	if(attacking_item.sharpness != SHARP_EDGED)
+	if(attacking_item.get_sharpness() != SHARP_EDGED)
 		return
 
 	if(attacking_item != user.get_active_held_item()) //no TK allowed
@@ -850,7 +851,7 @@
 
 /obj/item/reagent_containers/cup/glass/bottle/moonshine
 	name = "moonshine jug"
-	desc = "It is said that the ancient Applalacians used these stoneware jugs to capture lightning in a bottle."
+	desc = "It is said that the ancient Appalachians used these stoneware jugs to capture lightning in a bottle."
 	icon_state = "moonshinebottle"
 	list_reagents = list(/datum/reagent/consumable/ethanol/moonshine = 100)
 	drink_type = ALCOHOL

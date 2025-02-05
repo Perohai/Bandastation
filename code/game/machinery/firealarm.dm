@@ -18,6 +18,7 @@
 	max_integrity = 250
 	integrity_failure = 0.4
 	armor_type = /datum/armor/machinery_firealarm
+	mouse_over_pointer = MOUSE_HAND_POINTER
 	idle_power_usage = BASE_MACHINE_IDLE_CONSUMPTION * 0.05
 	active_power_usage = BASE_MACHINE_ACTIVE_CONSUMPTION * 0.02
 	power_channel = AREA_USAGE_ENVIRON
@@ -485,7 +486,7 @@
 		balloon_alert(user, "thermal sensors [my_area.fire_detect ? "enabled" : "disabled"]")
 		user.log_message("[ my_area.fire_detect ? "enabled" : "disabled" ] firelock sensors using [src].", LOG_GAME)
 
-MAPPING_DIRECTIONAL_HELPERS(/obj/machinery/firealarm, 26)
+MAPPING_DIRECTIONAL_HELPERS(/obj/machinery/firealarm, 24) // BANDASTATION EDIT - ASTHETICS - ORIGINAL: 26
 
 /*
  * Return of Party button

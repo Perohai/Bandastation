@@ -66,7 +66,7 @@
 		speed += servo.tier
 	var/chair_icon = "motorized_wheelchair[speed > delay_multiplier ? "_fast" : ""]"
 	if(icon_state != chair_icon)
-		wheels_overlay = image(icon, chair_icon + "_overlay", ABOVE_MOB_LAYER)
+		overlay_icon = chair_icon + "_overlay"
 
 	icon_state = chair_icon
 
@@ -206,9 +206,9 @@
 			ramtarget.throw_at(throw_target, 2, 3)
 			ramtarget.Knockdown(8 SECONDS)
 			ramtarget.adjustStaminaLoss(35)
-			visible_message(span_danger("[src] crashes into [ramtarget], sending [disabled] and [ramtarget] flying!"))
+			visible_message(span_danger("[capitalize(declent_ru(NOMINATIVE))] врезается в [ramtarget.declent_ru(ACCUSATIVE)], отправляя [disabled.declent_ru(ACCUSATIVE)] и [ramtarget.declent_ru(ACCUSATIVE)] в полёт!"))
 		else
-			visible_message(span_danger("[src] crashes into [bumped_atom], sending [disabled] flying!"))
+			visible_message(span_danger("[capitalize(declent_ru(NOMINATIVE))] врезается в [bumped_atom.declent_ru(ACCUSATIVE)], отправляя [disabled.declent_ru(ACCUSATIVE)] в полёт!"))
 		playsound(src, 'sound/effects/bang.ogg', 50, 1)
 
 /obj/vehicle/ridden/wheelchair/motorized/emag_act(mob/user, obj/item/card/emag/emag_card)

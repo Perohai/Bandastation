@@ -7,6 +7,7 @@
 	desc = "Order, order! No bombs in my courthouse."
 	icon = 'icons/obj/weapons/hammer.dmi'
 	icon_state = "gavelhammer"
+	icon_angle = -135
 	force = 5
 	throwforce = 6
 	w_class = WEIGHT_CLASS_SMALL
@@ -19,7 +20,7 @@
 	AddElement(/datum/element/kneejerk)
 
 /obj/item/gavelhammer/suicide_act(mob/living/user)
-	user.visible_message(span_suicide("[user] has sentenced [user.p_them()]self to death with [src]! It looks like [user.p_theyre()] trying to commit suicide!"))
+	user.visible_message(span_suicide("[user] has sentenced [user.p_them()]self to death with [src]! Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 	playsound(loc, 'sound/items/gavel.ogg', 50, TRUE, -1)
 	return BRUTELOSS
 

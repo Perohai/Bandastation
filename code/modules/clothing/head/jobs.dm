@@ -86,10 +86,10 @@
 
 /obj/item/clothing/head/utility/chefhat/suicide_act(mob/living/user)
 	user.visible_message(span_suicide("[user] is donning [src]! It looks like [user.p_theyre()] trying to become a chef."))
-	user.say("Bork Bork Bork!", forced = "chef hat suicide")
+	user.say("Борк Борк Борк!", forced = "chef hat suicide")
 	sleep(2 SECONDS)
 	user.visible_message(span_suicide("[user] climbs into an imaginary oven!"))
-	user.say("BOOORK!", forced = "chef hat suicide")
+	user.say("БОООРК!", forced = "chef hat suicide")
 	playsound(user, 'sound/machines/ding.ogg', 50, TRUE)
 	return FIRELOSS
 
@@ -128,6 +128,7 @@
 	greyscale_config = /datum/greyscale_config/beret_badge
 	greyscale_config_worn = /datum/greyscale_config/beret_badge/worn
 	greyscale_colors = "#0070B7#FFCE5B"
+	hair_mask = HAIR_MASK_HIDE_ABOVE_45_DEG_MEDIUM
 
 //Head of Personnel
 /obj/item/clothing/head/hats/hopcap
@@ -238,7 +239,7 @@
 ///Detectives Fedora, but like Inspector Gadget. Not a subtype to not inherit candy corn stuff
 /obj/item/clothing/head/fedora/inspector_hat
 	name = "inspector's fedora"
-	desc = "There's only one man can try to stop an evil villian."
+	desc = "There's only one man can try to stop an evil villain."
 	armor_type = /datum/armor/fedora_det_hat
 	icon_state = "detective"
 	inhand_icon_state = "det_hat"
@@ -392,6 +393,7 @@
 	greyscale_config_worn = /datum/greyscale_config/beret/worn
 	greyscale_colors = "#972A2A"
 	flags_1 = IS_PLAYER_COLORABLE_1
+	hair_mask = HAIR_MASK_HIDE_ABOVE_45_DEG_MEDIUM
 
 //Security
 /obj/item/clothing/head/hats/hos
@@ -447,6 +449,7 @@
 	greyscale_config = /datum/greyscale_config/beret_badge
 	greyscale_config_worn = /datum/greyscale_config/beret_badge/worn
 	greyscale_colors = "#39393f#f0cc8f"
+	hair_mask = HAIR_MASK_HIDE_ABOVE_45_DEG_MEDIUM
 
 /obj/item/clothing/head/hats/hos/beret/navyhos
 	name = "head of security's formal beret"

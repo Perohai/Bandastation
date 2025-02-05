@@ -15,6 +15,9 @@
 
 #INTERVIEW_WEBHOOK_URL
 
+## Bandastation Races
+ROUNDSTART_RACES vulpkanin
+
 #MIN_THREAT_TO_ROUNDSTART_PERCENT 30
 #MAX_THREAT_TO_ROUNDSTART_PERCENT 60
 #MIN_THREAT_LEVEL 20
@@ -30,3 +33,19 @@
 #ALLOW_CREW_TRANSFER_VOTE
 ## If automatic crew transfer is enabled
 #ENABLE_AUTOMATIC_CREW_TRANSFER
+
+# Cryo
+
+## Time in deciseconds the mob must be clientless for to be despawned by cryopod. 30 minutes by default
+#CRYO_MIN_SSD_TIME 18000
+
+## Speech filter for players
+
+## If enabled, some words will be removed from player's messages.
+# ENABLE_SPEECH_FILTER
+## List of ckeys, that bypass speech filter.
+# SPEECH_FILTER_BYPASS ckey
+# SPEECH_FILTER_BYPASS ckey
+
+## Boolean value to derminate is it posible to die permanently due death of brain or not (value true means it's enabled)
+BRAIN_PERMANENT_DEATH

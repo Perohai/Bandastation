@@ -340,7 +340,7 @@
 		else
 			how_cool_are_your_threads += "[src]'s storage opens when dragged to yourself.\n"
 		if (atom_storage.can_hold?.len) // If pocket type can hold anything, vs only specific items
-			how_cool_are_your_threads += "[src] can store [atom_storage.max_slots] <a href='?src=[REF(src)];show_valid_pocket_items=1'>item\s</a>.\n"
+			how_cool_are_your_threads += "[src] can store [atom_storage.max_slots] <a href='byond://?src=[REF(src)];show_valid_pocket_items=1'>item\s</a>.\n"
 		else
 			how_cool_are_your_threads += "[src] can store [atom_storage.max_slots] item\s that are [weight_class_to_text(atom_storage.max_specific_storage)] or smaller.\n"
 		if(atom_storage.quickdraw)
@@ -351,39 +351,39 @@
 		. += how_cool_are_your_threads.Join()
 
 	if(get_armor().has_any_armor() || (flags_cover & (HEADCOVERSMOUTH|PEPPERPROOF)) || (clothing_flags & STOPSPRESSUREDAMAGE) || (visor_flags & STOPSPRESSUREDAMAGE))
-		. += span_notice("It has a <a href='?src=[REF(src)];list_armor=1'>tag</a> listing its protection classes.")
+		. += span_notice("Имеется <a href='byond://?src=[REF(src)];list_armor=1'>бирка</a>, указывающая классы защиты.")
 
 /obj/item/clothing/examine_tags(mob/user)
 	. = ..()
 	if (clothing_flags & THICKMATERIAL)
-		.["thick"] = "Protects from most injections and sprays."
+		.["плотный"] = "Защищает от большинства инъекций и спреев."
 	if (clothing_flags & CASTING_CLOTHES)
-		.["magical"] = "Allows magical beings to cast spells when wearing [src]."
+		.["магический"] = "Позволяет магическим существам произносить заклинания, пока надет [declent_ru(NOMINATIVE)]."
 	if((clothing_flags & STOPSPRESSUREDAMAGE) || (visor_flags & STOPSPRESSUREDAMAGE))
-		.["pressureproof"] = "Protects the wearer from extremely low or high pressure, such as vacuum of space."
+		.["герметичный"] = "Защищает носителя от чрезвычайно низкого и высокого давленй, например как вакуум космоса."
 	if(flags_cover & PEPPERPROOF)
-		.["pepperproof"] = "Protects the wearer from the effects of pepperspray."
+		.["перцестойкий"] = "Защищает носителя от воздействия перцового баллончика."
 	if (heat_protection || cold_protection)
 		var/heat_desc
 		var/cold_desc
 		switch (max_heat_protection_temperature)
 			if (400 to 1000)
-				heat_desc = "high"
+				heat_desc = "высоких"
 			if (1001 to 1600)
-				heat_desc = "very high"
+				heat_desc = "очень высоких"
 			if (1601 to 35000)
-				heat_desc = "extremely high"
+				heat_desc = "чрезвычайно высоких"
 		switch (min_cold_protection_temperature)
 			if (160 to 272)
-				cold_desc = "low"
+				cold_desc = "низких"
 			if (72 to 159)
-				cold_desc = "very low"
+				cold_desc = "очень низких"
 			if (0 to 71)
-				cold_desc = "extremely low"
-		.["thermally insulated"] = "Protects the wearer from [jointext(list(heat_desc, cold_desc) - null, " and ")] temperatures."
+				cold_desc = "чрезвычайно низких"
+		.["термоизолированный"] = "Защищает носителя от [jointext(list(heat_desc, cold_desc) - null, " и ")] температур."
 
 /obj/item/clothing/examine_descriptor(mob/user)
-	return "clothing"
+	return "надеваемый предмет"
 
 /obj/item/clothing/Topic(href, href_list)
 	. = ..()
@@ -398,7 +398,7 @@
 			if(!rating)
 				continue
 			if(!added_damage_header)
-				readout += "<b><u>ARMOR (I-X)</u></b>"
+				readout += "<b><u>БРОНЯ (I-X)</u></b>"
 				added_damage_header = TRUE
 			readout += "[armor_to_protection_name(damage_key)] [armor_to_protection_class(rating)]"
 
@@ -408,7 +408,7 @@
 			if(!rating)
 				continue
 			if(!added_durability_header)
-				readout += "<b><u>DURABILITY (I-X)</u></b>"
+				readout += "<b><u>ПРОЧНОСТЬ (I-X)</u></b>"
 				added_damage_header = TRUE
 			readout += "[armor_to_protection_name(durability_key)] [armor_to_protection_class(rating)]"
 
@@ -456,7 +456,7 @@
 			readout += "No armor or durability information available."
 
 		var/formatted_readout = span_notice("<b>PROTECTION CLASSES</b><hr>[jointext(readout, "\n")]")
-		to_chat(usr, examine_block(formatted_readout))
+		to_chat(usr, boxed_message(formatted_readout))
 
 /**
  * Rounds armor_value down to the nearest 10, divides it by 10 and then converts it to Roman numerals.

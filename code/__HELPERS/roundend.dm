@@ -47,7 +47,7 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 					var/mob/living/carbon/human/H = L
 					category = "humans"
 					if(H.mind)
-						mob_data["job"] = H.mind.assigned_role.title
+						mob_data["job"] = job_title_ru(H.mind.assigned_role.title)
 					else
 						mob_data["job"] = "Unknown"
 					mob_data["species"] = H.dna.species.name
@@ -335,7 +335,7 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 
 	if(GLOB.round_id)
 		var/statspage = CONFIG_GET(string/roundstatsurl)
-		var/info = statspage ? "<a href='?action=openLink&link=[url_encode(statspage)][GLOB.round_id]'>[GLOB.round_id]</a>" : GLOB.round_id
+		var/info = statspage ? "<a href='byond://?action=openLink&link=[url_encode(statspage)][GLOB.round_id]'>[GLOB.round_id]</a>" : GLOB.round_id
 		parts += "[FOURSPACES]Round ID: <b>[info]</b>"
 	parts += "[FOURSPACES]Shift Duration: <B>[DisplayTimeText(world.time - SSticker.round_start_time)]</B>"
 	parts += "[FOURSPACES]Station Integrity: <B>[GLOB.station_was_nuked ? span_redtext("Destroyed") : "[popcount["station_integrity"]]%"]</B>"
@@ -660,7 +660,7 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 	var/datum/action/report/R = new
 	C.player_details.player_actions += R
 	R.Grant(C.mob)
-	to_chat(C,span_infoplain("<a href='?src=[REF(R)];report=1'>Show roundend report again</a>"))
+	to_chat(C,span_infoplain("<a href='byond://?src=[REF(R)];report=1'>Show roundend report again</a>"))
 
 /datum/action/report
 	name = "Show roundend report"
@@ -685,8 +685,8 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 /proc/printplayer(datum/mind/ply, fleecheck)
 	var/jobtext = ""
 	if(!is_unassigned_job(ply.assigned_role))
-		jobtext = " the <b>[ply.assigned_role.title]</b>"
-	var/text = "<b>[ply.key]</b> was <b>[ply.name]</b>[jobtext] and"
+		jobtext = ", <b>[job_title_ru(ply.assigned_role.title)],</b>"
+	var/text = "<b>[ply.key]</b> был <b>[ply.name]</b>[jobtext] and"
 	if(ply.current)
 		if(ply.current.stat == DEAD)
 			text += " [span_redtext("died")]"

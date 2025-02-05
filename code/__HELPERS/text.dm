@@ -178,12 +178,12 @@
 		switch(text2ascii(char))
 
 			// A  .. Z
-			if(65 to 90, 1040 to 1071, 1025) //Uppercase Letters //SS220 EDIT CHANGE - Cyrillic Fixes
+			if(65 to 90, 1040 to 1071, 1025) //Uppercase Letters // BANDASTATION EDIT CHANGE - Cyrillic Fixes
 				number_of_alphanumeric++
 				last_char_group = LETTERS_DETECTED
 
 			// a  .. z
-			if(97 to 122, 1072 to 1103, 1105) //Lowercase Letters //SS220 EDIT CHANGE - Cyrillic Fixes
+			if(97 to 122, 1072 to 1103, 1105) //Lowercase Letters // BANDASTATION EDIT CHANGE - Cyrillic Fixes
 				if(last_char_group == NO_CHARS_DETECTED || last_char_group == SPACES_DETECTED || cap_after_symbols && last_char_group == SYMBOLS_DETECTED) //start of a word
 					char = uppertext(char)
 				number_of_alphanumeric++
@@ -221,7 +221,7 @@
 					continue
 				last_char_group = SPACES_DETECTED
 
-			if(127 to INFINITY)
+			if(127 to 1024, 1026 to 1104, 1106 to INFINITY) // BANDASTATION EDIT CHANGE - Cyrillic Fixes - Ёё
 				if(ascii_only)
 					if(strict)
 						return
@@ -1175,28 +1175,28 @@ GLOBAL_LIST_INIT(binary, list("0","1"))
 /proc/weight_class_to_text(w_class)
 	switch(w_class)
 		if(WEIGHT_CLASS_TINY)
-			. = "tiny"
+			. = "крохотного размера"
 		if(WEIGHT_CLASS_SMALL)
-			. = "small"
+			. = "маленького размера"
 		if(WEIGHT_CLASS_NORMAL)
-			. = "normal-sized"
+			. = "обычного размера"
 		if(WEIGHT_CLASS_BULKY)
-			. = "bulky"
+			. = "громоздкого размера"
 		if(WEIGHT_CLASS_HUGE)
-			. = "huge"
+			. = "огромного размера"
 		if(WEIGHT_CLASS_GIGANTIC)
-			. = "gigantic"
+			. = "гигантского размера"
 		else
 			. = ""
 
 /proc/weight_class_to_tooltip(w_class)
 	switch(w_class)
 		if(WEIGHT_CLASS_TINY to WEIGHT_CLASS_SMALL)
-			return "This item can fit into pockets, boxes and backpacks."
+			return "Этот предмет помещается в карманы, коробки и сумки."
 		if(WEIGHT_CLASS_NORMAL)
-			return "This item can fit into backpacks."
+			return "Этот предмет помещается в сумки."
 		if(WEIGHT_CLASS_BULKY to WEIGHT_CLASS_GIGANTIC)
-			return "This item is too large to fit into any standard storage."
+			return "Этот предмет слишком большой, чтобы поместиться в стандартные хранилища."
 	return ""
 
 /// Removes all non-alphanumerics from the text, keep in mind this can lead to id conflicts

@@ -73,6 +73,7 @@
 	righthand_file = 'icons/mob/inhands/weapons/staves_righthand.dmi'
 	icon_state = "asclepius_dormant"
 	inhand_icon_state = "asclepius_dormant"
+	icon_angle = -45
 	var/activated = FALSE
 
 /obj/item/rod_of_asclepius/Initialize(mapload)
@@ -106,22 +107,22 @@
 	var/failText = span_warning("The snake seems unsatisfied with your incomplete oath and returns to its previous place on the rod, returning to its dormant, wooden state. You must stand still while completing your oath!")
 	to_chat(itemUser, span_notice("The wooden snake that was carved into the rod seems to suddenly come alive and begins to slither down your arm! The compulsion to help others grows abnormally strong..."))
 	if(do_after(itemUser, 4 SECONDS, target = itemUser))
-		itemUser.say("I swear to fulfill, to the best of my ability and judgment, this covenant:", forced = "hippocratic oath")
+		itemUser.say("Я клянусь выполнять, наилучшим образом, в соответствии с моими способностями и суждением, этот завет:", forced = "hippocratic oath")
 	else
 		to_chat(itemUser, failText)
 		return
 	if(do_after(itemUser, 2 SECONDS, target = itemUser))
-		itemUser.say("I will apply, for the benefit of the sick, all measures that are required, avoiding those twin traps of overtreatment and therapeutic nihilism.", forced = "hippocratic oath")
+		itemUser.say("Я буду применять все необходимые меры на благо больных, избегая двух крайностей: чрезмерного ухода и терапевтического нигилизма.", forced = "hippocratic oath")
 	else
 		to_chat(itemUser, failText)
 		return
 	if(do_after(itemUser, 3 SECONDS, target = itemUser))
-		itemUser.say("I will remember that I remain a member of society, with special obligations to all my fellow human beings, those sound of mind and body as well as the infirm.", forced = "hippocratic oath")
+		itemUser.say("Я буду помнить, что остаюсь членом общества, у которого есть особые обязательства по отношению ко всем моим собратьям - как к здоровым душой и телом, так и к немощным.", forced = "hippocratic oath")
 	else
 		to_chat(itemUser, failText)
 		return
 	if(do_after(itemUser, 3 SECONDS, target = itemUser))
-		itemUser.say("If I do not violate this oath, may I enjoy life and art, respected while I live and remembered with affection thereafter. May I always act so as to preserve the finest traditions of my calling and may I long experience the joy of healing those who seek my help.", forced = "hippocratic oath")
+		itemUser.say("Если я не нарушу эту клятву, пусть я буду наслаждаться жизнью и искусством, меня будут уважать, пока я жив, и вспоминать с любовью после этого. Пусть мои действия всегда будут направлены на сохранение лучших традиций моего призвания, и пусть я долго буду испытывать радость от исцеления тех, кто обращается ко мне за помощью.", forced = "hippocratic oath")
 	else
 		to_chat(itemUser, failText)
 		return
@@ -323,8 +324,7 @@
 
 /obj/item/warp_cube/attack_self(mob/user)
 	var/turf/current_location = get_turf(user)
-	var/area/current_area = current_location.loc
-	if(!linked || (current_area.area_flags & NOTELEPORT))
+	if(!linked || !check_teleport_valid(src, current_location))
 		to_chat(user, span_warning("[src] fizzles uselessly."))
 		return
 	if(teleporting)
@@ -533,7 +533,6 @@
 /datum/reagent/flightpotion
 	name = "Flight Potion"
 	description = "Strange mutagenic compound of unknown origins."
-	reagent_state = LIQUID
 	color = "#976230"
 
 /datum/reagent/flightpotion/expose_mob(mob/living/exposed_mob, methods=TOUCH, reac_volume, show_message = TRUE)
@@ -990,6 +989,7 @@
 	Even with the weapon destroyed, all the pieces containing the creature have coagulated back together to find a new host."
 	icon = 'icons/obj/mining_zones/artefacts.dmi'
 	icon_state = "cursed_katana"
+	icon_angle = -45
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	force = 15
@@ -998,8 +998,8 @@
 	block_sound = 'sound/items/weapons/parry.ogg'
 	sharpness = SHARP_EDGED
 	w_class = WEIGHT_CLASS_HUGE
-	attack_verb_continuous = list("attacks", "slashes", "stabs", "slices", "tears", "lacerates", "rips", "dices", "cuts")
-	attack_verb_simple = list("attack", "slash", "stab", "slice", "tear", "lacerate", "rip", "dice", "cut")
+	attack_verb_continuous = list("attacks", "slashes", "slices", "tears", "lacerates", "rips", "dices", "cuts")
+	attack_verb_simple = list("attack", "slash", "slice", "tear", "lacerate", "rip", "dice", "cut")
 	hitsound = 'sound/items/weapons/bladeslice.ogg'
 	resistance_flags = LAVA_PROOF | FIRE_PROOF | UNACIDABLE | FREEZE_PROOF
 	var/shattered = FALSE
@@ -1012,9 +1012,14 @@
 		ATTACK_CLOAK = list(COMBO_STEPS = list(LEFT_ATTACK, RIGHT_ATTACK, LEFT_ATTACK, RIGHT_ATTACK), COMBO_PROC = PROC_REF(cloak)),
 		ATTACK_SHATTER = list(COMBO_STEPS = list(RIGHT_ATTACK, LEFT_ATTACK, RIGHT_ATTACK, LEFT_ATTACK), COMBO_PROC = PROC_REF(shatter)),
 	)
+	var/list/alt_continuous = list("stabs", "pierces", "impales")
+	var/list/alt_simple = list("stab", "pierce", "impale")
 
 /obj/item/cursed_katana/Initialize(mapload)
 	. = ..()
+	alt_continuous = string_list(alt_continuous)
+	alt_simple = string_list(alt_simple)
+	AddComponent(/datum/component/alternative_sharpness, SHARP_POINTY, alt_continuous, alt_simple)
 	AddComponent( \
 		/datum/component/combo_attacks, \
 		combos = combo_list, \
@@ -1078,6 +1083,7 @@
 	user.visible_message(span_warning("[user] does a wide slice!"),
 		span_notice("You do a wide slice!"))
 	playsound(src, 'sound/items/weapons/bladeslice.ogg', 50, TRUE)
+	user.do_item_attack_animation(target, used_item = src, animation_type = ATTACK_ANIMATION_SLASH)
 	var/turf/user_turf = get_turf(user)
 	var/dir_to_target = get_dir(user_turf, get_turf(target))
 	var/static/list/cursed_katana_slice_angles = list(0, -45, 45, -90, 90) //so that the animation animates towards the target clicked and not towards a side target
@@ -1117,6 +1123,7 @@
 	user.visible_message(span_warning("[user] cuts [target]'s tendons!"),
 		span_notice("You tendon cut [target]!"))
 	to_chat(target, span_userdanger("Your tendons have been cut by [user]!"))
+	user.do_item_attack_animation(target, used_item = src, animation_type = ATTACK_ANIMATION_SLASH)
 	target.apply_damage(damage = 15, sharpness = SHARP_EDGED, wound_bonus = 15)
 	user.do_attack_animation(target, ATTACK_EFFECT_DISARM)
 	playsound(src, 'sound/items/weapons/rapierhit.ogg', 50, TRUE)

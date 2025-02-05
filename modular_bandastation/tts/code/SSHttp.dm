@@ -13,7 +13,10 @@ SUBSYSTEM_DEF(http)
 
 /datum/controller/subsystem/http/PreInit()
 	. = ..()
-	rustgss220_create_async_http_client() // Open the door
+	rustg_create_async_http_client() // Open the door
+
+/datum/controller/subsystem/http/stat_entry(msg)
+	return "[..()] P:[length(active_async_requests)] T:[total_requests]"
 
 /datum/controller/subsystem/http/fire(resumed)
 	for(var/r in active_async_requests)
@@ -84,7 +87,3 @@ SUBSYSTEM_DEF(http)
 /datum/http_request
 	/// Callback for executing after async requests. Will be called with an argument of [/datum/http_response] as first argument
 	var/datum/callback/cb
-
-/world/Del()
-	rustgss220_close_async_http_client()
-	. = ..()

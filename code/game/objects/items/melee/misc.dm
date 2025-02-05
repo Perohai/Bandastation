@@ -9,6 +9,7 @@
 	icon_state = "chain"
 	inhand_icon_state = "chain"
 	worn_icon_state = "whip"
+	icon_angle = -90
 	lefthand_file = 'icons/mob/inhands/weapons/melee_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/melee_righthand.dmi'
 	obj_flags = CONDUCTS_ELECTRICITY
@@ -25,7 +26,7 @@
 	custom_materials = list(/datum/material/iron = HALF_SHEET_MATERIAL_AMOUNT)
 
 /obj/item/melee/chainofcommand/suicide_act(mob/living/user)
-	user.visible_message(span_suicide("[user] is strangling [user.p_them()]self with [src]! It looks like [user.p_theyre()] trying to commit suicide!"))
+	user.visible_message(span_suicide("[user] is strangling [user.p_them()]self with [src]! Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 	return OXYLOSS
 
 /obj/item/melee/synthetic_arm_blade
@@ -34,18 +35,24 @@
 	icon = 'icons/obj/weapons/changeling_items.dmi'
 	icon_state = "arm_blade"
 	inhand_icon_state = "arm_blade"
+	icon_angle = 180
 	lefthand_file = 'icons/mob/inhands/antag/changeling_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/antag/changeling_righthand.dmi'
 	w_class = WEIGHT_CLASS_HUGE
 	force = 20
 	throwforce = 10
 	hitsound = 'sound/items/weapons/bladeslice.ogg'
-	attack_verb_continuous = list("attacks", "slashes", "stabs", "slices", "tears", "lacerates", "rips", "dices", "cuts")
-	attack_verb_simple = list("attack", "slash", "stab", "slice", "tear", "lacerate", "rip", "dice", "cut")
+	attack_verb_continuous = list("attacks", "slashes", "slices", "tears", "lacerates", "rips", "dices", "cuts")
+	attack_verb_simple = list("attack", "slash", "slice", "tear", "lacerate", "rip", "dice", "cut")
 	sharpness = SHARP_EDGED
+	var/list/alt_continuous = list("stabs", "pierces", "impales")
+	var/list/alt_simple = list("stab", "pierce", "impale")
 
 /obj/item/melee/synthetic_arm_blade/Initialize(mapload)
 	. = ..()
+	alt_continuous = string_list(alt_continuous)
+	alt_simple = string_list(alt_simple)
+	AddComponent(/datum/component/alternative_sharpness, SHARP_POINTY, alt_continuous, alt_simple, -5)
 	AddComponent(/datum/component/butchering, \
 	speed = 6 SECONDS, \
 	effectiveness = 80, \
@@ -58,6 +65,7 @@
 	icon = 'icons/obj/weapons/sword.dmi'
 	icon_state = "sabre"
 	inhand_icon_state = "sabre"
+	icon_angle = -45
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	obj_flags = CONDUCTS_ELECTRICITY | UNIQUE_RENAME
@@ -122,7 +130,7 @@
 	playsound(container.parent, 'sound/items/sheath.ogg', 25, TRUE)
 
 /obj/item/melee/sabre/suicide_act(mob/living/user)
-	user.visible_message(span_suicide("[user] is trying to cut off all [user.p_their()] limbs with [src]! it looks like [user.p_theyre()] trying to commit suicide!"))
+	user.visible_message(span_suicide("[user] is trying to cut off all [user.p_their()] limbs with [src]! Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 	var/i = 0
 	ADD_TRAIT(src, TRAIT_NODROP, SABRE_SUICIDE_TRAIT)
 	if(iscarbon(user))
@@ -167,10 +175,11 @@
 
 /obj/item/melee/parsnip_sabre
 	name = "parsnip sabre"
-	desc = "A weird, yet elegant weapon. Suprisingly sharp for something made from a parsnip."
+	desc = "A weird, yet elegant weapon. Surprisingly sharp for something made from a parsnip."
 	icon = 'icons/obj/weapons/sword.dmi'
 	icon_state = "parsnip_sabre"
 	inhand_icon_state = "parsnip_sabre"
+	icon_angle = -45
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	force = 15
@@ -212,6 +221,7 @@
 	icon_state = "beesword"
 	inhand_icon_state = "stinger"
 	worn_icon_state = "stinger"
+	icon_angle = -45
 	lefthand_file = 'icons/mob/inhands/weapons/melee_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/melee_righthand.dmi'
 	slot_flags = ITEM_SLOT_BELT
@@ -238,7 +248,7 @@
 		carbon_target.reagents.add_reagent(/datum/reagent/toxin, 4)
 
 /obj/item/melee/beesword/suicide_act(mob/living/user)
-	user.visible_message(span_suicide("[user] is stabbing [user.p_them()]self in the throat with [src]! It looks like [user.p_theyre()] trying to commit suicide!"))
+	user.visible_message(span_suicide("[user] is stabbing [user.p_them()]self in the throat with [src]! Кажется, [user.ru_p_they()] пытается совершить самоубийство!"))
 	playsound(get_turf(src), hitsound, 75, TRUE, -1)
 	return TOXLOSS
 
@@ -248,6 +258,7 @@
 	icon = 'icons/obj/weapons/sword.dmi'
 	icon_state = "supermatter_sword_balanced"
 	inhand_icon_state = "supermatter_sword"
+	icon_angle = -90
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	slot_flags = null
@@ -304,6 +315,7 @@
 	..()
 	balanced = 0
 	icon_state = "supermatter_sword"
+	icon_angle = -45
 
 /obj/item/melee/supermatter_sword/ex_act(severity, target)
 	visible_message(
@@ -361,6 +373,7 @@
 	icon = 'icons/obj/weapons/whip.dmi'
 	icon_state = "whip"
 	inhand_icon_state = "chain"
+	icon_angle = -90
 	lefthand_file = 'icons/mob/inhands/weapons/melee_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/melee_righthand.dmi'
 	worn_icon_state = "whip"
@@ -385,6 +398,7 @@
 	icon_state = "roastingstick"
 	inhand_icon_state = null
 	worn_icon_state = "tele_baton"
+	icon_angle = -45
 	slot_flags = ITEM_SLOT_BELT
 	w_class = WEIGHT_CLASS_SMALL
 	item_flags = NONE
@@ -510,6 +524,7 @@
 	icon_state = "default"
 	inhand_icon_state = "default"
 	worn_icon_state = "default_worn"
+	icon_angle = -45
 
 	greyscale_config = /datum/greyscale_config/cleric_mace
 	greyscale_config_inhand_left = /datum/greyscale_config/cleric_mace_lefthand
