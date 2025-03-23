@@ -2,12 +2,6 @@
 #define ADD_NEWLINE_IF_NECESSARY(list) if(length(list) > 0 && list[length(list)]) { list += "" }
 #define CARBON_EXAMINE_EMBEDDING_MAX_DIST 4
 
-/mob/living/carbon/human/get_examine_name(mob/user, declent) // BANDASTATION EDIT - Declents
-	if(!HAS_TRAIT(user, TRAIT_PROSOPAGNOSIA))
-		return ..()
-
-	return "Неизвестный"
-
 /mob/living/carbon/human/get_examine_icon(mob/user)
 	return null
 
@@ -62,6 +56,8 @@
 			disabled += body_part
 		missing -= body_part.body_zone
 		for(var/obj/item/embedded as anything in body_part.embedded_objects)
+			if(embedded.get_embed().stealthy_embed)
+				continue
 			var/harmless = embedded.get_embed().is_harmless()
 			var/stuck_wordage = harmless ? "застревает" : "впивается"
 			var/embed_line = "[capitalize(embedded.declent_ru(ACCUSATIVE))]"
@@ -84,7 +80,7 @@
 			damage_text = "обмякла и безжизненна"
 		else
 			damage_text = (body_part.brute_dam >= body_part.burn_dam) ? body_part.heavy_brute_msg : body_part.heavy_burn_msg
-		. += span_boldwarning("[t_His] [body_part.ru_plaintext_zone[NOMINATIVE] || body_part.plaintext_zone] [damage_text]!")
+		. += span_boldwarning("[body_part.ru_plaintext_zone[NOMINATIVE] || body_part.plaintext_zone] [capitalize(t_His)] выглядит [damage_text]!")
 
 	//stores missing limbs
 	var/l_limbs_missing = 0
@@ -303,6 +299,14 @@
 		.[1] = "<span class='info'>" + .[1]
 		.[length(.)] += "</span>"
 	return .
+
+/mob/living/carbon/examine_more(mob/user)
+	. = ..()
+	if(HAS_TRAIT(src, TRAIT_INVISIBLE_MAN))
+		return
+	for(var/datum/scar/iter_scar as anything in all_scars)
+		if(iter_scar.is_visible(user))
+			. += iter_scar.get_examine_description(user)
 
 /**
  * Shows any and all examine text related to any status effects the user has.
@@ -567,10 +571,48 @@
 
 /mob/living/carbon/human/examine_more(mob/user)
 	. = ..()
-	if((wear_mask && (wear_mask.flags_inv & HIDEFACE)) || (head && (head.flags_inv & HIDEFACE)))
-		return
+
+	if(istype(w_uniform, /obj/item/clothing/under) && !(check_obscured_slots() & ITEM_SLOT_ICLOTHING) && !HAS_TRAIT(w_uniform, TRAIT_EXAMINE_SKIP))
+		var/obj/item/clothing/under/undershirt = w_uniform
+		if(undershirt.has_sensor == BROKEN_SENSORS)
+			. += list(span_notice("\The [undershirt]'s medical sensors are sparking."))
+
 	if(HAS_TRAIT(src, TRAIT_UNKNOWN) || HAS_TRAIT(src, TRAIT_INVISIBLE_MAN))
 		return
+
+	var/limbs_text = get_mismatched_limb_text()
+	if(LAZYLEN(limbs_text))
+		. += limbs_text
+
+	var/agetext = get_age_text()
+	if(agetext)
+		. += agetext
+
+/// Reports all body parts which are mismatched with the user's species
+/mob/living/carbon/human/proc/get_mismatched_limb_text()
+	var/list/covered = get_covered_body_zones()
+	var/list/texts = list()
+	for(var/obj/item/bodypart/part as anything in bodyparts)
+		var/part_id = part.limb_id
+		var/obj/item/bodypart/expected_part = dna?.species?.bodypart_overrides[part.body_zone]
+		var/expected_id = initial(expected_part?.limb_id)
+		// only report abnormal bodyparts
+		if(part_id == expected_id)
+			continue
+		// same shape bodyparts are concealed by clothing
+		// this means you can see ex. digitigrade legs through clothes
+		// but you can't see ex. cybernetic legs through clothes
+		if(part.bodyshape == initial(expected_part?.bodyshape) && (part.body_zone in covered))
+			continue
+		texts += span_notice("[p_They()] [p_have()] \a [part].")
+
+	return texts
+
+/// Reports how old the mob appears to be
+/mob/living/carbon/human/proc/get_age_text()
+	if((wear_mask?.flags_inv & HIDEFACE) || (head?.flags_inv & HIDEFACE))
+		return
+
 	var/age_text
 	switch(age)
 		if(-INFINITY to 25)
@@ -585,16 +627,8 @@
 			age_text = "очень старо"
 		if(101 to INFINITY)
 			age_text = "увядающе"
-	. += list(span_notice("[ru_p_they(TRUE)] выглядит [age_text]."))
 
-	if(istype(w_uniform, /obj/item/clothing/under))
-		var/obj/item/clothing/under/undershirt = w_uniform
-		if(undershirt.has_sensor == BROKEN_SENSORS)
-			. += list(span_notice("[capitalize(undershirt.declent_ru(NOMINATIVE))] имеет коротящие медицинские датчики."))
-
-	for(var/datum/scar/iter_scar as anything in all_scars)
-		if(iter_scar.is_visible(user))
-			. += iter_scar.get_examine_description(user)
+	return span_notice("[ru_p_they(TRUE)] выглядит [age_text].")
 
 #undef ADD_NEWLINE_IF_NECESSARY
 #undef CARBON_EXAMINE_EMBEDDING_MAX_DIST

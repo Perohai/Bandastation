@@ -36,6 +36,8 @@
 	)
 	AddElement(/datum/element/connect_loc, loc_connections)
 	GLOB.human_list += src
+	ADD_TRAIT(src, TRAIT_CAN_MOUNT_HUMANS, INNATE_TRAIT)
+	ADD_TRAIT(src, TRAIT_CAN_MOUNT_CYBORGS, INNATE_TRAIT)
 
 /mob/living/carbon/human/proc/setup_physiology()
 	physiology = new()
@@ -125,6 +127,10 @@
 			id_gender ||= gender
 			id_species ||= dna.species.name
 			id_blood_type ||= dna.blood_type
+
+		if(istype(id, /obj/item/card/id/advanced))
+			var/obj/item/card/id/advanced/advancedID = id
+			id_job = advancedID.trim_assignment_override || id_job
 
 		var/id_examine = span_slightly_larger(separator_hr("Это <em>ID-карта [declent_ru(GENITIVE)]</em>."))
 		id_examine += "<div class='img_by_text_container'>"
@@ -391,7 +397,7 @@
 /mob/living/carbon/human/try_inject(mob/user, target_zone, injection_flags)
 	. = ..()
 	if(!. && (injection_flags & INJECT_TRY_SHOW_ERROR_MESSAGE) && user)
-		balloon_alert(user, "нет оголённой плоти на [target_zone || check_zone(user.zone_selected)]!")
+		balloon_alert(user, "нет оголённой плоти на [parse_zone(target_zone || check_zone(user.zone_selected))]!")
 
 /mob/living/carbon/human/get_butt_sprite()
 	var/obj/item/bodypart/chest/chest = get_bodypart(BODY_ZONE_CHEST)
@@ -966,14 +972,13 @@
 
 	return buckle_mob(target, TRUE, TRUE, RIDER_NEEDS_ARMS)
 
-/mob/living/carbon/human/buckle_mob(mob/living/target, force = FALSE, check_loc = TRUE, buckle_mob_flags= NONE)
-	if(!is_type_in_typecache(target, can_ride_typecache))
+/mob/living/carbon/human/is_buckle_possible(mob/living/target, force, check_loc)
+	if(!HAS_TRAIT(target, TRAIT_CAN_MOUNT_HUMANS))
 		target.visible_message(span_warning("Кажется, [target.declent_ru(NOMINATIVE)] не может оседлать [declent_ru(ACCUSATIVE)]..."))
-		return
-
-	if(!force)//humans are only meant to be ridden through piggybacking and special cases
-		return
-
+		return FALSE
+	// if you don't invoke it with forced, IE via piggyback / fireman, always fail
+	if(!force)
+		return FALSE
 	return ..()
 
 /mob/living/carbon/human/reagent_check(datum/reagent/chem, seconds_per_tick, times_fired)
