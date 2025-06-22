@@ -10,9 +10,12 @@
 	default = "default"
 
 SUBSYSTEM_DEF(central)
-	var/list/discord_links = list()
-	init_order = INIT_ORDER_DBCORE
+	dependencies = list(
+		/datum/controller/subsystem/http
+	)
 	flags = SS_NO_FIRE
+	init_stage = INITSTAGE_FIRST
+	var/list/discord_links = list()
 
 /datum/controller/subsystem/central/vv_edit_var(var_name, var_value)
 	return FALSE
@@ -21,13 +24,18 @@ SUBSYSTEM_DEF(central)
 	return FALSE
 
 /datum/controller/subsystem/central/Initialize()
-	if(!CONFIG_GET(string/ss_central_url) || !CONFIG_GET(string/ss_central_token))
+	if(!can_run())
 		return SS_INIT_NO_NEED
+
 	load_whitelist()
 	// TODO: preload links
+	return SS_INIT_SUCCESS
+
+/datum/controller/subsystem/central/proc/can_run()
+	return CONFIG_GET(string/ss_central_url) && CONFIG_GET(string/ss_central_token)
 
 /datum/controller/subsystem/central/stat_entry(msg)
-	if(!initialized)
+	if(!initialized || !can_run())
 		msg = "OFFLINE"
 	else
 		msg = "WL: [CONFIG_GET(flag/usewhitelist)] [CONFIG_GET(string/server_type)]"
@@ -173,7 +181,6 @@ SUBSYSTEM_DEF(central)
 
 	var/list/data = json_decode(response.body)
 	player.donator_level = max(player.donator_level, get_max_donation_tier_from_response_data(data))
-	player.can_save_donator_level = TRUE
 
 /datum/controller/subsystem/central/proc/update_player_donate_tier_blocking(client/player)
 	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/donates?ckey=[player.ckey]&active_only=true&page=1&page_size=1"
@@ -184,7 +191,6 @@ SUBSYSTEM_DEF(central)
 
 	var/list/data = json_decode(response.body)
 	player.donator_level = max(player.donator_level, get_max_donation_tier_from_response_data(data))
-	player.can_save_donator_level = TRUE
 
 /datum/controller/subsystem/central/proc/get_max_donation_tier_from_response_data(list/data)
 	if(!length(data["items"]))

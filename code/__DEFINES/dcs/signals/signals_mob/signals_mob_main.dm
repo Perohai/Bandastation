@@ -11,10 +11,10 @@
 #define COMSIG_MOB_MIND_INITIALIZED "mob_mind_inited"
 ///from base of mob/set_stat(): (new_stat, old_stat)
 #define COMSIG_MOB_STATCHANGE "mob_statchange"
-///from base of mob/reagent_check(): (datum/reagent/chem, seconds_per_tick, times_fired)
-#define COMSIG_MOB_REAGENT_CHECK "mob_reagent_check"
+///from base of mob/reagent_tick(): (datum/reagent/chem, seconds_per_tick, times_fired)
+#define COMSIG_MOB_REAGENT_TICK "mob_reagent_tick"
 	///stops the reagent check call
-	#define COMSIG_MOB_STOP_REAGENT_CHECK (1<<0)
+	#define COMSIG_MOB_STOP_REAGENT_TICK (1<<0)
 ///from base of mob/clickon(): (atom/A, list/modifiers)
 #define COMSIG_MOB_CLICKON "mob_clickon"
 ///from base of mob/MiddleClickOn(): (atom/A)
@@ -76,6 +76,9 @@
 #define COMSIG_MOB_MIND_TRANSFERRED_OUT_OF "mob_mind_transferred_out_of"
 /// From /mob/proc/ghostize() Called when a mob successfully ghosts
 #define COMSIG_MOB_GHOSTIZED "mob_ghostized"
+// BANDASTATION ADD START - SSD INDICATOR
+#define COMSIG_MOB_ADMIN_GHOSTED "mod_admin_ghosted"
+// BANDASTATION ADD END - SSD INDICATOR
 /// can_roll_midround(datum/antagonist/antag_type) from certain midround rulesets, (mob/living/source, datum/mind/mind, datum/antagonist/antagonist)
 #define COMSIG_MOB_MIND_BEFORE_MIDROUND_ROLL "mob_mind_transferred_out_of"
 	#define CANCEL_ROLL (1<<1)
@@ -194,7 +197,7 @@
 #define COMSIG_TABLE_SLAMMED "table_slammed"
 ///from base of atom/attack_hand(): (mob/user, modifiers)
 #define COMSIG_MOB_ATTACK_HAND "mob_attack_hand"
-///from base of /obj/item/attack(): (mob/M, mob/user)
+///from base of /obj/item/attack(): (mob/M, mob/user, list/modifiers, list/attack_modifiers)
 #define COMSIG_MOB_ITEM_ATTACK "mob_item_attack"
 ///from base of mob/RangedAttack(): (atom/A, modifiers)
 #define COMSIG_MOB_ATTACK_RANGED "mob_attack_ranged"
@@ -255,7 +258,7 @@
 /// from /mob/proc/change_mob_type_unchecked() : ()
 #define COMSIG_MOB_CHANGED_TYPE "mob_changed_type"
 
-/// from /mob/proc/slip(): (knockdown_amonut, obj/slipped_on, lube_flags [mobs.dm], paralyze, force_drop)
+/// from /mob/proc/slip(): (knockdown_amonut, obj/slipped_on, lube_flags [mobs.dm], paralyze, force_drop, immobilize)
 #define COMSIG_MOB_SLIPPED "mob_slipped"
 
 /// From the base of /datum/component/callouts/proc/callout_picker(mob/user, atom/clicked_atom): (datum/callout_option/callout, atom/target)
@@ -276,3 +279,6 @@
 
 ///from /obj/item/crusher_trophy/on_mark_activate(): (trophy, user)
 #define COMSIG_MOB_TROPHY_ACTIVATED(identifier) "COMSIG_MOB_TROPHY_ACTIVATED[identifier]"
+
+/// from /mob/eye/camera/remote/assign_user(): (mob/living/new_user, mob/living/old_user)
+#define COMSIG_REMOTE_CAMERA_ASSIGN_USER "remote_camera_assign_user"

@@ -1,10 +1,4 @@
-import {
-  KeyboardEvent,
-  MutableRefObject,
-  RefObject,
-  SetStateAction,
-  useCallback,
-} from 'react';
+import { KeyboardEvent, RefObject, SetStateAction, useCallback } from 'react';
 import { Box, Button, Section, TextArea } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { debounce } from 'tgui-core/timer';
@@ -19,11 +13,11 @@ type TextAreaSectionProps = {
   textAreaText: string;
   activeWriteButtonId: string;
   lastDistanceFromBottom: number;
-  usedReplacementsRef: MutableRefObject<PaperReplacement[]>;
-  textAreaRef: RefObject<HTMLTextAreaElement>;
-  scrollableRef: RefObject<HTMLDivElement>;
+  usedReplacementsRef: RefObject<PaperReplacement[]>;
+  textAreaRef: RefObject<HTMLTextAreaElement | null>;
+  scrollableRef: RefObject<HTMLDivElement | null>;
   paperReplacementHint: PaperReplacement[];
-  handleTextAreaKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
+  handleTextAreaKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   setTextAreaText: (value: SetStateAction<string>) => void;
   setTextAreaActive: (value: SetStateAction<boolean>) => void;
   setTextAreaTextForPreview: (value: SetStateAction<string>) => void;
@@ -109,7 +103,7 @@ export function TextAreaSection(props: TextAreaSectionProps) {
     setTextAreaTextForPreview('');
   }
 
-  function handleTextAreaKeyUp(event: KeyboardEvent<HTMLDivElement>) {
+  function handleTextAreaKeyUp(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === KEY.Up || event.key === KEY.Down) {
       if (paperReplacementHint.length) {
         return;
@@ -183,21 +177,19 @@ export function TextAreaSection(props: TextAreaSectionProps) {
       }
     >
       <TextArea
-        ref={textAreaRef}
         autoFocus
-        scrollbar
-        noborder
+        className="Paper__TextArea"
+        ref={textAreaRef}
         value={textAreaText}
         textColor={useColor}
         fontFamily={useFont}
         bold={useBold}
-        height="100%"
         backgroundColor={paper_color}
         dontUseTabForIndent={paperReplacementHint.length > 0}
         onKeyDown={handleTextAreaKeyDown}
         onKeyUp={handleTextAreaKeyUp}
         onClick={updatePaperReplacentHints}
-        onInput={(e, text) => {
+        onChange={(text: string) => {
           setTextAreaText(text);
           setTextAreaTextForPreviewWithDelayCallback(text);
 

@@ -1,12 +1,6 @@
 import { Marked } from 'marked';
 import { markedSmartypants } from 'marked-smartypants';
-import {
-  MutableRefObject,
-  RefObject,
-  SetStateAction,
-  useEffect,
-  useMemo,
-} from 'react';
+import { RefObject, SetStateAction, useEffect, useMemo } from 'react';
 import { Box, Section } from 'tgui-core/components';
 
 import { useBackend } from '../../backend';
@@ -55,10 +49,10 @@ const CUSTOM_TOKENS: CustomToken[] = [
 
 type PreviewViewProps = {
   paperContext: PaperContext;
-  scrollableRef: RefObject<HTMLDivElement>;
+  scrollableRef: RefObject<HTMLDivElement | null>;
   activeWriteButtonId: string;
   textAreaTextForPreview: string;
-  usedReplacementsRef: MutableRefObject<PaperReplacement[]>;
+  usedReplacementsRef: RefObject<PaperReplacement[]>;
   handleOnScroll: (this: GlobalEventHandlers, event: Event) => any;
   setActiveWriteButtonId: (value: SetStateAction<string>) => void;
   setTextAreaActive: (value: SetStateAction<boolean>) => void;
@@ -239,7 +233,7 @@ export function PreviewView(props: PreviewViewProps) {
     const autofillType = button.getAttribute(
       INPUT_FIELD_BUTTON_AUTOFILL_TYPE_ATTRIBUTE,
     );
-    console.log('Clicked autofillType: ' + autofillType);
+
     if (!autofillType) {
       return;
     }
@@ -247,12 +241,12 @@ export function PreviewView(props: PreviewViewProps) {
     const replacement = usedReplacementsRef.current.find(
       (replacement) => replacement.key === autofillType,
     );
-    console.log('Clicked replacement: ' + replacement);
+
     if (!replacement) {
       return;
     }
-    event.preventDefault();
 
+    event.preventDefault();
     const location = getWriteButtonLocation(button.id);
     act('add_text', {
       text: replacement.value,
@@ -413,7 +407,6 @@ export function PreviewView(props: PreviewViewProps) {
       const autofillType = button.getAttribute(
         INPUT_FIELD_BUTTON_AUTOFILL_TYPE_ATTRIBUTE,
       );
-      console.log('autofillType: ' + autofillType);
       if (autofillType) {
         button.addEventListener('contextmenu', onAutofillButtonContextMenu);
       }
@@ -461,9 +454,12 @@ export function PreviewView(props: PreviewViewProps) {
     advanced_html_user,
   ]);
 
-  const textHTML = {
-    __html: `<span class='paper-text'>${previewText}</span>`,
-  };
+  const textHTML = useMemo(
+    () => ({
+      __html: `<span class='paper-text'>${previewText}</span>`,
+    }),
+    [previewText],
+  );
 
   return (
     <Section

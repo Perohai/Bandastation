@@ -10,6 +10,7 @@ INITIALIZE_IMMEDIATE(/mob/living/carbon/human/dummy)
 /mob/living/carbon/human/dummy/Initialize(mapload)
 	. = ..()
 	ADD_TRAIT(src, TRAIT_GODMODE, INNATE_TRAIT)
+	ADD_TRAIT(src, TRAIT_PREVENT_BLINKING, INNATE_TRAIT)
 
 /mob/living/carbon/human/dummy/Destroy()
 	in_use = FALSE
@@ -118,11 +119,13 @@ INITIALIZE_IMMEDIATE(/mob/living/carbon/human/dummy)
 	target.dna.features["tail_cat"] = get_consistent_feature_entry(SSaccessories.tails_list_felinid) // it's a lie
 	target.dna.features["tail_lizard"] = get_consistent_feature_entry(SSaccessories.tails_list_lizard)
 	target.dna.features["tail_monkey"] = get_consistent_feature_entry(SSaccessories.tails_list_monkey)
+	target.dna.features["fish_tail"] = get_consistent_feature_entry(SSaccessories.tails_list_fish)
 	target.dna.features["pod_hair"] = get_consistent_feature_entry(SSaccessories.pod_hair_list)
 	target.dna.features["caps"] = get_consistent_feature_entry(SSaccessories.caps_list)
+
 	// BANDA STATION EDIT START
 	// vulpkanin
-	target.dna.features["vulpkanin_body_markings"] = get_consistent_feature_entry(SSaccessories.vulpkanin_body_markings_list)
+	target.dna.features["vulpkanin_chest_markings"] = get_consistent_feature_entry(SSaccessories.vulpkanin_chest_markings_list)
 	target.dna.features["vulpkanin_head_markings"] = get_consistent_feature_entry(SSaccessories.vulpkanin_head_markings_list)
 	target.dna.features["tail_vulpkanin"] = get_consistent_feature_entry(SSaccessories.tails_list_vulpkanin)
 	target.dna.features["tail_markings"] = get_consistent_feature_entry(SSaccessories.vulpkanin_tail_markings_list)
@@ -131,8 +134,9 @@ INITIALIZE_IMMEDIATE(/mob/living/carbon/human/dummy)
 	target.dna.features["vulpkanin_tail_markings_color"] = COLOR_WHITE
 	target.dna.features["vulpkanin_head_markings_color"] = COLOR_WHITE
 	target.dna.features["vulpkanin_facial_hair_color"] = COLOR_WHITE
+
 	// tajaran
-	target.dna.features["tajaran_body_markings"] = get_consistent_feature_entry(SSaccessories.tajaran_body_markings_list)
+	target.dna.features["tajaran_chest_markings"] = get_consistent_feature_entry(SSaccessories.tajaran_chest_markings_list)
 	target.dna.features["tajaran_head_markings"] = get_consistent_feature_entry(SSaccessories.tajaran_head_markings_list)
 	target.dna.features["tail_tajaran"] = get_consistent_feature_entry(SSaccessories.tails_list_tajaran)
 	target.dna.features["tajaran_tail_markings"] = get_consistent_feature_entry(SSaccessories.tajaran_tail_markings_list)
@@ -141,8 +145,13 @@ INITIALIZE_IMMEDIATE(/mob/living/carbon/human/dummy)
 	target.dna.features["tajaran_head_markings_color"] = COLOR_WHITE
 	target.dna.features["tajaran_tail_markings_color"] = COLOR_WHITE
 	target.dna.features["tajaran_facial_hair_color"] = COLOR_WHITE
+
+	// skrell
+	target.dna.features["skrell_head_tentacle"] = get_consistent_feature_entry(SSaccessories.skrell_head_tentacles_list)
 	// BANDA STATION EDIT STOP
-	target.dna.initialize_dna(create_mutation_blocks = FALSE, randomize_features = FALSE)
+
+	target.dna.initialize_dna(newblood_type = get_blood_type(BLOOD_TYPE_O_MINUS), create_mutation_blocks = FALSE, randomize_features = FALSE)
+
 	// UF and UI are nondeterministic, even though the features are the same some blocks will randomize slightly
 	// In practice this doesn't matter, but this is for the sake of 100%(ish) consistency
 	var/static/consistent_UF
@@ -199,7 +208,7 @@ GLOBAL_LIST_EMPTY(dummy_mob_list)
 
 	if(iscarbon(target))
 		var/mob/living/carbon/carbon_target = target
-		carbon_target.dna.transfer_identity(copycat, transfer_SE = TRUE)
+		carbon_target.dna.copy_dna(copycat.dna, COPY_DNA_SE|COPY_DNA_SPECIES)
 
 		if(ishuman(target))
 			var/mob/living/carbon/human/human_target = target

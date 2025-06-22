@@ -1,4 +1,3 @@
-#define INIT_ORDER_GAMEMODE 70
 ///how many storytellers can be voted for along with always_votable ones
 #define DEFAULT_STORYTELLER_VOTE_OPTIONS 4
 ///amount of players we can have before no longer running votes for storyteller
@@ -9,11 +8,13 @@
 
 SUBSYSTEM_DEF(gamemode)
 	name = "Gamemode"
-	init_order = INIT_ORDER_GAMEMODE
 	runlevels = RUNLEVEL_GAME
 	flags = SS_BACKGROUND | SS_KEEP_TIMING
 	priority = 20
 	wait = 2 SECONDS
+	dependencies = list(
+		/datum/controller/subsystem/mapping
+	)
 
 	/// List of our event tracks for fast access during for loops.
 	var/list/event_tracks = EVENT_TRACKS
@@ -97,7 +98,8 @@ SUBSYSTEM_DEF(gamemode)
 		EVENT_TRACK_OBJECTIVES = 1,
 		)
 
-
+	/// List of all valid event by their name
+	var/list/events_by_name = list()
 
 	/// Associative list of control events by their track category. Compiled in Init
 	var/list/event_pools = list()
@@ -182,6 +184,7 @@ SUBSYSTEM_DEF(gamemode)
 			continue // event isn't good for this map no point in trying to add it to the list
 
 		control += event //add it to the list of all events (controls)
+		events_by_name[name] = event
 
 	load_config_vars()
 	load_event_config_vars()
@@ -1011,11 +1014,25 @@ SUBSYSTEM_DEF(gamemode)
 	min_pop_thresholds[EVENT_TRACK_ROLESET] = CONFIG_GET(number/roleset_min_pop)
 	min_pop_thresholds[EVENT_TRACK_OBJECTIVES] = CONFIG_GET(number/objectives_min_pop)
 
-	//point_thresholds[EVENT_TRACK_MUNDANE] = CONFIG_GET(number/mundane_point_threshold)
-	//point_thresholds[EVENT_TRACK_MODERATE] = CONFIG_GET(number/moderate_point_threshold)
-	//point_thresholds[EVENT_TRACK_MAJOR] = CONFIG_GET(number/major_point_threshold)
-	//point_thresholds[EVENT_TRACK_ROLESET] = CONFIG_GET(number/roleset_point_threshold)
-	//point_thresholds[EVENT_TRACK_OBJECTIVES] = CONFIG_GET(number/objectives_point_threshold)
+	if(!CONFIG_GET(flag/events_config_enabled))
+		return
+
+	var/file_path = "[global.config.directory]/bandastation/events.toml"
+	if(!fexists(file_path))
+		return
+
+	var/list/configuration = rustg_read_toml_file(file_path)
+	for(var/variable in configuration)
+		var/datum/round_event_control/event = events_by_name[variable]
+		if(!event)
+			stack_trace("Invalid event [event] attempting to be configured.")
+			continue
+		for(var/event_variable in configuration[variable])
+			if(!(event.vars.Find(event_variable)))
+				stack_trace("Invalid event configuration variable [event_variable] in variable changes for [variable].")
+				continue
+			event.vars[event_variable] = configuration[variable][event_variable]
+
 
 /datum/controller/subsystem/gamemode/proc/handle_picking_storyteller()
 	if(CONFIG_GET(flag/disable_storyteller))

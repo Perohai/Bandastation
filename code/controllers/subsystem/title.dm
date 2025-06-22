@@ -1,9 +1,7 @@
 SUBSYSTEM_DEF(title)
 	name = "Title Screen"
 	flags = SS_NO_FIRE
-	init_order = INIT_ORDER_TITLE
 	init_stage = INITSTAGE_EARLY
-
 	var/file_path
 	var/icon/icon
 	var/icon/previous_icon
@@ -60,7 +58,7 @@ SUBSYSTEM_DEF(title)
 	for(var/thing in GLOB.clients)
 		if(!thing)
 			continue
-		var/atom/movable/screen/splash/S = new(null, thing, FALSE)
+		var/atom/movable/screen/splash/S = new(null, null, thing, FALSE)
 		S.Fade(FALSE,FALSE)
 
 /datum/controller/subsystem/title/Recover()

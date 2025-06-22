@@ -1,19 +1,7 @@
-/datum/persistent_client
-	var/discord_id
-	var/ckey
-
-/datum/persistent_client/New(ckey, client)
-	. = ..()
-	src.ckey = ckey
-
 /datum/preferences/vv_edit_var(var_name, var_value)
 	if(var_name == "discord_id")
 		return FALSE
 	return ..()
-
-/client/New()
-	. = ..()
-	SScentral.get_player_discord_async(ckey)
 
 /mob/dead/new_player/register_for_interview()
 	. = ..()
@@ -24,11 +12,11 @@
 	set name = "Привязать Discord"
 	set desc = "Привязка аккаунта Discord к BYOND"
 
-	if(!SScentral.initialized)
+	if(!SScentral.can_run())
 		to_chat(src, span_warning("Привязка Discord сейчас недоступна."))
 		return
 
-	if(SScentral.is_player_discord_linked(src))
+	if(SScentral.is_player_discord_linked(ckey))
 		to_chat(src, span_warning("Вы уже привязали свою учетную запись Discord."))
 		return
 
