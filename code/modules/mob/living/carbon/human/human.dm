@@ -692,7 +692,8 @@
 	// Updates the health bar, also sends signal
 	. = ..()
 	// Handles changing limb colors and stuff
-	hud_used.healthdoll?.update_appearance()
+	if(!(living_flags & STOP_OVERLAY_UPDATE_BODY_PARTS))
+		hud_used.healthdoll?.update_appearance()
 
 /mob/living/carbon/human/fully_heal(heal_flags = HEAL_ALL)
 	if(heal_flags & HEAL_NEGATIVE_MUTATIONS)
@@ -901,7 +902,7 @@
 	var/carrydelay = 5 SECONDS //if you have latex you are faster at grabbing
 	var/skills_space
 	var/fitness_level = mind?.get_skill_level(/datum/skill/athletics) - 1
-	var/experience_reward = 5
+	var/experience_reward = ATHLETICS_SKILL_MISC_EXP
 	if(HAS_TRAIT(src, TRAIT_QUICKER_CARRY))
 		carrydelay -= 2 SECONDS
 		experience_reward *= 3
@@ -933,7 +934,7 @@
 		visible_message(span_warning("[capitalize(declent_ru(DATIVE))] не удается поднять [target.declent_ru(ACCUSATIVE)] на плечи!"))
 		return
 
-	mind?.adjust_experience(/datum/skill/athletics, experience_reward) //Get a bit fitter every time we fireman carry successfully. Deadlift your friends for gains!
+	mind?.adjust_experience(/datum/skill/athletics, round(experience_reward/(fitness_level || 1), 1)) //Get a bit fitter every time we fireman carry successfully. Deadlift your friends for gains!
 
 	return buckle_mob(target, TRUE, TRUE, CARRIER_NEEDS_ARM)
 
@@ -967,10 +968,8 @@
 	var/health_deficiency = max((maxHealth - health), staminaloss)
 	if(health_deficiency >= 40)
 		add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/damage_slowdown, TRUE, multiplicative_slowdown = health_deficiency / 75)
-		add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/damage_slowdown_flying, TRUE, multiplicative_slowdown = health_deficiency / 25)
 	else
 		remove_movespeed_modifier(/datum/movespeed_modifier/damage_slowdown)
-		remove_movespeed_modifier(/datum/movespeed_modifier/damage_slowdown_flying)
 
 /mob/living/carbon/human/is_bleeding()
 	if(HAS_TRAIT(src, TRAIT_NOBLOOD))
@@ -984,7 +983,6 @@
 
 /mob/living/carbon/human/get_exp_list(minutes)
 	. = ..()
-
 	if(mind.assigned_role.title in SSjob.name_occupations)
 		.[mind.assigned_role.title] = minutes
 
@@ -1046,7 +1044,7 @@
 	if (!isnull(race))
 		dna.species = new race
 
-/mob/living/carbon/human/species/set_species(datum/species/mrace, icon_update, pref_load)
+/mob/living/carbon/human/species/set_species(datum/species/mrace, icon_update, pref_load, replace_missing)
 	. = ..()
 	if(use_random_name)
 		fully_replace_character_name(real_name, generate_random_mob_name())
@@ -1118,6 +1116,12 @@
 /mob/living/carbon/human/species/lizard/silverscale
 	race = /datum/species/lizard/silverscale
 
+/mob/living/carbon/human/species/spirit
+	race = /datum/species/spirit
+
+/mob/living/carbon/human/species/ghost
+	race = /datum/species/spirit/ghost
+
 /mob/living/carbon/human/species/ethereal
 	race = /datum/species/ethereal
 
@@ -1153,6 +1157,3 @@
 
 /mob/living/carbon/human/species/zombie/infectious
 	race = /datum/species/zombie/infectious
-
-/mob/living/carbon/human/species/voidwalker
-	race = /datum/species/voidwalker
