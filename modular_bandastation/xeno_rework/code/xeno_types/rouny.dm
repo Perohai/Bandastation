@@ -7,11 +7,14 @@
 	maxHealth = 200
 	health = 200
 	icon_state = "alienrunner"
-	/// Holds the evade ability to be granted to the runner later
+
+	/// Holds the ability to be granted to the runner later
+	var/datum/action/cooldown/alien/banda/pounce_runner/pounce_ability
 	var/datum/action/cooldown/alien/banda/evade/evade_ability
+
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	next_evolution = NONE // /mob/living/carbon/alien/adult/banda/ravager // todo: rebalance ravager
+	next_evolution = /mob/living/carbon/alien/adult/banda/ravager
 	on_fire_pixel_y = 0
 
 	default_organ_types_by_slot = list(
@@ -27,11 +30,21 @@
 
 /mob/living/carbon/alien/adult/banda/runner/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/tackler, stamina_cost = 0, base_knockdown = 2, range = 10, speed = 2, skill_mod = 7, min_distance = 0)
-	evade_ability = new(src)
-	evade_ability.Grant(src)
+
+	if(!evade_ability)
+		evade_ability = new
+		evade_ability.Grant(src)
+
+	if(!pounce_ability)
+		pounce_ability = new
+		pounce_ability.Grant(src)
 
 	add_movespeed_modifier(/datum/movespeed_modifier/alien_quick)
+
+/mob/living/carbon/alien/adult/banda/runner/Destroy()
+	QDEL_NULL(evade_ability)
+	QDEL_NULL(pounce_ability)
+	return ..()
 
 /mob/living/carbon/alien/adult/banda/runner/add_tts_component()
 	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/wendy)
@@ -42,7 +55,9 @@
 
 /mob/living/carbon/alien/adult/banda/runner/bullet_act(obj/projectile/hitting_projectile, def_zone, piercing_hit = FALSE)
 	if(evade_ability)
-		var/evade_result = evade_ability.on_projectile_hit()
-		if(!(evade_result == BULLET_ACT_HIT))
+		var/datum/action/cooldown/alien/banda/evade/E = evade_ability
+		var/evade_result = E.on_projectile_hit(hitting_projectile)
+		if(evade_result != BULLET_ACT_HIT)
 			return evade_result
+
 	return ..()

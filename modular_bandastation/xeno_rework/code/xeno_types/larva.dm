@@ -1,6 +1,6 @@
 /// banda MODULE banda_XENO_REDO
 
-/datum/action/cooldown/alien/larva_evolve/Activate(atom/target)
+/datum/action/cooldown/alien/larva_evolve/banda/Activate(atom/target)
 	var/static/list/caste_options
 	if(!caste_options)
 		caste_options = list()
@@ -33,9 +33,9 @@
 		caste_image  = image(icon = 'modular_bandastation/xeno_rework/icons/xeno_actions.dmi', icon_state = "preview_defender"),
 		caste_info = span_info("Медленный, выносливый и мощно атакующий, защитник полностью оправдывает своё имя. \
 		Его толстая броня позволяет выдерживать больше ударов, чем другие касты, а смертельная \
-		булава на хвосте и способность совершать короткие рывки делают его грозным бойцом. \
-		Со временем защитник может эволюционировать в устрашающего крушителя — \
-		разрушителя стационарных объектов, если у улья будет достаточно ресурсов."),
+		булава на хвосте и способность укрепляться на месте делают его грозным бойцом. \
+		Со временем защитник может эволюционировать в устрашающего воина — \
+		мастера захватов и бросков, если у улья будет достаточно ресурсов."),
 		caste_options = caste_options,
 		)
 
@@ -61,7 +61,7 @@
 	return TRUE
 
 /// Generates a new entry to the
-/datum/action/cooldown/alien/larva_evolve/proc/make_xeno_caste_entry(caste_name, caste_image, caste_info, list/caste_options)
+/datum/action/cooldown/alien/larva_evolve/banda/proc/make_xeno_caste_entry(caste_name, caste_image, caste_info, list/caste_options)
 	var/datum/radial_menu_choice/caste_option = new()
 
 	caste_option.name = caste_name
@@ -70,9 +70,9 @@
 
 	caste_options[caste_name] = caste_option
 
-/datum/action/cooldown/alien/larva_evolve/proc/spawn_new_xeno(alien_caste)
+/datum/action/cooldown/alien/larva_evolve/banda/proc/spawn_new_xeno(alien_caste)
 	var/mob/living/carbon/alien/adult/banda/new_xeno
-	var/mob/living/carbon/alien/larva/larva = owner
+	var/mob/living/carbon/alien/larva/banda/larva = owner
 
 	switch(alien_caste)
 		if("Runner")
@@ -88,3 +88,15 @@
 
 	new_xeno.has_just_evolved()
 	larva.alien_evolve(new_xeno)
+
+/mob/living/carbon/alien/larva/banda
+	name = "banda alien larva"
+
+/mob/living/carbon/alien/larva/banda/Initialize(mapload)
+	. = ..()
+	for(var/datum/action/cooldown/alien/larva_evolve/action in actions.Copy())
+		qdel(action)
+	GRANT_ACTION(/datum/action/cooldown/alien/larva_evolve/banda)
+
+/datum/action/cooldown/alien/larva_evolve/banda/IsAvailable(feedback = FALSE)
+	return ..() && istype(owner, /mob/living/carbon/alien/larva/banda)

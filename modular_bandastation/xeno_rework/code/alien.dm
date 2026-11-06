@@ -1,6 +1,3 @@
-/mob/living/carbon/alien
-	var/obj/structure/selected_resin_structure = null
-
 /mob/living/carbon/alien/adult/banda/queen/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/queen_walk, \

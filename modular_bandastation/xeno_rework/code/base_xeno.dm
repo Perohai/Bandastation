@@ -5,6 +5,7 @@
 	icon = 'modular_bandastation/xeno_rework/icons/big_xenos.dmi'
 	rotate_on_lying = FALSE
 	base_pixel_x = -16 //All of the xeno sprites are 64x64, and we want them to be level with the tile they are on, much like oversized quirk users
+	base_pixel_y = -4 //Same for y, change this for better transform scale
 	mob_size = MOB_SIZE_LARGE
 	layer = LARGE_MOB_LAYER //above most mobs, but below speechbubbles
 	plane = ABOVE_GAME_PLANE
@@ -15,6 +16,7 @@
 	/// What icon file update_held_items will look for when making inhands for xenos
 	var/alt_inhands_file = 'modular_bandastation/xeno_rework/icons/big_xenos.dmi'
 	/// Setting this will give a xeno generic_evolve set to evolve them into this type
+	var/selected_resin_structure
 	var/next_evolution
 	/// Keeps track of if a xeno has evolved recently, if so then we prevent them from evolving until that time is up
 	var/has_evolved_recently = FALSE
@@ -26,11 +28,19 @@
 	var/on_fire_pixel_x = 16
 	/// Pixel Y shifting of the on fire overlay
 	var/on_fire_pixel_y = 16
-
+	/// visual-only sprite scale for this xeno
+	var/sprite_scale = 0.9
+	/// visual offset to re-center the sprite after scaling
+	var/sprite_pixel_y_offset = -4
 
 /mob/living/carbon/alien/adult/banda/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/seethrough_mob)
+
+	update_xeno_sprite_scale()
+
+	AddComponent(/datum/component/seethrough_mob, 100, 0.5 SECONDS, TRUE)
+
+	addtimer(CALLBACK(src, PROC_REF(patch_seethrough_for_xeno)), 0)
 
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/sleepytime)
 	if(next_evolution)
@@ -41,6 +51,21 @@
 	ADD_TRAIT(src, TRAIT_XENO_HEAL_AURA, TRAIT_XENO_INNATE)
 	ADD_TRAIT(src, TRAIT_SLEEPIMMUNE, TRAIT_XENO_INNATE)
 	real_name = "alien [caste]"
+
+/mob/living/carbon/alien/adult/banda/proc/patch_seethrough_for_xeno()
+	var/datum/component/seethrough_mob/C = GetComponent(/datum/component/seethrough_mob)
+	if(!C)
+		return
+
+	if(C.render_source_atom)
+		C.render_source_atom.appearance_flags |= RESET_TRANSFORM
+
+//Transform for better size select
+/mob/living/carbon/alien/adult/banda/proc/update_xeno_sprite_scale()
+	var/matrix/M = matrix()
+	M.Scale(sprite_scale, sprite_scale)
+	transform = M
+	pixel_y = initial(pixel_y) + sprite_pixel_y_offset
 
 /// Called when a larva or xeno evolves, adds a configurable timer on evolving again to the xeno
 /mob/living/carbon/alien/adult/banda/proc/has_just_evolved()
@@ -112,7 +137,7 @@
 	overlays_standing[HANDS_LAYER] = hands
 	apply_overlay(HANDS_LAYER)
 
-/mob/living/carbon/proc/get_max_plasma()
+/mob/living/carbon/alien/adult/banda/proc/get_max_plasma()
 	var/obj/item/organ/alien/plasmavessel/vessel = get_organ_by_type(/obj/item/organ/alien/plasmavessel)
 	if(!vessel)
 		return -1
@@ -127,17 +152,26 @@
 	if(mind)
 		mind.name = xeno_to_transfer_to.real_name
 		mind.transfer_to(xeno_to_transfer_to)
+	release_swallowed()
+	drop_all_held_items()
 	qdel(src)
 
 /mob/living/carbon/alien/adult/banda/findQueen() //Yes we really do need to do this whole thing to let the queen finder work
 	if(hud_used)
-		hud_used.alien_queen_finder.cut_overlays()
+		#ifdef HUD_ALIEN_QUEEN_FINDER
+		var/atom/movable/screen/alien/alien_queen_finder/finder = hud_used.screen_objects[HUD_ALIEN_QUEEN_FINDER]
+		#else
+		var/atom/movable/screen/alien/alien_queen_finder/finder = hud_used.alien_queen_finder
+		#endif
+		if(!finder)
+			return
+		finder.cut_overlays()
 		var/mob/queen = get_alien_type(/mob/living/carbon/alien/adult/banda/queen)
 		if(!queen)
 			return
 		var/turf/Q = get_turf(queen)
 		var/turf/A = get_turf(src)
-		if(Q.z != A.z) //The queen is on a different Z level, we cannot sense that far.
+		if(!Q || !A || Q.z != A.z) //The queen is on a different Z level, we cannot sense that far.
 			return
 		var/Qdir = get_dir(src, Q)
 		var/Qdist = get_dist(src, Q)
@@ -150,4 +184,4 @@
 			if(21 to INFINITY)
 				finder_icon = "finder_far"
 		var/image/finder_eye = image('icons/hud/screen_alien.dmi', finder_icon, dir = Qdir)
-		hud_used.alien_queen_finder.add_overlay(finder_eye)
+		finder.add_overlay(finder_eye)

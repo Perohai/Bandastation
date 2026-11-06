@@ -1,11 +1,20 @@
 #include "_xeno_rework.dm"
 
 #include "code/defines/traits.dm"
+#include "code/defines/compatibility.dm"
 #include "code/base_xeno.dm"
+#include "code/tgmc/shared.dm"
 #include "code/human_defense.dm"
 #include "code/xeno_types/larva.dm"
+#include "code/components/swallowed.dm"
+#include "code/hud/stomach_escape.dm"
 #include "code/organs.dm"
+#include "code/devour.dm"
+#include "code/reproduction.dm"
 #include "code/alien_powers.dm"
+#include "code/tgmc/spitter_powers.dm"
+#include "code/tgmc/sentinel_powers.dm"
+#include "code/tgmc/ravager_powers.dm"
 #include "code/alien.dm"
 #include "code/queen_walk.dm"
 #include "code/resin_door.dm"
@@ -19,3 +28,8 @@
 #include "code/xeno_types/sentinel.dm"
 #include "code/xeno_types/spitter.dm"
 #include "code/xeno_types/warrior.dm"
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+#include "code/tgmc/unit_tests.dm"
+#include "code/tests/swallowing.dm"
+#endif

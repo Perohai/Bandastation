@@ -1,8 +1,9 @@
 /obj/structure/alien/resin/door
 	name = "resin door"
 	desc = "A thick resin secretion that can be parted by xenomorphs."
-	icon = 'icons/obj/smooth_structures/alien/resin_door.dmi'
-	icon_state = "resin_door-0"
+	icon = 'modular_bandastation/xeno_rework/icons/tgmc_resin_door.dmi'
+	icon_state = "resin-door-0"
+	base_icon_state = "resin-door"
 	density = TRUE
 	anchored = TRUE
 	opacity = TRUE
@@ -18,27 +19,12 @@
 	/// Delay before attempting to close the door automatically (in seconds).
 	var/close_delay = 3 SECONDS
 	/// Sound played when the door opens.
-	var/open_sound = 'sound/machines/airlock/airlockopen.ogg'
+	var/open_sound = 'modular_bandastation/xeno_rework/sound/alien_resin_move1.ogg'
 	/// Sound played when the door closes.
-	var/close_sound = 'sound/machines/airlock/airlockclose.ogg'
+	var/close_sound = 'modular_bandastation/xeno_rework/sound/alien_resin_move2.ogg'
 
-	/// Static overlay for closed door state.
-	var/mutable_appearance/close_overlay = null
-	/// Temporary overlay for door animation.
-	var/mutable_appearance/anim_overlay = null
-
-	/// List of smoothing junction numbers for vertical door states
-	var/list/vertical_sides = list(1, 2, 3, 5, 6, 7, 9, 10, 11, 21, 23, 38, 39, 55, 63, 74, 75, 137, 139, 203, 207, 223, 239, 255)
-	/// List of smoothing junction numbers for horizontal door states
-	var/list/horizontal_sides = list(0, 4, 8, 12, 13, 14, 15, 29, 31, 46, 47, 78, 79, 95, 110, 111, 127, 141, 143, 157, 159, 175, 191)
-
-	/// Duration of animations in ticks, based on .dmi
-	var/list/anim_lengths = list(
-		"resinopening" = 3,
-		"resinclosing" = 3,
-		"resinopening-side" = 3,
-		"resinclosing-side" = 3
-	)
+	/// Sum of the seven TGMC animation frame delays, in deciseconds.
+	var/animation_time = 11
 
 /// Initializes the door, updating its icon and air properties.
 /obj/structure/alien/resin/door/Initialize(mapload)
@@ -48,12 +34,6 @@
 
 /// Cleans up overlays and air properties before destruction.
 /obj/structure/alien/resin/door/Destroy()
-	if (close_overlay)
-		overlays -= close_overlay
-		close_overlay = null
-	if (anim_overlay)
-		overlays -= anim_overlay
-		anim_overlay = null
 	density = FALSE
 	air_update_turf(TRUE, FALSE)
 	return ..()
@@ -99,14 +79,6 @@
 		return
 	to_chat(user, span_notice("Your lack of connection to the hive prevents the resin door from opening."))
 
-/// Determines if the door is vertical based on its icon_state.
-/obj/structure/alien/resin/door/proc/is_vertical()
-	var/parts = splittext(icon_state, "-")
-	var/num = 0
-	if (length(parts) >= 2)
-		num = text2num(parts[2]) || 0
-	return (num in vertical_sides)
-
 /// Starts the door opening or closing animation.
 /obj/structure/alien/resin/door/proc/operate(bumped_open = FALSE)
 	if (is_operating || QDELETED(src))
@@ -115,33 +87,22 @@
 	var/is_closing = state_open
 
 	if (is_closing)
-		var/list/mobs_present = locate(/mob/living) in get_turf(src)
-		if (length(mobs_present))
+		var/mob/living/mob_present = locate(/mob/living) in get_turf(src)
+		if (mob_present)
 			if (state_open)
 				addtimer(CALLBACK(src, PROC_REF(mobless_try_to_operate)), close_delay)
 			return
 
 	is_operating = TRUE
-	var/isvert = is_vertical()
-	var/anim_state = is_closing ? (isvert ? "resinclosing-side" : "resinclosing") : (isvert ? "resinopening-side" : "resinopening")
+	var/anim_state = "resin-door-[smoothing_junction || 0]-[is_closing ? "closing" : "opening"]"
 
-	// Remove static closed overlay when opening to show the "hole".
-	if (!state_open && close_overlay)
-		overlays -= close_overlay
-		close_overlay = null
-
-	// Create and play animation overlay.
-	anim_overlay = mutable_appearance(icon, anim_state)
-	overlays += anim_overlay
-	flick(anim_state, anim_overlay)
+	flick(anim_state, src)
 
 	// Play sound.
 	playsound(loc, is_closing ? close_sound : open_sound, 50, TRUE)
 
-	var/duration = src.anim_lengths[anim_state] || 6
-
 	// Schedule update after animation.
-	addtimer(CALLBACK(src, PROC_REF(operate_update), bumped_open), duration)
+	addtimer(CALLBACK(src, PROC_REF(operate_update), bumped_open), animation_time)
 
 /// Updates door state, physics, and icon after animation.
 /obj/structure/alien/resin/door/proc/operate_update(bumped_open)
@@ -153,18 +114,8 @@
 	opacity = !opacity
 	state_open = !state_open
 
-	// Remove animation overlay.
-	if (anim_overlay)
-		overlays -= anim_overlay
-		anim_overlay = null
-
-	// Add static overlay if closed.
-	if (!state_open)
-		close_overlay = mutable_appearance(icon, is_vertical() ? "resinclose-side" : "resinclose")
-		overlays += close_overlay
-
 	air_update_turf(TRUE, TRUE)
-	icon_state = "resin_door-[smoothing_junction || 0]"
+	icon_state = "resin-door-[smoothing_junction || 0][state_open ? "-open" : ""]"
 	if (smoothing_flags & SMOOTH_BITMASK)
 		smooth_icon(src)
 
@@ -184,28 +135,23 @@
 		addtimer(CALLBACK(src, PROC_REF(mobless_try_to_operate)), close_delay)
 		return
 
-	var/list/mobs_present = locate(/mob/living) in get_turf(src)
-	if (length(mobs_present))
+	var/mob/living/mob_present = locate(/mob/living) in get_turf(src)
+	if (mob_present)
 		addtimer(CALLBACK(src, PROC_REF(mobless_try_to_operate)), close_delay)
 		return
 	operate()
 
 /obj/structure/alien/resin/door/update_icon()
 	. = ..()
-	// Clear only static overlay (preserve anim_overlay if playing).
-	if (close_overlay)
-		overlays -= close_overlay
-		close_overlay = null
-
 	// Set smoothed icon.
-	icon_state = "resin_door-[smoothing_junction || 0]"
-
-	// Add static overlay if closed.
-	if (!state_open)
-		close_overlay = mutable_appearance(icon, is_vertical() ? "resinclose-side" : "resinclose")
-		overlays += close_overlay
+	icon_state = "resin-door-[smoothing_junction || 0][state_open ? "-open" : ""]"
 
 /obj/structure/alien/resin/door/Bumped(atom/movable/user)
 	. = ..()
 	if (!state_open)
 		return try_to_operate(user, TRUE)
+
+/// Preserve the open state when a neighbouring resin structure changes smoothing.
+/obj/structure/alien/resin/door/set_smoothed_icon_state(new_junction)
+	. = ..()
+	icon_state = "resin-door-[new_junction][state_open ? "-open" : ""]"

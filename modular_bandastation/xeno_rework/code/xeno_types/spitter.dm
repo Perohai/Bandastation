@@ -4,11 +4,13 @@
 	name = "alien spitter"
 	desc = "Довольно массивный чужой с выраженными кислотными железами, из его рта капает... то ли токсин, то ли кислота."
 	caste = "spitter"
-	maxHealth = 300
-	health = 300
+	maxHealth = 360
+	health = 360
 	icon_state = "alienspitter"
-	melee_damage_lower = 10
-	melee_damage_upper = 15
+	melee_damage_lower = 20
+	melee_damage_upper = 20
+	alien_speed = -0.6
+	tgmc_combat = TRUE
 
 	default_organ_types_by_slot = list(
 		ORGAN_SLOT_BRAIN = /obj/item/organ/brain/alien,
@@ -18,41 +20,13 @@
 		ORGAN_SLOT_LIVER = /obj/item/organ/liver/alien,
 		ORGAN_SLOT_EARS = /obj/item/organ/ears,
 		ORGAN_SLOT_STOMACH = /obj/item/organ/stomach/alien_banda,
-		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel,
-		ORGAN_SLOT_XENO_NEUROTOXINGLAND = /obj/item/organ/alien/neurotoxin/spitter,
+		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/tgmc/spitter,
+		ORGAN_SLOT_XENO_NEUROTOXINGLAND = /obj/item/organ/alien/neurotoxin/tgmc_spitter,
 	)
 
 /mob/living/carbon/alien/adult/banda/spitter/Initialize(mapload)
 	. = ..()
-
-	add_movespeed_modifier(/datum/movespeed_modifier/alien_heavy)
-
-	REMOVE_TRAIT(src, TRAIT_VENTCRAWLER_ALWAYS, INNATE_TRAIT)
+	set_tgmc_armor("caste", new /datum/armor/xeno_tgmc_spitter)
 
 /mob/living/carbon/alien/adult/banda/spitter/add_tts_component()
 	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/janna)
-
-// MARK: SPITTER UNIQUE ABILITIES
-
-/datum/action/cooldown/alien/acid/banda/spread/spitter
-	name = "Spit Neurotoxin Spread"
-	desc = "Выплёвывает нейротоксин, истощая противника."
-	plasma_cost = 1
-	cooldown_time = 1.5 SECONDS
-
-/datum/action/cooldown/alien/acid/banda/spread/lethal/spitter
-	name = "Spit Acid Spread"
-	desc = "Выплёвывает облако кислоты в цель, обжигая её."
-	plasma_cost = 1
-	cooldown_time = 1.5 SECONDS
-
-/obj/item/organ/alien/neurotoxin/spitter
-	name = "large neurotoxin gland"
-	icon_state = "neurotox"
-	zone = BODY_ZONE_PRECISE_MOUTH
-	slot = ORGAN_SLOT_XENO_NEUROTOXINGLAND
-	actions_types = list(
-		/datum/action/cooldown/alien/acid/banda/spread/spitter,
-		/datum/action/cooldown/alien/acid/banda/spread/lethal/spitter,
-		/datum/action/cooldown/alien/acid/corrosion,
-	)

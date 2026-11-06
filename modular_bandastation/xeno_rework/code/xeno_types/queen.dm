@@ -21,7 +21,7 @@
 		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/large/queen,
 		ORGAN_SLOT_XENO_RESINSPINNER = /obj/item/organ/alien/resinspinner_banda,
 		ORGAN_SLOT_XENO_NEUROTOXINGLAND = /obj/item/organ/alien/neurotoxin/queen,
-		ORGAN_SLOT_XENO_EGGSAC = /obj/item/organ/alien/eggsac,
+		ORGAN_SLOT_XENO_EGGSAC = /obj/item/organ/alien/eggsac/banda,
 	)
 
 /mob/living/carbon/alien/adult/banda/queen/Initialize(mapload)
