@@ -1,5 +1,5 @@
 /datum/action/cooldown/spell/touch/mansus_grasp
-	name = "Mansus Grasp"
+	name = "Хватка Мансуса"
 	desc = "Заклинание прикосновения, позволяющее вам направить силу Старых богов через вашу хватку."
 	background_icon_state = "bg_heretic"
 	overlay_icon_state = "bg_heretic_border"
@@ -54,18 +54,18 @@
 
 		var/old_color = carbon_hit.color
 		carbon_hit.color = COLOR_CULT_RED
-		animate(carbon_hit, color = old_color, time = 4 SECONDS, easing = EASE_IN)
+		animate(carbon_hit, color = old_color, time = 4 SECONDS, easing = SINE_EASING|EASE_IN)
 		carbon_hit.mob_light(range = 1.5, power = 2.5, color = COLOR_CULT_RED, duration = 0.5 SECONDS)
 		playsound(carbon_hit, 'sound/effects/magic/curse.ogg', 50, TRUE)
 
-		to_chat(caster, span_warning("An unholy force intervenes as you grasp [carbon_hit], absorbing most of the effects!"))
-		to_chat(carbon_hit, span_warning("As [caster] grasps you with eldritch forces, your blood magic absorbs most of the effects!"))
-		carbon_hit.balloon_alert_to_viewers("absorbed!")
+		to_chat(caster, span_warning("Нечестивая сила вмешивается, когда вы наносите [carbon_hit], поглощая большую часть эффекта!"))
+		to_chat(carbon_hit, span_warning("Когда [caster.declent_ru(NOMINATIVE)] хватает вас потусторонними силами, ваша кровавая магия поглощает большую часть эффектов!"))
+		carbon_hit.balloon_alert_to_viewers("поглощено!")
 		return TRUE
 
 	carbon_hit.adjust_timed_status_effect(4 SECONDS, /datum/status_effect/speech/slurring/heretic)
 	carbon_hit.AdjustKnockdown(5 SECONDS, daze_amount = 3 SECONDS)
-	carbon_hit.adjustStaminaLoss(80)
+	carbon_hit.adjust_stamina_loss(80)
 
 	return TRUE
 
@@ -79,10 +79,10 @@
 	return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
 
 /obj/item/melee/touch_attack/mansus_fist
-	name = "Mansus Grasp"
+	name = "Хватка Мансуса"
 	desc = "Зловещая аура, искажающая течение реальности вокруг себя. \
-		Вызывает сбивание с ног, незначительные ушибы и большой урон стамине. \
-		Он приобретает дополнительные полезные эффекты по мере того, как вы расширяете свои знания Мансуса."
+		Вызывает сбивание с ног, незначительные ушибы и большой урон выносливости. \
+		Навык приобретает дополнительные полезные эффекты по мере того, как вы расширяете свои знания Мансуса."
 	icon_state = "mansus"
 	inhand_icon_state = "mansus"
 
@@ -120,14 +120,14 @@
 		return SHAME
 
 	var/escape_our_torment = 0
-	while(carbon_user.stat == CONSCIOUS)
+	while(!IS_UNCONSCIOUS_OR_CRIT(carbon_user))
 		if(QDELETED(src) || QDELETED(user))
 			return SHAME
 		if(escape_our_torment > 20) //Stops us from infinitely stunning ourselves if we're just not taking the damage
 			return FIRELOSS
 
 		if(prob(70))
-			carbon_user.adjustFireLoss(20)
+			carbon_user.adjust_fire_loss(20)
 			playsound(carbon_user, 'sound/effects/wounds/sizzle1.ogg', 70, vary = TRUE)
 			if(prob(50))
 				carbon_user.emote("scream")

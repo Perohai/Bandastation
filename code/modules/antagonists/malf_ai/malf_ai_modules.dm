@@ -50,6 +50,7 @@ GLOBAL_LIST_INIT(blacklisted_malf_machines, typecacheof(list(
 		/obj/machinery/computer/shuttle,
 		/obj/machinery/computer/emergency_shuttle,
 		/obj/machinery/computer/gateway_control,
+		/obj/machinery/ai_law_rack,
 	)))
 
 GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
@@ -85,6 +86,8 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 
 /datum/action/innate/ai/Trigger(mob/clicker, trigger_flags)
 	. = ..()
+	if(!.)
+		return
 	if(auto_use_uses)
 		adjust_uses(-1)
 	if(cooldown_period)
@@ -120,6 +123,9 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 	var/name = "generic module"
 	var/category = "generic category"
 	var/description = "generic description"
+	/// Icons for the module picker interface. If icon_state is not set, the interface will attempt to use the active ability's icon.
+	var/icon = 'icons/mob/actions/actions_AI.dmi'
+	var/icon_state = ""
 	var/cost = 5
 	/// Minimum amount of APCs that has to be under the AI's control to purchase this module.
 	var/minimum_apcs = 0
@@ -158,13 +164,13 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 		Получение контроля над оружием будет легче, если ЛКП в кабинетах глав отделов находятся под вашим контролем."
 	cost = 130
 	one_purchase = TRUE
-	minimum_apcs = 15 // So you cant speedrun delta
+	minimum_apcs = 10 // So you cant speedrun delta
 	power_type = /datum/action/innate/ai/nuke_station
 	unlock_text = span_notice("Вы медленно и осторожно устанавливаете соединение с устройством самоуничтожения станции. Вы можете активировать его в любое время.")
 	///List of areas that grant discounts. "heads_quarters" will match any head of staff office.
 	var/list/discount_areas = list(
 		/area/station/command/heads_quarters,
-		/area/station/ai_monitored/command/nuke_storage
+		/area/station/command/vault
 	)
 	///List of hacked head of staff office areas. Includes the vault too. Provides a 20 PT discount per (Min 50 PT cost)
 	var/list/hacked_command_areas = list()
@@ -364,6 +370,7 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 /obj/machinery/doomsday_device/proc/trigger_doomsday()
 	callback_on_everyone_on_z(SSmapping.levels_by_trait(ZTRAIT_STATION), CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(bring_doomsday)), src)
 	to_chat(world, span_bold("ИИ уничтожил жизнь на станции с помощью [src.name]!"))
+	GLOB.station_was_nuked = TRUE // BANDASTATION EDIT: Add change for station was nuked
 	SSticker.force_ending = FORCE_END_ROUND
 
 /proc/bring_doomsday(mob/living/victim, atom/source)
@@ -409,8 +416,8 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(_malf_ai_undo_lockdown)), 90 SECONDS)
 
-	var/obj/machinery/computer/communications/random_comms_console = locate() in GLOB.shuttle_caller_list
-	random_comms_console?.post_status("alert", "lockdown")
+	// Set status displays to lockdown alert
+	send_status_display_lockdown_alert()
 
 	minor_announce("Вредоносное программное обеспечение обнаружено в системе контроля шлюзов. Задействованы протоколы изоляции. Пожалуйста, сохраняйте спокойствие.", "Тревога сети", TRUE)
 	to_chat(owner, span_danger("Инициирована блокировка. Система перезагрузится через 90 секунд."))
@@ -426,6 +433,9 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 			continue
 		INVOKE_ASYNC(locked_down, TYPE_PROC_REF(/obj/machinery/door, disable_lockdown))
 		CHECK_TICK
+
+	// Clear the lockdown emergency display
+	clear_status_display_lockdown()
 
 /// Override Machine: Allows the AI to override a machine, animating it into an angry, living version of itself.
 /datum/ai_module/malf/destructive/override_machine
@@ -502,10 +512,11 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 	cooldown_period = 10 SECONDS
 
 /datum/action/innate/ai/destroy_rcds/Activate()
-	for(var/I in GLOB.rcd_list)
-		if(!istype(I, /obj/item/construction/rcd/borg)) //Ensures that cyborg RCDs are spared.
-			var/obj/item/construction/rcd/RCD = I
-			RCD.detonate_pulse()
+	for(var/potential_rcd in GLOB.rcd_list)
+		if(istype(potential_rcd, /obj/item/construction/rcd/borg)) //Ensures that cyborg RCDs are spared.
+			continue
+		var/obj/item/construction/rcd/definite_rcd = potential_rcd
+		definite_rcd.detonate_pulse()
 	to_chat(owner, span_danger("Импульс детонации RCD запущен."))
 	owner.playsound_local(owner, 'sound/machines/beep/twobeep.ogg', 50, 0)
 
@@ -627,11 +638,13 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 			continue
 		found_intercom.audible_message(message = "Из [found_intercom.declent_ru(GENITIVE)] на мгновение издается треск.", hearing_distance = 3)
 		playsound(found_intercom, 'sound/items/airhorn/airhorn.ogg', 100, TRUE)
-		for(var/mob/living/carbon/honk_victim in ohearers(6, found_intercom))
+		for(var/mob/living/honk_victim in ohearers(6, found_intercom))
+			if(issilicon(honk_victim))
+				continue
 			var/turf/victim_turf = get_turf(honk_victim)
 			if(isspaceturf(victim_turf) && !victim_turf.Adjacent(found_intercom)) //Prevents getting honked in space
 				continue
-			if(honk_victim.soundbang_act(intensity = 1, stun_pwr = 20, damage_pwr = 30, deafen_pwr = 60)) //Ear protection will prevent these effects
+			if(honk_victim.soundbang_act(SOUNDBANG_NORMAL, stun_pwr = 20, damage_pwr = 30, deafen_pwr = 60)) //Ear protection will prevent these effects
 				honk_victim.set_jitter_if_lower(120 SECONDS)
 				to_chat(honk_victim, span_clown("ХООООООНК!"))
 
@@ -640,7 +653,6 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 	name = "Robotic Factory (Removes Shunting)"
 	description = "Строит машину где угодно из дорогих наномашин, превращающую живое существо в лояльного раба-киборга."
 	cost = 100
-	minimum_apcs = 10 // So you can't speedrun this
 	power_type = /datum/action/innate/ai/place_transformer
 	unlock_text = span_notice("Вы связались с космическим Амазоном и заказали фабрику роботов доставкой.")
 	unlock_sound = 'sound/machines/ping.ogg'
@@ -694,8 +706,7 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 		var/turf/T = turfs[n]
 		if(!isfloorturf(T))
 			success = FALSE
-		var/datum/camerachunk/C = GLOB.cameranet.getCameraChunk(T.x, T.y, T.z)
-		if(!C.visibleTurfs[T])
+		if(!SScameras.is_visible_by_cameras(T))
 			alert_msg = "Ваши камеры не захватывают данную область!"
 			success = FALSE
 		for(var/atom/movable/AM in T.contents)
@@ -747,7 +758,7 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 	power_type = /datum/action/innate/ai/break_fire_alarms
 	unlock_text = span_notice("Вы изменяете управление всех пожарных тревог на ручное, \
 		что позволяет вам переключать их по собственному желанию.")
-	unlock_sound = 'sound/machines/fire_alarm/FireAlarm1.ogg'
+	unlock_sound = 'sound/machines/fire_alarm/fire_alarm1.ogg'
 
 /datum/action/innate/ai/break_fire_alarms
 	name = "Override Thermal Sensors"
@@ -820,7 +831,7 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 
 /datum/action/innate/ai/reactivate_cameras/Activate()
 	var/fixed_cameras = 0
-	for(var/obj/machinery/camera/C as anything in GLOB.cameranet.cameras)
+	for(var/obj/machinery/camera/C as anything in SScameras.cameras)
 		if(!uses)
 			break
 		if(!C.camera_enabled || C.view_range != initial(C.view_range))
@@ -840,6 +851,8 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 /datum/ai_module/malf/upgrade/upgrade_cameras
 	name = "Upgrade Camera Network"
 	description = "Установите программу широкополосного сканирования и электрического резервирования в сеть камер, что позволяет активировать ЭМИ-защиту и улучшенное рентгеновское зрение. Обновление происходит сразу после покупки." //I <3 pointless technobabble
+	icon = 'modular_bandastation/aesthetics/cameras/icons/cameras.dmi' // BANDASTATION EDIT: Custom camera icons
+	icon_state = "xraycamera"
 	//This used to have motion sensing as well, but testing quickly revealed that giving it to the whole cameranet is PURE HORROR.
 	cost = 35 //Decent price for omniscience!
 	upgrade = TRUE
@@ -852,13 +865,12 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 	AI.update_sight()
 
 	var/upgraded_cameras = 0
-	for(var/obj/machinery/camera/camera as anything in GLOB.cameranet.cameras)
+	for(var/obj/machinery/camera/camera as anything in SScameras.cameras)
 		var/upgraded = FALSE
 
 		if(!camera.isXRay())
 			camera.upgradeXRay(TRUE) //if this is removed you can get rid of camera_assembly/var/malf_xray_firmware_active and clean up isxray()
 			//Update what it can see.
-			GLOB.cameranet.updateVisibility(camera, 0)
 			upgraded = TRUE
 
 		if(!camera.isEmpProof())
@@ -878,6 +890,8 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 /datum/ai_module/malf/upgrade/upgrade_turrets
 	name = "AI Turret Upgrade"
 	description = "Улучшает мощность и здоровье турелей ИИ. Данный эффект постоянен. Улучшение происходит сразу после покупки."
+	icon = 'icons/obj/weapons/turrets.dmi'
+	icon_state = "standard_off"
 	cost = 30
 	upgrade = TRUE
 	unlock_text = span_notice("Вы перенаправляете часть энергии на турели, усиливая их живучесть и урон.")
@@ -885,7 +899,7 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 
 /datum/ai_module/malf/upgrade/upgrade_turrets/upgrade(mob/living/silicon/ai/AI)
 	for(var/obj/machinery/porta_turret/ai/turret as anything in SSmachines.get_machines_by_type_and_subtypes(/obj/machinery/porta_turret/ai))
-		turret.AddElement(/datum/element/empprotection, EMP_PROTECT_ALL)
+		turret.AddElement(/datum/element/empprotection, EMP_PROTECT_ALL|EMP_NO_EXAMINE)
 		turret.max_integrity = 200
 		turret.repair_damage(200)
 		turret.lethal_projectile = /obj/projectile/beam/laser/heavylaser //Once you see it, you will know what it means to FEAR.
@@ -896,6 +910,8 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 	name = "Enhanced Surveillance"
 	description = "Через комбинацию скрытых микрофонов и программного обеспечения для чтения по губам, \
 		вы можете использовать камеры для прослушивания разговоров. Улучшение происходит сразу после покупки."
+	icon = 'icons/obj/service/broadcast.dmi'
+	icon_state = "microphone"
 	cost = 30
 	upgrade = TRUE
 	unlock_text = span_notice("Распространения прошивки через OTA завершено! Камеры улучшены: Система улучшенного наблюдения активна.")
@@ -911,6 +927,8 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 	description = "Позволяет вам взломать бортовой компьютер меха, загружая в него свои процессы, а также выкидывая любых пассажиров. \
 		Улучшение происходит сразу после покупки. Не позволяйте меху покинуть станцию или быть уничтоженным. \
 		Если ваше ядро уничтожено, вы потеряете соединение с устройством Судного дня и отчёт остановится."
+	icon = 'icons/mob/rideables/mecha.dmi'
+	icon_state = "durand"
 	cost = 30
 	upgrade = TRUE
 	unlock_text = span_notice("Вирусный пакет скомпилирован. Выберите цель в любой момент. <b>Вы должны постоянно оставаться на станции. \
@@ -1092,7 +1110,7 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 		/obj/structure,
 		/obj/item/radio/intercom,
 		/obj/item/modular_computer,
-		/mob/living/simple_animal/bot,
+		/mob/living/basic/bot,
 		/mob/living/silicon,
 	)
 

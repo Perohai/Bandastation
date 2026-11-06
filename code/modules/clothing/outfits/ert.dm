@@ -38,7 +38,7 @@
 /datum/outfit/centcom/ert/commander
 	name = "ERT Commander"
 
-	id = /obj/item/card/id/advanced/centcom/ert
+	id = /obj/item/card/id/advanced/centcom/ert/commander
 	back = /obj/item/mod/control/pre_equipped/responsory/commander
 	l_hand = /obj/item/gun/energy/e_gun
 	box = /obj/item/storage/box/survival/centcom
@@ -54,12 +54,14 @@
 /datum/outfit/centcom/ert/commander/alert
 	name = "ERT Commander - High Alert"
 
+	l_hand = /obj/item/gun/energy/disabler/smg
 	backpack_contents = list(
 		/obj/item/gun/energy/pulse/pistol/loyalpin = 1,
 		/obj/item/melee/baton/security/loaded = 1,
 	)
 	glasses = /obj/item/clothing/glasses/thermal/eyepatch
 	l_pocket = /obj/item/melee/energy/sword/saber
+	suit_store = /obj/item/gun/energy/laser/assault
 
 /datum/outfit/centcom/ert/security
 	name = "ERT Security"
@@ -166,14 +168,14 @@
 	gloves = /obj/item/clothing/gloves/color/black
 	shoes = /obj/item/clothing/shoes/sneakers/black
 	l_pocket = /obj/item/pen
-	r_pocket = /obj/item/modular_computer/pda/heads
+	r_pocket = /obj/item/modular_computer/pda/crew/heads
 	l_hand = /obj/item/clipboard
 
 /datum/outfit/centcom/centcom_official/post_equip(mob/living/carbon/human/H, visuals_only = FALSE)
 	if(visuals_only)
 		return
 
-	var/obj/item/modular_computer/pda/heads/pda = H.r_store
+	var/obj/item/modular_computer/pda/crew/heads/pda = H.r_store
 	pda.imprint_id(H.real_name, "CentCom Official")
 
 	var/obj/item/card/id/W = H.wear_id
@@ -186,7 +188,7 @@
 	name = "Inquisition Commander"
 
 	back = /obj/item/mod/control/pre_equipped/responsory/inquisitory/commander
-	r_hand = /obj/item/nullrod/vibro/talking/chainsword
+	r_hand = /obj/item/nullrod/claymore/talking/chainsword
 	backpack_contents = null
 
 /datum/outfit/centcom/ert/security/inquisitor
@@ -304,8 +306,8 @@
 	glasses = /obj/item/clothing/glasses/sunglasses
 	gloves = /obj/item/clothing/gloves/color/black
 	shoes = /obj/item/clothing/shoes/sneakers/black
-	l_pocket = /obj/item/ammo_box/strilka310
-	r_pocket = /obj/item/ammo_box/strilka310
+	l_pocket = /obj/item/ammo_box/speedloader/strilka310
+	r_pocket = /obj/item/ammo_box/speedloader/strilka310
 	l_hand = /obj/item/gun/ballistic/rifle/boltaction
 
 /datum/outfit/centcom/centcom_intern/post_equip(mob/living/carbon/human/H, visuals_only = FALSE)
@@ -434,7 +436,7 @@
 	back = /obj/item/mod/control/pre_equipped/apocryphal
 	box = /obj/item/storage/box/survival/centcom
 	backpack_contents = list(
-		/obj/item/ammo_box/a357 = 1,
+		/obj/item/ammo_box/speedloader/c357 = 1,
 		/obj/item/flashlight = 1,
 		/obj/item/grenade/c4/x4 = 1,
 		/obj/item/storage/box/flashbangs = 1,
@@ -442,7 +444,6 @@
 	)
 	belt = /obj/item/gun/ballistic/revolver/mateba
 	ears = /obj/item/radio/headset/headset_cent/alt
-	glasses = /obj/item/clothing/glasses/hud/toggle/thermal
 	gloves = /obj/item/clothing/gloves/tackler/combat/insulated
 	mask = /obj/item/clothing/mask/gas/sechailer/swat
 	shoes = /obj/item/clothing/shoes/combat/swat
@@ -455,6 +456,9 @@
 	)
 
 /datum/outfit/centcom/death_commando/post_equip(mob/living/carbon/human/squaddie, visuals_only = FALSE)
+	var/obj/item/organ/eyes/robotic/tacvisor/deathsquad/visor = new()
+	visor.Insert(squaddie, movement_flags = DELETE_IF_REPLACED)
+
 	if(visuals_only)
 		return
 
@@ -479,7 +483,7 @@
 	if(!istype(mod))
 		return
 	var/obj/item/clothing/helmet = mod.get_part_from_slot(ITEM_SLOT_HEAD)
-	var/obj/item/clothing/head/helmet/space/beret/beret = new(helmet)
+	var/obj/item/clothing/head/beret/centcom/beret = new(helmet)
 	var/datum/component/hat_stabilizer/component = helmet.GetComponent(/datum/component/hat_stabilizer)
 	component.attach_hat(beret)
 	squaddie.update_clothing(helmet.slot_flags)
@@ -487,7 +491,7 @@
 /datum/outfit/centcom/ert/marine
 	name = "Marine Commander"
 
-	id = /obj/item/card/id/advanced/centcom/ert
+	id = /obj/item/card/id/advanced/centcom/ert/commander
 	suit = /obj/item/clothing/suit/armor/vest/marine
 	suit_store = /obj/item/gun/ballistic/automatic/wt550
 	back = /obj/item/shield/riot
@@ -516,7 +520,7 @@
 
 	id = /obj/item/card/id/advanced/centcom/ert/medical
 	suit = /obj/item/clothing/suit/armor/vest/marine/medic
-	suit_store = /obj/item/storage/belt/holster/detective/full/ert
+	accessory = /obj/item/clothing/accessory/holster/tacticool/ert_gp93r //BANDASTATION EDIT: Accessory holsters
 	back = /obj/item/storage/backpack/ert/medical
 	l_pocket = /obj/item/healthanalyzer
 	head = /obj/item/clothing/head/helmet/marine/medic
@@ -552,7 +556,7 @@
 	name = "Militia Man"
 
 	id = /obj/item/card/id/advanced/centcom/ert/militia
-	belt = /obj/item/storage/belt/holster/energy/smoothbore
+	accessory = /obj/item/clothing/accessory/holster/energy/smoothborne //BANDASTATION EDIT: Accessory holsters
 	suit = /obj/item/clothing/suit/armor/militia
 	suit_store = /obj/item/gun/energy/laser/musket
 	head = /obj/item/clothing/head/cowboy/black

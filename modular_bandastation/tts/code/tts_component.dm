@@ -21,6 +21,7 @@
 		new_tts_seed = SStts220.tts_seeds[initial(new_tts_seed.name)]
 	if(istype(new_tts_seed))
 		tts_seed = new_tts_seed
+
 	if(!tts_seed)
 		tts_seed = get_random_tts_seed_by_gender()
 	if(!tts_seed) // Something went terribly wrong
@@ -68,7 +69,7 @@
 		tts_seeds |= SStts220.get_tts_by_gender(being_changed.gender)
 		tts_seeds |= SStts220.get_tts_by_gender(NEUTER)
 	// Check donation restrictions
-	if(!check_rights(R_ADMIN, FALSE, chooser) && !(overrides & TTS_OVERRIDE_TIER))
+	if(!(overrides & TTS_OVERRIDE_TIER))
 		tts_seeds = tts_seeds && SStts220.get_available_seeds(being_changed) // && for lists means intersection
 	if(!length(tts_seeds))
 		to_chat(chooser, span_warning("Не удалось найти голоса для пола! Текущий голос - [tts_seed.name]"))
@@ -85,27 +86,21 @@
 		effects = new_sound_effects
 
 	if(!silent_target && being_changed != chooser && ismob(being_changed))
-		INVOKE_ASYNC(\
-			SStts220,\
-			TYPE_PROC_REF(/datum/controller/subsystem/tts220, get_tts),\
-			null,\
-			being_changed,\
-			tts_test_str,\
-			new_tts_seed,\
-			FALSE,\
-			get_effects()\
+		SStts220.get_tts(
+			listener = being_changed,
+			message = tts_test_str,
+			tts_seed = new_tts_seed,
+			is_local = FALSE,
+			effect_types = get_effects()
 		)
 
 	if(chooser)
-		INVOKE_ASYNC(\
-			SStts220,\
-			TYPE_PROC_REF(/datum/controller/subsystem/tts220, get_tts),\
-			null,\
-			chooser,\
-			tts_test_str,\
-			new_tts_seed,\
-			FALSE,\
-			get_effects()\
+		SStts220.get_tts(
+			listener = chooser,
+			message = tts_test_str,
+			tts_seed = new_tts_seed,
+			is_local = FALSE,
+			effect_types = get_effects()
 		)
 
 	return new_tts_seed
@@ -125,7 +120,8 @@
 
 /datum/component/tts_component/proc/get_random_tts_seed_by_gender()
 	var/atom/being_changed = parent
-	var/tts_choice = SStts220.pick_tts_seed_by_gender(being_changed.gender)
+	var/list/available_seeds = SStts220.get_available_seeds(being_changed)
+	var/tts_choice = SStts220.pick_tts_seed_by_gender(being_changed.gender, available_seeds)
 	var/datum/tts_seed/seed = SStts220.tts_seeds[tts_choice]
 	if(!seed)
 		return null
@@ -140,7 +136,7 @@
 
 /datum/component/tts_component/proc/cast_tts(
 	atom/speaker,
-	mob/listener,
+	listener,
 	message,
 	atom/location,
 	is_local = TRUE,
@@ -151,30 +147,45 @@
 	postSFX,
 	tts_seed_override,
 	tts_channel_override,
+	check_deafness = TRUE,
+	radio_freq
 )
 
 	SIGNAL_HANDLER
 
 	if(!message)
 		return
-	var/datum/preferences/prefs = listener?.client?.prefs
-	if(prefs?.read_preference(/datum/preference/choiced/sound_tts) != TTS_SOUND_ENABLED || prefs?.read_preference(/datum/preference/numeric/volume/sound_tts_volume) == 0)
-		return
-	if(HAS_TRAIT(listener, TRAIT_DEAF))
-		return
+	var/volume_preference = is_radio ? /datum/preference/numeric/volume/sound_tts_radio_volume : /datum/preference/numeric/volume/sound_tts_volume
 	if(!speaker)
 		speaker = parent
-	if(!location)
-		location = parent
+	var/list/input_listeners = islist(listener) ? listener : list(listener)
+	var/tts_listeners = list()
+	for(var/mob/current_listener as anything in input_listeners)
+		var/datum/preferences/prefs = current_listener?.client?.prefs
+		if(prefs?.read_preference(/datum/preference/choiced/sound_tts) != TTS_SOUND_ENABLED || prefs?.read_preference(volume_preference) == 0)
+			continue
+		if(check_deafness && HAS_TRAIT(current_listener, TRAIT_DEAF))
+			continue
+		if(is_radio && current_listener == speaker && !prefs.read_preference(/datum/preference/toggle/sound_tts_hear_self_radio))
+			continue
+		tts_listeners += current_listener
+	if(!length(tts_listeners))
+		return
+	if(isnull(additional_effects))
+		additional_effects = list()
+	else
+		additional_effects = additional_effects.Copy()
 	if(is_radio)
 		additional_effects |= /datum/singleton/sound_effect/radio
-		is_local = FALSE
-		if(listener == speaker) // don't hear both radio and whisper from yourself
-			return
+		// Global to listener, not positioned at the speaker
+		if(!location)
+			is_local = FALSE
+	if(!location)
+		location = parent
 
 	var/list/tts_args = list()
 	tts_args[TTS_CAST_SPEAKER] = speaker
-	tts_args[TTS_CAST_LISTENER] = listener
+	tts_args[TTS_CAST_LISTENER] = tts_listeners
 	tts_args[TTS_CAST_MESSAGE] = message
 	tts_args[TTS_CAST_LOCATION] = location
 	tts_args[TTS_CAST_LOCAL] = is_local
@@ -194,19 +205,17 @@
 	if(!.[TTS_CAST_SEED])
 		return
 
-	INVOKE_ASYNC(\
-		SStts220,\
-		TYPE_PROC_REF(/datum/controller/subsystem/tts220, get_tts),\
-		.[TTS_CAST_LOCATION],\
-		.[TTS_CAST_LISTENER],\
-		.[TTS_CAST_MESSAGE],\
-		.[TTS_CAST_SEED],\
-		.[TTS_CAST_LOCAL],\
-		.[TTS_CAST_EFFECTS],\
-		.[TTS_CAST_TRAITS],\
-		.[TTS_CAST_PRE_SFX],\
-		.[TTS_CAST_POST_SFX],\
-		.[TTS_CHANNEL_OVERRIDE]\
+	SStts220.get_tts(
+		.[TTS_CAST_LOCATION],
+		.[TTS_CAST_LISTENER],
+		.[TTS_CAST_MESSAGE],
+		.[TTS_CAST_SEED],
+		.[TTS_CAST_LOCAL],
+		.[TTS_CAST_EFFECTS],
+		.[TTS_CAST_TRAITS],
+		.[TTS_CAST_PRE_SFX],
+		.[TTS_CAST_POST_SFX],
+		.[TTS_CHANNEL_OVERRIDE]
 	)
 
 /datum/component/tts_component/proc/tts_effects_add(atom/user, list/new_sound_effects)

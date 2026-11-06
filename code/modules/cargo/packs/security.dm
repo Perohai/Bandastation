@@ -7,13 +7,13 @@
 	name = "Ammo Crate"
 	desc = "Contains three boxes of beanbag shotgun shells, three boxes \
 		of rubbershot shotgun shells and one of each special .38 speedloaders."
-	cost = CARGO_CRATE_VALUE * 8
+	cost = CARGO_CRATE_VALUE * 12 // Original price: 1600 New price: 2400
 	access_view = ACCESS_ARMORY
 	contains = list(/obj/item/storage/box/beanbag = 3,
 					/obj/item/storage/box/rubbershot = 3,
-					/obj/item/ammo_box/c38/trac,
-					/obj/item/ammo_box/c38/hotshot,
-					/obj/item/ammo_box/c38/iceblox,
+					/obj/item/ammo_box/speedloader/c38/trac,
+					/obj/item/ammo_box/speedloader/c38/hotshot,
+					/obj/item/ammo_box/speedloader/c38/iceblox,
 				)
 	crate_name = "ammo crate"
 
@@ -31,7 +31,7 @@
 	cost = CARGO_CRATE_VALUE
 	access_view = ACCESS_SECURITY
 	contains = list(/obj/item/mod/construction/plating/security)
-	crate_name = "MOD plating crate"
+	crate_name = "\improper MOD plating crate"
 
 /datum/supply_pack/security/disabler
 	name = "Disabler Crate"
@@ -64,14 +64,6 @@
 	cost = CARGO_CRATE_VALUE * 3
 	contains = list(/obj/item/clothing/head/helmet/sec = 3)
 	crate_name = "helmet crate"
-
-/datum/supply_pack/security/laser
-	name = "Lasers Crate"
-	desc = "Contains three lethal, high-energy laser guns."
-	cost = CARGO_CRATE_VALUE * 4
-	access_view = ACCESS_ARMORY
-	contains = list(/obj/item/gun/energy/laser = 3)
-	crate_name = "laser crate"
 
 /datum/supply_pack/security/securitybarriers
 	name = "Security Barrier Grenades"
@@ -152,7 +144,7 @@
 		The Alpha and the Omega of security headwear. Guaranteed to strike fear into the hearts \
 		of each and every criminal aboard the station. Also comes with a security gasmask."
 	cost = CARGO_CRATE_VALUE * 6 //justice comes at a price. An expensive, noisy price.
-	contraband = TRUE
+	order_flags = ORDER_CONTRABAND
 	contains = list(/obj/item/clothing/head/helmet/toggleable/justice,
 					/obj/item/clothing/mask/gas/sechailer,
 				)
@@ -179,7 +171,7 @@
 	desc = "Spare equipment found in a warehouse. Contains a constable's outfit, \
 		whistle, and conversion kit."
 	cost = CARGO_CRATE_VALUE * 2.2
-	contraband = TRUE
+	order_flags = ORDER_CONTRABAND
 	contains = list(/obj/item/clothing/under/rank/security/constable,
 					/obj/item/clothing/head/costume/constable,
 					/obj/item/clothing/gloves/color/white,
@@ -223,7 +215,7 @@
 	name = "Combat Shotguns Crate"
 	desc = "For when the enemy absolutely needs to be replaced with lead. \
 		Contains three Aussec-designed Combat Shotguns, and three Shotgun Bandoliers."
-	cost = CARGO_CRATE_VALUE * 17.5
+	cost = CARGO_CRATE_VALUE * 26 // Original price: 3500 New price: 5200
 	contains = list(/obj/item/gun/ballistic/shotgun/automatic/combat = 3,
 					/obj/item/storage/belt/bandolier = 3)
 	crate_name = "combat shotguns crate"
@@ -241,38 +233,47 @@
 
 /datum/supply_pack/security/armory/energy
 	name = "Energy Guns Crate"
-	desc = "Contains two Energy Guns, capable of firing both nonlethal and lethal \
+	desc = "Contains three Energy Guns, capable of firing both nonlethal and lethal \
 		blasts of light."
-	cost = CARGO_CRATE_VALUE * 18
-	contains = list(/obj/item/gun/energy/e_gun = 2)
+	cost = CARGO_CRATE_VALUE * 27 // Original price: 3600 New price: 5400
+	contains = list(/obj/item/gun/energy/e_gun = 3)
 	crate_name = "energy gun crate"
 	crate_type = /obj/structure/closet/crate/secure/plasma
 
+/datum/supply_pack/security/armory/laser
+	name = "Type 5 Laser Gun Crate"
+	desc = "Contains three Type 5 laser guns, developed by Nanotrasen. For when the going gets tough, you get going with the \
+		Type 5 Heat Delivery System. As developed by Nanotrasen."
+	cost = CARGO_CRATE_VALUE * 18 // Original price: 800 New price: 3600
+	contains = list(/obj/item/gun/energy/laser = 3)
+	crate_name = "\improper Type 5 laser crate"
+	crate_type = /obj/structure/closet/crate/secure/plasma
+
 /datum/supply_pack/security/armory/laser_carbine
-	name = "Laser Carbine Crate"
-	desc = "Contains three laser carbines, capable of rapidly firing weak lasers."
-	cost = CARGO_CRATE_VALUE * 9
+	name = "Type 5/R Laser Carbine Crate"
+	desc = "Contains three Type 5R laser carbines, developed by Nanotrasen. Fires a rapid burst of slightly weaker laser projectiles."
+	cost = CARGO_CRATE_VALUE * 27 // Original price: 1800 New price: 5400
 	contains = list(/obj/item/gun/energy/laser/carbine = 3)
-	crate_name = "laser carbine crate"
+	crate_name = "\improper Type 5R laser carbine crate"
 	crate_type = /obj/structure/closet/crate/secure/plasma
 
 /datum/supply_pack/security/armory/disabler_smg
 	name = "Disabler SMG Crate"
 	desc = "Contains three disabler SMGs, capable of rapidly firing weak disabler beams."
-	cost = CARGO_CRATE_VALUE * 7
+	cost = CARGO_CRATE_VALUE * 14 // Original price: 1400 New price: 2800
 	contains = list(/obj/item/gun/energy/disabler/smg = 3)
 	crate_name = "disabler smg crate"
 	crate_type = /obj/structure/closet/crate/secure/plasma
 
 /datum/supply_pack/security/armory/battle_rifle
 	name = "NT BR-38 Crate"
-	desc = "An experimental energy-based ballistic battle rifle. Only available to \
-		Nanotrasen stations for security purposes. DO NOT RESELL TO OUTSIDE COMPANIES. \
-		Contains three NT BR-38 rifles and three magazines containing .38 Standard."
-	cost = CARGO_CRATE_VALUE * 100
+	desc = "An experimental energy-based ballistic battle rifle, as developed by Nanotrasen. \
+		Only available to Nanotrasen stations for security purposes. DO NOT RESELL TO OUTSIDE \
+		COMPANIES. Contains three NT BR-38 rifles and 6 magazines containing .38 Standard."
+	cost = CARGO_CRATE_VALUE * 60 // Original price: 20000 New price: 12000
 	contains = list(
-		/obj/item/gun/ballistic/automatic/battle_rifle = 2,
-		/obj/item/ammo_box/magazine/m38 = 4,
+		/obj/item/gun/ballistic/automatic/battle_rifle = 3,
+		/obj/item/ammo_box/magazine/m38 = 6,
 	)
 	crate_name = "battle rifle crate"
 
@@ -280,7 +281,7 @@
 	name = "NT BR-38 Magazine Crate"
 	desc = "Six .38 magazines, able to fit into the NT BR-38. Contains \
 		two standard magazines, two Hot Shot magazines and two Iceblox magazines."
-	cost = CARGO_CRATE_VALUE * 7
+	cost = CARGO_CRATE_VALUE * 10.5 // Original price: 1400 New price: 2100
 	contains = list(
 		/obj/item/ammo_box/magazine/m38 = 2,
 		/obj/item/ammo_box/magazine/m38/hotshot = 2,
@@ -307,7 +308,7 @@
 				)
 	crate_name = "incendiary weapons crate"
 	crate_type = /obj/structure/closet/crate/secure/plasma
-	dangerous = TRUE
+	order_flags = ORDER_DANGEROUS
 
 /datum/supply_pack/security/armory/mindshield
 	name = "Mindshield Implants Crate"
@@ -321,7 +322,7 @@
 	desc = "Contains four tracking implants and three tracking speedloaders of tracing .38 ammo."
 	cost = CARGO_CRATE_VALUE * 4.5
 	contains = list(/obj/item/storage/box/trackimp,
-					/obj/item/ammo_box/c38/trac = 3,
+					/obj/item/ammo_box/speedloader/c38/trac = 3,
 				)
 	crate_name = "tracking implant crate"
 
@@ -376,8 +377,8 @@
 	name = "Thermal Pistol Crate"
 	desc = "Contains a pair of holsters each with two experimental thermal pistols, \
 		using nanites as the basis for their ammo. Can be shaken to reload."
-	cost = CARGO_CRATE_VALUE * 10
-	contains = list(/obj/item/storage/belt/holster/energy/thermal = 2)
+	cost = CARGO_CRATE_VALUE * 20 // Original price: 2000 New price: 4000
+	contains = list(/obj/item/clothing/accessory/holster/energy/thermal = 2) //BANDASTATION EDIT: Accessory holsters
 	crate_name = "thermal pistol crate"
 
 /datum/supply_pack/security/sunglasses
@@ -393,9 +394,123 @@
 	desc = "Contains two experimental thermal cannons for use by mechs. \
 		When used simultaneously, their excess power used to heat and cool the opposing weapon, \
 		increasing the reload speed."
-	cost = CARGO_CRATE_VALUE * 25
+	cost = CARGO_CRATE_VALUE * 35 // Original price: 5000 New price: 7000
 	contains = list(
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/thermal/cryo,
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/thermal/inferno,
 	)
 	crate_name = "thermal cannons crate"
+
+/datum/supply_pack/security/armory/rnd_locked
+	abstract_type = /datum/supply_pack/security/armory/rnd_locked
+	group = "Requisitions"
+	order_flags = ORDER_SPECIAL
+
+/datum/supply_pack/security/armory/rnd_locked/New()
+	. = ..()
+	desc += " Firing pin not included."
+
+/datum/supply_pack/security/armory/rnd_locked/fill(obj/container)
+	. = ..()
+	for(var/obj/item/firing_pin/gunpin in container.get_all_contents())
+		qdel(gunpin)
+
+/datum/supply_pack/security/armory/rnd_locked/aeg
+	name = "Advanced Energy Gun Requisition"
+	desc = "Contains an Advanced Energy Gun, which fires both disabling and lethal shots like a standard energy gun. \
+		However, it also contains a miniature nuclear reactor that recharges the gun's energy cells over time."
+	cost = CARGO_CRATE_VALUE * 16
+	contains = list(/obj/item/gun/energy/e_gun/nuclear = 1)
+	crate_name = "advanced energy gun crate"
+	order_flags = parent_type::order_flags | ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/aeg/three_pack
+	name = "Advanced Energy Gun Requisition (x3)"
+	cost = parent_type::cost * 2.9
+	contains = list(/obj/item/gun/energy/e_gun/nuclear = 3)
+	order_flags = parent_type::order_flags & ~ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/xray
+	name = "Type 6 X-ray Laser Gun Requisition"
+	desc = "Contains a Type 6 X-ray Laser Gun, an atypical energy gun that fires radioactive-infused laser beams, \
+		which are capable of penetrating most forms of armor and even walls."
+	cost = CARGO_CRATE_VALUE * 20
+	contains = list(/obj/item/gun/energy/laser/xray = 1)
+	crate_name = "x-ray gun crate"
+	order_flags = parent_type::order_flags | ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/xray/three_pack
+	name = "Type 6 X-ray Laser Gun Requisition (x3)"
+	cost = parent_type::cost * 2.9
+	contains = list(/obj/item/gun/energy/laser/xray = 3)
+	order_flags = parent_type::order_flags & ~ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/tempgun
+	name = "Temperature Gun Requisition"
+	desc = "Contains a Temperature Gun, a debatably useful weapon designed to rapidly heating or cooling targets."
+	cost = CARGO_CRATE_VALUE * 4
+	contains = list(/obj/item/gun/energy/temperature = 1)
+	crate_name = "temperature gun crate"
+	order_flags = parent_type::order_flags | ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/tempgun/three_pack
+	name = "Temperature Gun Requisition (x3)"
+	cost = parent_type::cost * 2.75 // it's so bad it gets a better discount
+	contains = list(/obj/item/gun/energy/temperature = 3)
+	order_flags = parent_type::order_flags & ~ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/tesla
+	name = "Tesla Cannon Requisition"
+	desc = "Contains an anomaly powered Tesla Cannon, which fires high-voltage arc of electricity that can chain between multiple targets. \
+		Requires a flux anomaly core to power, which is not included."
+	cost = CARGO_CRATE_VALUE * 10
+	contains = list(/obj/item/gun/energy/tesla_cannon = 1)
+	crate_name = "tesla cannon crate"
+
+/datum/supply_pack/security/armory/rnd_locked/photon
+	name = "Photon Cannon Requisition"
+	desc = "Contains an anomaly powered Photon Cannon, which fires concentrated miniature suns that blind those without eye protection. \
+		Requires a flux anomaly core to power, which is not included."
+	cost = CARGO_CRATE_VALUE * 5
+	contains = list(/obj/item/gun/energy/photon = 1)
+	crate_name = "photon cannon crate"
+
+/datum/supply_pack/security/armory/rnd_locked/ion
+	name = "Ion Carbine Requisition"
+	desc = "Contains an Ion Carbine, a more portable form of the more unwieldy Ion Rifle. \
+		Fires electromagnetic pulses that can disable electronics."
+	cost = CARGO_CRATE_VALUE * 6
+	contains = list(/obj/item/gun/energy/ionrifle/carbine = 1)
+	crate_name = "ion carbine crate"
+	order_flags = parent_type::order_flags | ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/ion/three_pack
+	name = "Ion Carbine Requisition (x3)"
+	cost = parent_type::cost * 2.9
+	contains = list(/obj/item/gun/energy/ionrifle/carbine = 3)
+	order_flags = parent_type::order_flags & ~ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/ebow
+	name = "Energy Bow Requisition"
+	desc = "Contains a reverse engineered Syndicate Energy Crossbow. Though less compact that the original, \
+		the projectiles it fires are just as capable of downing targets in a single shot - if not more."
+	cost = CARGO_CRATE_VALUE * 10
+	contains = list(/obj/item/gun/energy/recharge/ebow/large = 1)
+	crate_name = "energy bow crate"
+	order_flags = parent_type::order_flags | ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/armory/rnd_locked/ebow/three_pack
+	name = "Energy Bow Requisition (x3)"
+	cost = parent_type::cost * 2.9
+	contains = list(/obj/item/gun/energy/recharge/ebow/large = 3)
+	order_flags = parent_type::order_flags & ~ORDER_NOT_DEPARTMENTAL
+
+/datum/supply_pack/security/blood_worm_testers
+	name = "Hemoparasite Testing Crate"
+	desc = "Contains four single-use hemoparasite testing tools. \
+		These devices accurately report whether a patient is inhabited by a hemoparasite, such as the infamous space-faring blood worm. \
+		The DeForest Medical Corporation claims no liability for any mental and/or physical trauma caused to patients from the improper use of these devices."
+	cost = CARGO_CRATE_VALUE * 30 // Original price: 10000 New price: 6000
+	access_view = ACCESS_SECURITY
+	contains = list(/obj/item/blood_worm_tester = 4)
+	crate_name = "hemoparasite testing crate"

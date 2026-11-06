@@ -66,40 +66,64 @@
 // 			else if(organ.organ_flags & ORGAN_ORGANIC)
 // 				organic_bodytypes += 0.02
 
-// 	return list(
+// 	return alist(
 // 		BODYPART_SCORE_ORGANIC = organic_bodytypes,
 // 		BODYPART_SCORE_SILICON = silicon_bodytypes,
 // 		BODYPART_SCORE_OTHER_BODYTYPES = other_bodytypes,
 // 		BODYPART_SCORE_OVERALL = silicon_bodytypes - organic_bodytypes
 // 	)
 
+// /datum/quirk/transhumanist/add(client/client_source)
+// 	RegisterSignal(quirk_holder, COMSIG_CARBON_POST_ATTACH_LIMB, PROC_REF(calculate_bodypart_score))
+// 	RegisterSignal(quirk_holder, COMSIG_CARBON_POST_REMOVE_LIMB, PROC_REF(calculate_bodypart_score))
+// 	RegisterSignal(quirk_holder, COMSIG_CARBON_GAIN_ORGAN, PROC_REF(calculate_bodypart_score))
+// 	RegisterSignal(quirk_holder, COMSIG_CARBON_LOSE_ORGAN, PROC_REF(calculate_bodypart_score))
+// 	calculate_bodypart_score()
 
-// /datum/quirk/transhumanist/proc/calculate_bodypart_score()
-// 	SIGNAL_HANDLER
-// 	var/list/score = get_bodypart_score(quirk_holder)
-// 	var/organic_bodytypes = score[BODYPART_SCORE_ORGANIC]
-// 	var/silicon_bodytypes = score[BODYPART_SCORE_SILICON]
-// 	var/other_bodytypes = score[BODYPART_SCORE_OTHER_BODYTYPES]
-
-// 	if(!other_bodytypes)
-// 		if(organic_bodytypes <= 0.02)
-// 			quirk_holder.add_mood_event(MOOD_CATEGORY_TRANSHUMANIST_BODYPART, /datum/mood_event/completely_robotic)
-// 			return
-// 		else if(silicon_bodytypes == 0)
-// 			quirk_holder.add_mood_event(MOOD_CATEGORY_TRANSHUMANIST_BODYPART, /datum/mood_event/completely_organic)
-// 			return
-// 	else if(silicon_bodytypes == 0 && organic_bodytypes == 0)
+// /datum/quirk/transhumanist/remove()
+// 	UnregisterSignal(quirk_holder, list(
+// 		COMSIG_CARBON_POST_ATTACH_LIMB,
+// 		COMSIG_CARBON_POST_REMOVE_LIMB,
+// 		COMSIG_CARBON_GAIN_ORGAN,
+// 		COMSIG_CARBON_LOSE_ORGAN,
+// 	))
+// 	if(isnull(old_part))
 // 		quirk_holder.clear_mood_event(MOOD_CATEGORY_TRANSHUMANIST_BODYPART)
+// 		quirk_holder.clear_mood_event(MOOD_CATEGORY_TRANSHUMANIST_PEOPLE)
 // 		return
 
-// 	var/bodypart_score = score[BODYPART_SCORE_OVERALL]
-// 	switch(bodypart_score)
-// 		if(3 to INFINITY)
-// 			quirk_holder.add_mood_event(MOOD_CATEGORY_TRANSHUMANIST_BODYPART, /datum/mood_event/very_robotic)
-// 		if(0 to 3)
-// 			quirk_holder.add_mood_event(MOOD_CATEGORY_TRANSHUMANIST_BODYPART, /datum/mood_event/balanced_robotic)
-// 		if(-INFINITY to 0)
-// 			quirk_holder.add_mood_event(MOOD_CATEGORY_TRANSHUMANIST_BODYPART, /datum/mood_event/very_organic)
+// 	if(QDELETED(quirk_holder)) // We don't ever want to be adding organs to qdeleting mobs
+// 		QDEL_NULL(old_part)
+// 		return
+
+// 	var/mob/living/carbon/human/human_holder = quirk_holder
+// 	if(isbodypart(old_part))
+// 		var/obj/item/bodypart/old_bodypart = old_part
+// 		human_holder.del_and_replace_bodypart(old_bodypart, special = TRUE)
+// 		old_bodypart = null
+// 	else if(isorgan(old_part))
+// 		var/obj/item/organ/old_organ = old_part
+// 		old_part = human_holder.get_organ_slot(ORGAN_SLOT_TONGUE)
+// 		old_organ.Insert(quirk_holder, special = TRUE)
+// 		old_part.moveToNullspace()
+// 		STOP_PROCESSING(SSobj, old_part)
+// 		old_organ = null
+// 		old_part = null
+
+// 	quirk_holder.clear_mood_event(MOOD_CATEGORY_TRANSHUMANIST_BODYPART)
+// 	quirk_holder.clear_mood_event(MOOD_CATEGORY_TRANSHUMANIST_PEOPLE)
+
+// /datum/quirk/transhumanist/proc/get_bodypart_score(mob/living/carbon/target, limbs_only = FALSE)
+// 	var/organic_bodytypes = 0
+// 	var/silicon_bodytypes = 0
+// 	var/other_bodytypes = FALSE
+// 	for(var/obj/item/bodypart/part as anything in target.get_bodyparts())
+// 		if(part.bodytype & BODYTYPE_ROBOTIC)
+// 			silicon_bodytypes += 1
+// 		else if(part.bodytype & BODYTYPE_ORGANIC)
+// 			organic_bodytypes += 0.1
+// 		else
+// 			other_bodytypes = TRUE
 
 // /datum/quirk_constant_data/transhumanist
 // 	associated_typepath = /datum/quirk/transhumanist
@@ -162,8 +186,55 @@
 // 		old_organ = null
 // 		old_part = null
 
-// 	quirk_holder.clear_mood_event(MOOD_CATEGORY_TRANSHUMANIST_BODYPART)
-// 	quirk_holder.clear_mood_event(MOOD_CATEGORY_TRANSHUMANIST_PEOPLE)
+// /datum/quirk/transhumanist/proc/can_add_part(part_type)
+// 	if(ispath(part_type, /obj/item/bodypart))
+// 		var/obj/item/bodypart/bodypart_check = part_type
+// 		return !!quirk_holder.get_bodypart(bodypart_check::body_zone)
+// 	if(ispath(part_type, /obj/item/organ))
+// 		var/obj/item/organ/organ_check = part_type
+// 		return !!quirk_holder.get_organ_slot(organ_check::slot)
+// 	return FALSE
+
+// /datum/quirk/transhumanist/add_unique(client/client_source)
+// 	var/mob/living/carbon/human/human_holder = quirk_holder
+// 	var/list/part_options = GLOB.part_choice_transhuman.Copy()
+// 	var/part_type = part_options[client_source?.prefs?.read_preference(/datum/preference/choiced/trans_prosthetic)]
+// 	if(isnull(part_type))  //Client gone or they chose a random part
+// 		var/picked_type = pick(part_options)
+// 		part_type = part_options[picked_type]
+// 		part_options -= picked_type
+
+// 	if(quirk_holder.has_quirk(/datum/quirk/prosthetic_limb) && ispath(part_type, /obj/item/bodypart))
+// 		var/obj/item/bodypart/bodypart_check = part_type
+// 		var/preferred_prosthetic_zone = GLOB.prosthetic_limb_choice[client_source?.prefs?.read_preference(/datum/preference/choiced/prosthetic)]
+// 		// dumbass already has a part in the same spot so let's just let the shoddy trait do its thing instead
+// 		if(preferred_prosthetic_zone == bodypart_check::body_zone)
+// 			return
+
+// 	while(!can_add_part(part_type))
+// 		if(!length(part_options))
+// 			return // you get NOTHING good day
+// 		var/picked_type = pick(part_options)
+// 		part_type = part_options[picked_type]
+// 		part_options -= picked_type
+
+// 	var/obj/item/new_part = new part_type()
+// 	if(isbodypart(new_part))
+// 		var/obj/item/bodypart/new_bodypart = new_part
+// 		slot_string = new_bodypart.plaintext_zone
+// 		old_part = human_holder.return_and_replace_bodypart(new_bodypart, special = TRUE)
+
+// 	else if(isorgan(new_part))
+// 		var/obj/item/organ/new_organ = new_part
+// 		old_part = human_holder.get_organ_slot(new_organ.slot)
+// 		new_organ.Insert(human_holder, special = TRUE)
+// 		old_part.moveToNullspace()
+// 		STOP_PROCESSING(SSobj, old_part)
+// 		slot_string = new_organ.name
+
+// 	for(var/mob/living/target in mobs)
+// 		if(!isturf(target.loc) || target == quirk_holder || target.alpha <= 128 || target.invisibility > quirk_holder.see_invisible)
+// 			continue
 
 // /datum/quirk/transhumanist/process(seconds_per_tick)
 // 	var/organics_nearby = 0
@@ -177,7 +248,7 @@
 // 			continue
 
 // 		if(iscarbon(target))
-// 			var/list/score = get_bodypart_score(target, limbs_only = TRUE)
+// 			var/alist/score = get_bodypart_score(target, limbs_only = TRUE)
 // 			// For an average human, they'll need 2 augmented limbs to not get counted as an organic nor a silicon.
 // 			// If some monstrosity has 20-30 organic limbs, they'll likely need more.
 // 			if(score[BODYPART_SCORE_OVERALL] < 1)
@@ -218,4 +289,3 @@
 // #undef BODYPART_SCORE_SILICON
 // #undef BODYPART_SCORE_OTHER_BODYTYPES
 // #undef BODYPART_SCORE_OVERALL
-// // BANDASTATION REMOVAL END - Feat: Augmentations

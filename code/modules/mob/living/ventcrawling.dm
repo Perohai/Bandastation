@@ -7,11 +7,10 @@
 	to_chat(src, span_notice("Вы можете перемещаться по вентиляции! Нажмите Альт-Клик по вентиляции, чтобы быстро перемещаться по станции."))
 
 /mob/living/carbon/human/notify_ventcrawler_on_login()
-	if(!ismonkey(src))
+	if(!HAS_TRAIT(src, TRAIT_LESSER_HUMANOID))
 		return ..()
 	if(!istype(head, /obj/item/clothing/head/helmet/monkey_sentience)) //don't notify them about ventcrawling if they're wearing the sentience helmet, because they can't ventcrawl with it on, and if they take it off they'll no longer be in control of the mob.
 		return ..()
-
 
 
 /// Checks if the mob is able to enter the vent, and provides feedback if they are unable to.
@@ -25,7 +24,7 @@
 		return
 	if(!HAS_TRAIT(src, TRAIT_VENTCRAWLER_NUDE) && !HAS_TRAIT(src, TRAIT_VENTCRAWLER_ALWAYS))
 		return
-	if(stat)
+	if(IS_UNCONSCIOUS_OR_CRIT(src))
 		if(provide_feedback)
 			to_chat(src, span_warning("Вы должны быть в сознании!"))
 		return
@@ -46,13 +45,16 @@
 			to_chat(src, span_warning("Вы должны отстегнуться!"))
 		return
 	if(iscarbon(src) && required_nudity)
-		if(length(get_equipped_items(INCLUDE_POCKETS)) || get_num_held_items())
+		if(length(get_equipped_items(INCLUDE_POCKETS|INCLUDE_HELD)) || has_status_effect(/datum/status_effect/cuffed_item))
 			if(provide_feedback)
 				to_chat(src, span_warning("Вы должны снять предметы!"))
 			return
 	if(ventcrawl_target.welded)
 		if(provide_feedback)
-			to_chat(src, span_warning("Вентиляция заварена!"))
+			// Add cooldown to prevent welded vent message spam during movement
+			if(COOLDOWN_FINISHED(src, welded_vent_message_cd))
+				to_chat(src, span_warning("Вентиляция заварена!"))
+				COOLDOWN_START(src, welded_vent_message_cd, 2 SECONDS)
 		return
 
 	if(!(vent_movement & VENTCRAWL_ENTRANCE_ALLOWED))
@@ -130,6 +132,8 @@
 /mob/living/proc/update_pipe_vision(full_refresh = FALSE)
 	if(!isnull(ai_controller) && isnull(client)) // we don't care about pipe vision if we have an AI controller with no client (typically means we are clientless).
 		return
+
+	update_sight()
 
 	// Take away all the pipe images if we're not doing anything with em
 	if(isnull(client) || !HAS_TRAIT(src, TRAIT_MOVE_VENTCRAWLING) || !istype(loc, /obj/machinery/atmospherics) || !(movement_type & VENTCRAWLING))

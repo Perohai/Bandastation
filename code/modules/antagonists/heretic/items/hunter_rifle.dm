@@ -6,7 +6,7 @@
 // releasing a homing, very damaging projectile
 /obj/item/gun/ballistic/rifle/lionhunter
 	name = "\improper Lionhunter's Rifle"
-	desc = "Антикварная винтовка, которая выглядит безупречно, несмотря на то свою явную старость."
+	desc = "Антикварная винтовка, которая выглядит безупречно, несмотря на свою явную старость."
 	slot_flags = ITEM_SLOT_BACK
 	icon_state = "lionhunter"
 	inhand_icon_state = "lionhunter"
@@ -174,10 +174,10 @@
 	return ..()
 
 // Extra ammunition can be made with a heretic ritual.
-/obj/item/ammo_box/strilka310/lionhunter
+/obj/item/ammo_box/speedloader/strilka310/lionhunter
 	name = "stripper clip (.310 hunter)"
 	desc = "Стрипперная обойма с загадочными, нетипичными патронами. Они не подходят к обычным баллистическим винтовкам."
-	icon_state = "310_strip"
+	icon_state = "lionhunter_strip"
 	ammo_type = /obj/item/ammo_casing/strilka310/lionhunter
 	max_ammo = 3
 	multiple_sprites = AMMO_BOX_PER_BULLET

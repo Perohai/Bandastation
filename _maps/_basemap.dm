@@ -1,25 +1,25 @@
-//#define LOWMEMORYMODE //uncomment this to load centcom and runtime station and thats it.
-
+#ifndef MINIMAL_CENTCOM
 #include "map_files\generic\CentCom.dmm"
+#else
+#include "map_files\generic\CentCom_minimal.dmm"
+#endif
 
-#ifndef LOWMEMORYMODE
-	#ifdef ALL_MAPS
-		// #include "map_files\Birdshot\birdshot.dmm"
-		#include "map_files\debug\multiz.dmm"
-		#include "map_files\debug\runtimestation.dmm"
-		#include "map_files\Deltastation\DeltaStation2.dmm"
-		#include "map_files\IceBoxStation\IceBoxStation.dmm"
-		#include "map_files\MetaStation\MetaStation.dmm"
-		#include "map_files\Mining\Lavaland.dmm"
-		#include "map_files\tramstation\tramstation.dmm"
-		// #include "map_files\CatwalkStation\CatwalkStation_2023.dmm"
-		// #include "map_files\NebulaStation\NebulaStation.dmm"
-		// #include "map_files\wawastation\wawastation.dmm"
-		// BANDASTATION - ADDITION STAT
-		#include "map_files\Cyberiad\Cyberiad.dmm"
-		// BANDASTATION - ADDITION END
-	#endif
-	#ifdef ALL_TEMPLATES
-		#include "templates.dm"
-	#endif
+#ifdef ALL_MAPS
+	#include "map_files\debug\multiz.dmm"
+	#include "map_files\debug\runtimestation.dmm"
+	#include "map_files\Deltastation\DeltaStation2.dmm"
+	#include "map_files\IceBoxStation\IceBoxStation.dmm"
+	#include "map_files\MetaStation\MetaStation.dmm"
+	#include "map_files\Mining\Lavaland.dmm"
+	#include "map_files\tramstation\tramstation.dmm"
+	#include "map_files\CatwalkStation\CatwalkStation_2023.dmm"
+	#include "map_files\NebulaStation\NebulaStation.dmm"
+	#include "map_files\wawastation\wawastation.dmm"
+	//#include "map_files\KiloStation\KiloStation.dmm" // BANDASTATION EDIT: TEMP remove #2579
+	// BANDASTATION EDIT START: Custom maps
+	#include "map_files\Cyberiad\Cyberiad.dmm"
+	// BANDASTATION EDIT END: Custom maps
+#endif
+#ifdef ALL_TEMPLATES
+	#include "templates.dm"
 #endif

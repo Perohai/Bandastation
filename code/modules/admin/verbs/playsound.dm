@@ -3,7 +3,8 @@
 #define SHELLEO_STDOUT 2
 #define SHELLEO_STDERR 3
 
-ADMIN_VERB(play_sound, R_SOUND, "Play Global Sound", "Play a sound to all connected players.", ADMIN_CATEGORY_FUN, sound as sound)
+ADMIN_VERB(play_sound, R_SOUND, "Play Global Sound", "Play a sound to all connected players.", ADMIN_CATEGORY_FUN)
+	VERB_ARG(sound, VERB_ARG_TYPE_SOUND, VERB_ARG_SOURCE_INPUT)
 	var/freq = 1
 	var/vol = tgui_input_number(user, "What volume would you like the sound to play at?", max_value = 100)
 	if(!vol)
@@ -20,7 +21,7 @@ ADMIN_VERB(play_sound, R_SOUND, "Play Global Sound", "Play a sound to all connec
 	admin_sound.status = SOUND_STREAM
 	admin_sound.volume = vol
 
-	var/res = tgui_alert(user, "Show the title of this song to the players?",, list("Yes","No", "Cancel"))
+	var/res = tgui_alert(user, "Show the title of this song to the players?", "Play Sound", list("Yes", "No", "Cancel"))
 	switch(res)
 		if("Yes")
 			to_chat(world, span_boldannounce("An admin played: [sound]"), confidential = TRUE)
@@ -39,14 +40,17 @@ ADMIN_VERB(play_sound, R_SOUND, "Play Global Sound", "Play a sound to all connec
 
 	BLACKBOX_LOG_ADMIN_VERB("Play Global Sound")
 
-ADMIN_VERB(play_local_sound, R_SOUND, "Play Local Sound", "Plays a sound only you can hear.", ADMIN_CATEGORY_FUN, sound as sound)
+ADMIN_VERB(play_local_sound, R_SOUND, "Play Local Sound", "Plays a sound only you can hear.", ADMIN_CATEGORY_FUN)
+	VERB_ARG(sound, VERB_ARG_TYPE_SOUND, VERB_ARG_SOURCE_INPUT)
 	log_admin("[key_name(user)] played a local sound [sound]")
 	message_admins("[key_name_admin(user)] played a local sound [sound]")
 	var/volume = tgui_input_number(user, "What volume would you like the sound to play at?", max_value = 100)
 	playsound(get_turf(user.mob), sound, volume || 50, FALSE)
 	BLACKBOX_LOG_ADMIN_VERB("Play Local Sound")
 
-ADMIN_VERB(play_direct_mob_sound, R_SOUND, "Play Direct Mob Sound", "Play a sound directly to a mob.", ADMIN_CATEGORY_FUN, sound as sound, mob/target in world)
+ADMIN_VERB(play_direct_mob_sound, R_SOUND, "Play Direct Mob Sound", "Play a sound directly to a mob.", ADMIN_CATEGORY_FUN)
+	VERB_ARG(sound, VERB_ARG_TYPE_SOUND, VERB_ARG_SOURCE_INPUT)
+	VERB_ARG_TYPED(target, VERB_ARG_TYPE_MOB, VERB_ARG_SOURCE_WORLD, /mob)
 	if(!target)
 		target = input(user, "Choose a mob to play the sound to. Only they will hear it.", "Play Mob Sound") as null|anything in sort_names(GLOB.player_list)
 	if(QDELETED(target))
@@ -104,34 +108,49 @@ GLOBAL_VAR_INIT(web_sound_cooldown, 0)
 		music_extra_data["album"] = data["album"]
 		duration = data["duration"] * 1 SECONDS
 		if (duration > 10 MINUTES)
-			if((tgui_alert(user, "This song is over 10 minutes long. Are you sure you want to play it?", "Length Warning!", list("No", "Yes", "Cancel")) != "Yes"))
+			if((tgui_alert(user, "This song is over 10 minutes long. Are you sure you want to play it?", "Length Warning", list("No", "Yes", "Cancel")) != "Yes"))
 				return
-		var/res = tgui_alert(user, "Show the title of and link to this song to the players?\n[title]", "Show Info?", list("Yes", "No", "Cancel"))
-		switch(res)
+		var/include_song_data = tgui_alert(user, "Show the title of and link to this song to the players?\n[title]", "Song Info", list("Yes", "No", "Cancel"))
+		switch(include_song_data)
 			if("Yes")
 				music_extra_data["title"] = data["title"]
+				music_extra_data["artist"] = data["artist"]
 			if("No")
-				music_extra_data["link"] = "Song Link Hidden"
-				music_extra_data["title"] = "Song Title Hidden"
-				music_extra_data["artist"] = "Song Artist Hidden"
-				music_extra_data["upload_date"] = "Song Upload Date Hidden"
-				music_extra_data["album"] = "Song Album Hidden"
+				music_extra_data["link"] = "\[\[HYPERLINK BLOCKED\]\]"
+				music_extra_data["title"] = "Untitled"
+				music_extra_data["artist"] = "Unknown"
+				music_extra_data["upload_date"] = "XX.YY.ZZZZ"
+				music_extra_data["album"] = "Default"
 			if("Cancel", null)
 				return
-		var/anon = tgui_alert(user, "Display who played the song?", "Credit Yourself?", list("Yes", "No", "Cancel"))
-		switch(anon)
+		var/credit_yourself = tgui_alert(user, "Display who played the song?", "Credit Yourself", list("Yes", "No", "Cancel"))
+
+		var/list/to_chat_message = list()
+
+		switch(credit_yourself)
 			if("Yes")
-				if(res == "Yes")
-					to_chat(world, span_boldannounce("[user.key] played: [webpage_url]"), confidential = TRUE)
+				if(include_song_data == "Yes")
+					to_chat_message += span_notice("[user.ckey] played: [span_linkify(webpage_url)]")
 				else
-					to_chat(world, span_boldannounce("[user.key] played a sound"), confidential = TRUE)
+					to_chat_message += span_notice("[user.ckey] played a sound.")
 			if("No")
-				if(res == "Yes")
-					to_chat(world, span_boldannounce("An admin played: [webpage_url]"), confidential = TRUE)
+				if(include_song_data == "Yes")
+					to_chat_message += span_notice("An admin played: [span_linkify(webpage_url)]")
+				else
+					to_chat_message += span_notice("An admin played a sound.")
 			if("Cancel", null)
 				return
+
 		if(credit)
-			to_chat(world, span_boldannounce(credit), confidential = TRUE)
+			to_chat_message += span_notice("<br>[credit]")
+
+		var/list/recipients = list()
+		for(var/client/client as anything in GLOB.clients)
+			if(client.prefs.read_preference(/datum/preference/numeric/volume/sound_midi) > 0)
+				recipients += client
+		recipients |= user.client
+		to_chat(recipients, fieldset_block("Now Playing: [span_bold(music_extra_data["title"])] by [span_bold(music_extra_data["artist"])]", jointext(to_chat_message, ""), "boxed_message"))
+
 		SSblackbox.record_feedback("nested tally", "played_url", 1, list("[user.ckey]", "[input]"))
 		log_admin("[key_name(user)] played web sound: [input]")
 		message_admins("[key_name(user)] played web sound: [input]")
@@ -185,7 +204,8 @@ ADMIN_VERB(play_web_sound, R_SOUND, "Play Internet Sound", "Play a given interne
 	else
 		web_sound(user.mob, null)
 
-ADMIN_VERB(set_round_end_sound, R_SOUND, "Set Round End Sound", "Set the sound that plays on round end.", ADMIN_CATEGORY_FUN, sound as sound)
+ADMIN_VERB(set_round_end_sound, R_SOUND, "Set Round End Sound", "Set the sound that plays on round end.", ADMIN_CATEGORY_FUN)
+	VERB_ARG(sound, VERB_ARG_TYPE_SOUND, VERB_ARG_SOURCE_INPUT)
 	var/volume = tgui_input_number(user, "What volume would you like this sound to play at?", max_value = 100)
 	var/sound/admin_sound = sound(sound)
 	if(volume)

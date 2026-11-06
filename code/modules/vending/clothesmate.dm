@@ -50,8 +50,10 @@
 			"products" = list(
 				// /obj/item/clothing/accessory/pride = 15, // BANDASTATION REMOVAL
 				/obj/item/clothing/accessory/waistcoat = 4,
+				/obj/item/clothing/accessory/sweatervest = 4,
 				/obj/item/clothing/suit/toggle/suspenders = 4,
 				/obj/item/clothing/neck/tie/horrible = 3,
+				/obj/item/clothing/neck/robe_cape = 3,
 				/obj/item/clothing/glasses/regular = 3,
 				/obj/item/clothing/glasses/regular/jamjar = 3,
 				/obj/item/clothing/glasses/orange = 3,
@@ -102,6 +104,8 @@
 				/obj/item/clothing/suit/jacket/oversized = 4,
 				/obj/item/clothing/suit/jacket/fancy = 4,
 				/obj/item/clothing/suit/toggle/lawyer/greyscale = 4,
+				/obj/item/clothing/suit/hooded/wintercoat/pullover = 3,
+				/obj/item/clothing/suit/hooded/wintercoat/zipup = 3,
 				/obj/item/clothing/suit/hooded/wintercoat/custom = 3,
 				/obj/item/clothing/suit/hooded/wintercoat = 3,
 				/obj/item/clothing/under/suit/navy = 3,
@@ -120,8 +124,8 @@
 				/obj/item/clothing/suit/costume/poncho = 3,
 				/obj/item/clothing/under/dress/skirt = 3,
 				/obj/item/clothing/under/suit/white/skirt = 3,
-				/obj/item/clothing/under/rank/captain/suit/skirt = 2,
-				/obj/item/clothing/under/rank/civilian/head_of_personnel/suit/skirt = 2,
+				/obj/item/clothing/under/costume/captain/skirt = 2,
+				/obj/item/clothing/under/costume/head_of_personnel/skirt = 2,
 				/obj/item/clothing/under/rank/civilian/purple_bartender = 2,
 				/obj/item/clothing/suit/jacket/miljacket = 3,
 				/obj/item/clothing/suit/apron/overalls = 3,
@@ -233,7 +237,6 @@
 	payment_department = NO_FREEBIES
 	light_mask = "wardrobe-light-mask"
 	light_color = LIGHT_COLOR_ELECTRIC_GREEN
-	allow_custom = TRUE
 
 /obj/item/vending_refill/clothing
 	machine_name = "ClothesMate"

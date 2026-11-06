@@ -21,21 +21,27 @@
 	src.climb_stun = climb_stun
 
 	RegisterSignal(target, COMSIG_ATOM_ATTACK_HAND, PROC_REF(attack_hand))
-	RegisterSignal(target, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
+	RegisterSignal(target, COMSIG_ATOM_EXAMINE_TAGS, PROC_REF(get_examine_tags))
 	RegisterSignal(target, COMSIG_MOUSEDROPPED_ONTO, PROC_REF(mousedrop_receive))
 	ADD_TRAIT(target, TRAIT_CLIMBABLE, ELEMENT_TRAIT(type))
 
 /datum/element/climbable/Detach(datum/target)
-	UnregisterSignal(target, list(COMSIG_ATOM_ATTACK_HAND, COMSIG_ATOM_EXAMINE, COMSIG_MOUSEDROPPED_ONTO, COMSIG_ATOM_BUMPED))
+	UnregisterSignal(target, list(COMSIG_ATOM_ATTACK_HAND, COMSIG_ATOM_EXAMINE_TAGS, COMSIG_MOUSEDROPPED_ONTO, COMSIG_ATOM_BUMPED))
 	REMOVE_TRAIT(target, TRAIT_CLIMBABLE, ELEMENT_TRAIT(type))
 	return ..()
 
-/datum/element/climbable/proc/on_examine(atom/source, mob/user, list/examine_texts)
+///Someone inspected our embeddable item
+/datum/element/climbable/proc/get_examine_tags(atom/source, mob/user, list/examine_list)
 	SIGNAL_HANDLER
-	examine_texts += span_notice("[source] looks climbable.")
+	/// BANDASTATION EDIT START — перевод тегов
+	var/is_female = (source.examine_descriptor() in list("структура", "машина"))
+	var/he_she_it = is_female ? "Она" : "Он"
+	var/their_low = is_female ? "её" : "его"
+	examine_list[is_female ? "удобная для взбирания" : "удобный для взбирания"] = "[he_she_it] выглядит как будто на [their_low] можно забраться."
+	// BANDASTATION EDIT END
 
 /datum/element/climbable/proc/can_climb(atom/source, mob/user)
-	if (!user.CanReach(source))
+	if (!source.IsReachableBy(user))
 		return FALSE
 	var/dir_step = get_dir(user, source.loc)
 	//To jump over a railing you have to be standing next to it, not far behind it.
@@ -53,15 +59,15 @@
 		user.changeNext_move(CLICK_CD_MELEE)
 		user.do_attack_animation(climbed_thing)
 		structure_climber.Paralyze(40)
-		structure_climber.visible_message(span_warning("[structure_climber] is knocked off [climbed_thing]."), span_warning("You're knocked off [climbed_thing]!"), span_hear("You hear a cry from [structure_climber], followed by a slam."))
+		structure_climber.visible_message(span_warning("[structure_climber.declent_ru(NOMINATIVE)] срывается с [climbed_thing.declent_ru(ACCUSATIVE)]."), span_warning("Вы срываетесь с [climbed_thing.declent_ru(ACCUSATIVE)]!"), span_hear("Вы слышите крик от [structure_climber.declent_ru(GENITIVE)], за которым следует удар."))
 
 
 /datum/element/climbable/proc/climb_structure(atom/climbed_thing, mob/living/user, params)
 	if(!can_climb(climbed_thing, user))
 		return
 	climbed_thing.add_fingerprint(user)
-	user.visible_message(span_warning("[user] starts climbing onto [climbed_thing]."), \
-								span_notice("You start climbing onto [climbed_thing]..."))
+	user.visible_message(span_warning("[user.declent_ru(NOMINATIVE)] начинает подниматься на [climbed_thing.declent_ru(ACCUSATIVE)]."), \
+								span_notice("Вы начинаете подниматься на [climbed_thing.declent_ru(ACCUSATIVE)]..."))
 	// Time in deciseoncds it takes to complete the climb do_after()
 	var/adjusted_climb_time = climb_time
 	// Time in deciseonds that the mob is stunned after climbing successfully.
@@ -90,8 +96,8 @@
 		if(QDELETED(climbed_thing)) //Checking if structure has been destroyed
 			return
 		if(do_climb(climbed_thing, user, params))
-			user.visible_message(span_warning("[user] climbs onto [climbed_thing]."), \
-								span_notice("You climb onto [climbed_thing]."))
+			user.visible_message(span_warning("[user.declent_ru(NOMINATIVE)] взбирается на [climbed_thing.declent_ru(ACCUSATIVE)]."), \
+								span_notice("Вы взобрались на [climbed_thing.declent_ru(ACCUSATIVE)]."))
 			log_combat(user, climbed_thing, "climbed onto")
 			if(adjusted_climb_stun)
 				user.Stun(adjusted_climb_stun)
@@ -101,7 +107,7 @@
 					buckle_target.buckle_mob(user)
 			user.mind?.adjust_experience(/datum/skill/athletics, round(ATHLETICS_SKILL_MISC_EXP/(fitness_level || 1), 1)) //Get a bit fitter with every climb. But it has diminishing returns at a certain point.
 		else
-			to_chat(user, span_warning("You fail to climb onto [climbed_thing]."))
+			to_chat(user, span_warning("Вам не удается взобраться на [climbed_thing.declent_ru(ACCUSATIVE)]."))
 	LAZYREMOVEASSOC(current_climbers, climbed_thing, user)
 
 

@@ -58,7 +58,7 @@
 	if(GLOB.persistent_clients_by_ckey[ckey])
 		persistent_client = GLOB.persistent_clients_by_ckey[ckey]
 	else
-		persistent_client = new(ckey)
+		persistent_client = new(ckey, key) // BANDASTATION ADDITION - Mentors: (key)
 	persistent_client.set_client(src)
 #endif
 
@@ -83,5 +83,11 @@
 /datum/client_interface/proc/get_award_status(achievement_type, mob/user, value = 1)
 	return FALSE
 
-/datum/client_interface/proc/set_fullscreen(logging_in = FALSE)
+/datum/client_interface/proc/set_fullscreen()
 	return TRUE
+
+/datum/client_interface/proc/check_drag_proximity(atom/dragging, atom/over, src_location, over_location, src_control, over_control, params)
+	return FALSE
+
+/datum/client_interface/proc/update_parallax_prefs()
+	return

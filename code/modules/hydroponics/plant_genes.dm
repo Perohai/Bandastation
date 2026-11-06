@@ -123,7 +123,7 @@
 	/// Flag - Traits that share an ID cannot be placed on the same plant.
 	var/trait_ids
 	/// Flag - Modifications made to the final product.
-	var/trait_flags
+	var/trait_flags = NONE
 	/// A blacklist of seeds that a trait cannot be attached to.
 	var/list/obj/item/seeds/seed_blacklist
 
@@ -178,9 +178,28 @@
 		return FALSE
 
 	// Add on any bonus lines on examine
-	if(description)
+	if(description && (trait_flags & TRAIT_SHOW_EXAMINE))
 		RegisterSignal(our_plant, COMSIG_ATOM_EXAMINE, PROC_REF(examine))
 	return TRUE
+
+/**
+ * on_plant_in_tray is called when a seed with this trait is placed in a hydroponics tray
+ *
+ * * tray - the hydroponics tray the seed is placed in
+ * * seed - the seed being placed in the tray
+ */
+/datum/plant_gene/trait/proc/on_plant_in_tray(obj/machinery/hydroponics/tray, obj/item/seeds/seed)
+	return
+
+/**
+ * on_unplanted_from_tray is called when a seed with this trait is removed from a hydroponics tray
+ * (this can be done from being harvested, being uprooted, etc.)
+ *
+ * * tray - the hydroponics tray the seed is removed from
+ * * seed - the seed being removed from the tray
+ */
+/datum/plant_gene/trait/proc/on_unplanted_from_tray(obj/machinery/hydroponics/tray, obj/item/seeds/seed)
+	return
 
 /// Add on any unique examine text to the plant's examine text.
 /datum/plant_gene/trait/proc/examine(obj/item/our_plant, mob/examiner, list/examine_list)
@@ -204,7 +223,7 @@
 
 	RegisterSignal(our_plant, COMSIG_PLANT_ON_SLIP, PROC_REF(squash_plant))
 	RegisterSignal(our_plant, COMSIG_MOVABLE_IMPACT, PROC_REF(squash_plant_if_not_caught))
-	RegisterSignal(our_plant, COMSIG_ITEM_ATTACK_SELF, PROC_REF(squash_plant))
+	RegisterSignal(our_plant, COMSIG_ITEM_ATTACK_SELF, PROC_REF(squash_plant_in_hands)) // BANDASTATION ADDITION
 
 /*
  * Signal proc to squash the plant this trait belongs to, causing a smudge, exposing the target to reagents, and deleting it,
@@ -244,6 +263,14 @@
 	if(!caught)
 		squash_plant(source, hit_atom)
 
+// BANDASTATION ADDITION - START
+/datum/plant_gene/trait/squash/proc/squash_plant_in_hands(obj/item/food/grown/our_plant, atom/target)
+	if(!do_after(target, SQUASH_WITH_HANDS_DELAY, our_plant))
+		return
+
+	squash_plant(our_plant, target)
+// BANDASTATION ADDITION - END
+
 /*
  * Makes plant slippery, unless it has a grown-type trash. Then the trash gets slippery.
  * Applies other trait effects (teleporting, etc) to the target by signal.
@@ -275,6 +302,14 @@
 /// On slip, sends a signal that our plant was slipped on out.
 /datum/plant_gene/trait/slip/proc/handle_slip(obj/item/food/grown/our_plant, mob/slipped_target)
 	SEND_SIGNAL(our_plant, COMSIG_PLANT_ON_SLIP, slipped_target)
+
+/// Prevents instability from being changed BY cross-pollination.
+/datum/plant_gene/trait/safe_instability
+	name = "Conserved Genetics"
+	description = "With highly conserved genetics, this plant doesn't lose or gain instability in cross-pollination."
+	icon = FA_ICON_SEEDLING
+	rate = 1
+	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
 
 /*
  * Cell recharging trait. Charges all mob's power cells to (potency*rate)% mark when eaten.
@@ -335,7 +370,7 @@
 	to_chat(eater, span_notice("You feel energized as you bite into [our_plant]."))
 	var/batteries_recharged = FALSE
 	var/obj/item/seeds/our_seed = our_plant.get_plant_seed()
-	for(var/obj/item/stock_parts/power_store/found_cell in eater.get_all_contents())
+	for(var/obj/item/stock_parts/power_store/found_cell in assoc_to_values(eater.get_all_cells()))
 		var/newcharge = min(our_seed.potency * 0.01 * found_cell.maxcharge, found_cell.maxcharge)
 		if(found_cell.charge < newcharge)
 			found_cell.charge = newcharge
@@ -356,6 +391,7 @@
 	icon = FA_ICON_LIGHTBULB
 	rate = 0.03
 	description = "It emits a soft glow."
+	trait_flags = TRAIT_SHOW_EXAMINE
 	trait_ids = GLOW_ID
 	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
 	/// The color of our bioluminescence.
@@ -384,6 +420,7 @@
 	name = "Shadow Emission"
 	rate = 0.04
 	glow_color = COLOR_BIOLUMINESCENCE_SHADOW
+	description = "It absorbs light around it."
 
 /datum/plant_gene/trait/glow/shadow/glow_power(obj/item/seeds/seed)
 	return -max(seed.potency*(rate*0.2), 0.2)
@@ -603,10 +640,6 @@
 	pocell.charge = pocell.maxcharge
 	pocell.name = "[our_plant.name] battery"
 	pocell.desc = "A rechargeable plant-based power cell. This one has a rating of [display_energy(pocell.maxcharge)], and you should not swallow it."
-
-	if(our_plant.reagents.has_reagent(/datum/reagent/toxin/plasma, 2))
-		pocell.rigged = TRUE
-
 	qdel(our_plant)
 
 /*
@@ -619,6 +652,7 @@
 	icon = FA_ICON_SYRINGE
 	trait_ids = REAGENT_TRANSFER_ID
 	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
+	trait_flags = TRAIT_SHOW_EXAMINE
 
 /datum/plant_gene/trait/stinging/on_new_plant(obj/item/our_plant, newloc)
 	. = ..()
@@ -673,13 +707,10 @@
 	SIGNAL_HANDLER
 
 	our_plant.investigate_log("made smoke at [AREACOORD(target)]. Last touched by: [our_plant.fingerprintslast].", INVESTIGATE_BOTANY)
-	var/datum/effect_system/fluid_spread/smoke/chem/smoke = new ()
 	var/obj/item/seeds/our_seed = our_plant.get_plant_seed()
 	var/splat_location = get_turf(target)
 	var/range = sqrt(our_seed.potency * 0.1)
-	smoke.attach(splat_location)
-	smoke.set_up(round(range), holder = our_plant, location = splat_location, carry = our_plant.reagents, silent = FALSE)
-	smoke.start(log = TRUE)
+	do_chem_smoke(round(range), our_plant, splat_location, carry = our_plant.reagents, silent = FALSE, log = TRUE)
 	our_plant.reagents.clear_reagents()
 
 /// Makes the plant and its seeds fireproof. From lavaland plants.
@@ -779,6 +810,22 @@
 	trait_ids = CONTENTS_CHANGE_ID
 	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
 
+/datum/plant_gene/trait/brewing/on_new_plant(obj/item/our_plant, newloc)
+	. = ..()
+	if(!.)
+		return
+
+	RegisterSignal(our_plant, COMSIG_PLANT_ON_HARVEST, PROC_REF(brewing_harvest))
+
+/datum/plant_gene/trait/brewing/proc/brewing_harvest(obj/item/our_plant, obj/item/seeds/our_seed)
+	SIGNAL_HANDLER
+
+	if(!istype(our_plant, /obj/item/food/grown))
+		return
+
+	var/obj/item/food/grown/grown_plant = our_plant
+	grown_plant.ferment()
+
 /**
  * Similar to auto-distilling, but instead of brewing the plant's contents it juices it.
  *
@@ -790,6 +837,19 @@
 	icon = FA_ICON_GLASS_WATER
 	trait_ids = CONTENTS_CHANGE_ID
 	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
+
+/datum/plant_gene/trait/juicing/on_new_plant(obj/item/our_plant, newloc)
+	. = ..()
+	if(!.)
+		return
+
+	RegisterSignal(our_plant, COMSIG_PLANT_ON_HARVEST, PROC_REF(juicing_harvest))
+
+/datum/plant_gene/trait/juicing/proc/juicing_harvest(obj/item/our_plant, obj/item/seeds/our_seed)
+	SIGNAL_HANDLER
+
+	// FALSE is used to differentiate from null
+	our_plant.juice(juicer = FALSE)
 
 /**
  * Plays a laughter sound when someone slips on it.
@@ -834,9 +894,10 @@
  */
 /datum/plant_gene/trait/eyes
 	name = "Oculary Mimicry"
-	description = "It will watch after you."
+	description = "It watches after you."
 	icon = FA_ICON_EYE
 	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
+	trait_flags = TRAIT_SHOW_EXAMINE
 	/// Our googly eyes appearance.
 	var/mutable_appearance/googly
 
@@ -855,6 +916,7 @@
 	icon = FA_ICON_BANDAGE
 	trait_ids = THROW_IMPACT_ID
 	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
+	trait_flags = TRAIT_SHOW_EXAMINE
 
 /datum/plant_gene/trait/sticky/on_new_plant(obj/item/our_plant, newloc)
 	. = ..()
@@ -898,6 +960,23 @@
 	trait_flags = TRAIT_HALVES_YIELD
 	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
 
+/datum/plant_gene/trait/chem_heating/on_new_plant(obj/item/our_plant, newloc)
+	. = ..()
+	if(!.)
+		return
+
+	RegisterSignal(our_plant, COMSIG_PLANT_ON_HARVEST, PROC_REF(chem_heating_harvest))
+
+/datum/plant_gene/trait/chem_heating/proc/chem_heating_harvest(obj/item/our_plant, obj/item/seeds/our_seed)
+	SIGNAL_HANDLER
+
+	var/num_nutriment = our_plant.reagents.get_reagent_amount(/datum/reagent/consumable/nutriment)
+	our_plant.visible_message(span_notice("[our_plant] releases freezing air, consuming its nutriments to heat its contents."))
+	our_plant.reagents.remove_reagent(/datum/reagent/consumable/nutriment, num_nutriment)
+	our_plant.reagents.chem_temp = min(1000, (our_plant.reagents.chem_temp + num_nutriment * 25))
+	our_plant.reagents.handle_reactions()
+	playsound(our_plant, 'sound/effects/wounds/sizzle2.ogg', 5)
+
 /**
  * This trait is the opposite of above - it cools down the plant's chemical contents on harvest.
  * This requires nutriment to fuel. 1u nutriment = -5 K.
@@ -909,6 +988,23 @@
 	trait_ids = TEMP_CHANGE_ID
 	trait_flags = TRAIT_HALVES_YIELD
 	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
+
+/datum/plant_gene/trait/chem_cooling/on_new_plant(obj/item/our_plant, newloc)
+	. = ..()
+	if(!.)
+		return
+
+	RegisterSignal(our_plant, COMSIG_PLANT_ON_HARVEST, PROC_REF(chem_cooling_harvest))
+
+/datum/plant_gene/trait/chem_cooling/proc/chem_cooling_harvest(obj/item/our_plant, obj/item/seeds/our_seed)
+	SIGNAL_HANDLER
+
+	var/num_nutriment = our_plant.reagents.get_reagent_amount(/datum/reagent/consumable/nutriment)
+	our_plant.visible_message(span_notice("[our_plant] releases a blast of hot air, consuming its nutriments to cool its contents."))
+	our_plant.reagents.remove_reagent(/datum/reagent/consumable/nutriment, num_nutriment)
+	our_plant.reagents.chem_temp = max(3, (our_plant.reagents.chem_temp + num_nutriment * -5))
+	our_plant.reagents.handle_reactions()
+	playsound(our_plant, 'sound/effects/space_wind.ogg', 50)
 
 /// Prevents species mutation, while still allowing wild mutation harvest and Floral Somatoray species mutation.  Trait acts as a tag for hydroponics.dm to recognise.
 /datum/plant_gene/trait/never_mutate
@@ -938,6 +1034,13 @@
 	if(istype(grown_plant))
 		grown_plant.preserved_food = TRUE
 
+/// Ignores tox damage
+/datum/plant_gene/trait/tox_resistance
+	name = "Toxin Resistance"
+	description = "It is immune to the negative effects of a toxic environment."
+	icon = FA_ICON_SKULL_CROSSBONES
+	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
+
 /datum/plant_gene/trait/carnivory
 	name = "Obligate Carnivory"
 	description = "Pests have positive effect on the plant health."
@@ -961,7 +1064,30 @@
 	description = "It is a mushroom that needs no water, less light and can't be overtaken by weeds."
 	icon = FA_ICON_DROPLET_SLASH
 
+/// A plant that thrives in toxic environments.
+/datum/plant_gene/trait/plant_type/toxin_adaptation
+	name = "Toxin Adaptation"
+	description = "It is a toxic plant that thrives in poisonous environments."
+	icon = FA_ICON_SKULL_CROSSBONES
+
 /// Currently unused and does nothing. Appears in strange seeds.
 /datum/plant_gene/trait/plant_type/alien_properties
 	name ="?????"
 	icon = FA_ICON_DISEASE
+
+/datum/plant_gene/trait/carnivory
+	name = "Obligate Carnivory"
+	description = "Pests have positive effect on the plant health."
+	icon = FA_ICON_SPIDER
+
+/datum/plant_gene/trait/semiaquatic
+	name = "Semiaquatic"
+	description = "A type of plant that thrives in flooded conditions due to less competion from weeds, but can also grow on land."
+	icon = FA_ICON_BOWL_RICE
+	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE
+
+/datum/plant_gene/trait/soil_lover
+	name = "Soil Lover"
+	description = "A plant that needs the firm embrace of soil to develop properly, produces small irregular produce when grown hydroponically."
+	icon =  FA_ICON_MOUND
+	mutability_flags = PLANT_GENE_REMOVABLE | PLANT_GENE_MUTATABLE | PLANT_GENE_GRAFTABLE

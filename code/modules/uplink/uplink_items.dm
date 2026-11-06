@@ -9,7 +9,7 @@
 			per_category[possible_sale.category] = list()
 		per_category[possible_sale.category] += possible_sale
 
-	for (var/i in 1 to num)
+	for (var/i in 1 to min(length(per_category), num))
 		var/datum/uplink_category/item_category = pick(per_category)
 		var/datum/uplink_item/taken_item = pick(per_category[item_category])
 		per_category -= item_category
@@ -78,7 +78,7 @@
 	/// Whether this can be discounted or not
 	var/cant_discount = FALSE
 	/// If discounted, is true. Used to send a signal to update reimbursement.
-	var/discounted = FALSE
+	VAR_FINAL/discounted = FALSE
 	/// If this value is changed on two items they will share stock, defaults to not sharing stock with any other item
 	var/stock_key = UPLINK_SHARED_STOCK_UNIQUE
 	/// How many items of this stock can be purchased.
@@ -92,8 +92,6 @@
 	var/list/restricted_roles = list()
 	/// The species able to purchase this uplink item.
 	var/list/restricted_species = list()
-	/// The minimum amount of progression needed for this item to be added to uplinks.
-	var/progression_minimum = 0
 	/// The minimum number of joined players (so not observers) needed for this item to be added to uplinks.
 	var/population_minimum = 0
 	/// Whether this purchase is visible in the purchase log.
@@ -109,6 +107,9 @@
 	/// Uses the purchase log, so items purchased that are not visible in the purchase log will not count towards this.
 	/// However, they won't be purchasable afterwards.
 	var/lock_other_purchases = FALSE
+	/// A lazylist of typepaths to uplink items relevant to this this item
+	/// EX: a pistol would list its magazines or modifications here
+	var/list/relevant_child_items
 
 /datum/uplink_item/New()
 	. = ..()
@@ -148,10 +149,14 @@
 	var/atom/spawned_item = spawn_item(item, user, uplink_handler, source)
 	log_uplink("[key_name(user)] purchased [src] for [cost] telecrystals from [source]'s uplink")
 	user.playsound_local(get_turf(user), 'sound/effects/kaching.ogg', 100, FALSE, pressure_affected = FALSE, use_reverb = FALSE)
-	if(purchase_log_vis && uplink_handler.purchase_log)
-		uplink_handler.purchase_log.LogPurchase(spawned_item, src, cost)
+	if(uplink_handler.purchase_log)
+		log_purchase(spawned_item, uplink_handler)
 	if(lock_other_purchases)
 		uplink_handler.shop_locked = TRUE
+	return spawned_item
+
+/datum/uplink_item/proc/log_purchase(atom/spawned_item, datum/uplink_handler/uplink_handler)
+	uplink_handler.purchase_log.log_purchase(spawned_item, src, cost)
 
 /// Spawns an item in the world
 /datum/uplink_item/proc/spawn_item(spawn_path, mob/user, datum/uplink_handler/uplink_handler, atom/movable/source)
@@ -172,9 +177,9 @@
 			ADD_TRAIT(contained, TRAIT_CONTRABAND, INNATE_TRAIT)
 	var/mob/living/carbon/human/human_user = user
 	if(istype(human_user) && isitem(spawned_item) && human_user.put_in_hands(spawned_item))
-		to_chat(human_user, span_boldnotice("[spawned_item] materializes into your hands!"))
+		to_chat(human_user, span_boldnotice("[capitalize(spawned_item.declent_ru(NOMINATIVE))] материализуется в вашей руке!"))
 	else
-		to_chat(user, span_boldnotice("[spawned_item] materializes onto the floor!"))
+		to_chat(user, span_boldnotice("[capitalize(spawned_item.declent_ru(NOMINATIVE))] материализуется на полу!"))
 	SEND_SIGNAL(uplink_handler, COMSIG_ON_UPLINK_PURCHASE, spawned_item, user)
 	return spawned_item
 
@@ -209,7 +214,7 @@
 
 	QDEL_NULL(gun_reward.pin)
 	var/obj/item/firing_pin/pin = new
-	pin.gun_insert(new_gun = gun_reward)
+	pin.gun_insert(new_gun = gun_reward, starting = TRUE)
 
 ///For special overrides if an item can be bought or not.
 /datum/uplink_item/proc/can_be_bought(datum/uplink_handler/source)

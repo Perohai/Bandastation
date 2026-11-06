@@ -1,8 +1,9 @@
 /datum/action/cooldown/spell/jaunt/mirror_walk
-	name = "Mirror Walk"
-	desc = "Позволяет незаметно и свободно перемещаться по станции в пределах мира зеркала. \
+	name = "Проход в Зазеркалье"
+	desc = "Позволяет незаметно и свободно перемещаться по станции в пределах Зазеркалья. \
 		Войти в мир зеркал и выйти из него можно только при наличии рядом отражающих поверхностей и предметов, \
-		например, окна, зеркала, отражающие стены или оборудование."
+		например, окна, зеркала, отражающей стены или оборудования. \
+		Медленно исцеляет при нахождении в этой форме."
 	background_icon_state = "bg_heretic"
 	overlay_icon_state = "bg_heretic_border"
 	button_icon = 'icons/mob/actions/actions_minor_antag.dmi'
@@ -64,7 +65,7 @@
 
 	jaunter.Beam(nearby_reflection, icon_state = "light_beam", time = phase_out_time)
 	nearby_reflection.visible_message(span_warning("[capitalize(nearby_reflection.declent_ru(NOMINATIVE))] начинают мерцать и слегка дрожать!"))
-	if(!do_after(jaunter, phase_out_time, nearby_reflection, IGNORE_USER_LOC_CHANGE|IGNORE_INCAPACITATED, hidden = TRUE))
+	if(!do_after(jaunter, phase_out_time, nearby_reflection, IGNORE_USER_LOC_CHANGE|IGNORE_INCAPACITATED, cog_icon = null))
 		return
 
 	playsound(jaunter, 'sound/effects/magic/ethereal_enter.ogg', 50, TRUE, -1)
@@ -90,13 +91,13 @@
 
 	// It would likely be a bad idea to teleport into an ai monitored area (ai sat)
 	var/area/phase_area = get_area(phase_turf)
-	if(istype(phase_area, /area/station/ai_monitored))
+	if(phase_area.motion_monitored)
 		to_chat(unjaunter, span_warning("Выходить из зеркального царства здесь, вероятно, не очень разумно."))
 		return FALSE
 
 	nearby_reflection.Beam(phase_turf, icon_state = "light_beam", time = phase_in_time)
 	nearby_reflection.visible_message(span_warning("[capitalize(nearby_reflection.declent_ru(NOMINATIVE))] начинает мерцать и слегка дрожать!"))
-	if(!do_after(unjaunter, phase_in_time, nearby_reflection, hidden = TRUE))
+	if(!do_after(unjaunter, phase_in_time, nearby_reflection, cog_icon = null))
 		return FALSE
 
 	// We can move around while phasing in, but we'll always end up where we started it.
@@ -156,3 +157,14 @@
 
 /obj/effect/dummy/phased_mob/mirror_walk
 	name = "reflection"
+
+/obj/effect/dummy/phased_mob/mirror_walk/Initialize(mapload, atom/movable/jaunter)
+	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/effect/dummy/phased_mob/mirror_walk/process(seconds_per_tick)
+	if(!isliving(jaunter))
+		STOP_PROCESSING(SSobj, src)
+		return ..()
+	var/mob/living/living_jaunter = jaunter
+	living_jaunter.heal_overall_damage(5 * seconds_per_tick)

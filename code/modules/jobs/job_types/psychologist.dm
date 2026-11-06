@@ -1,8 +1,7 @@
 /datum/job/psychologist
 	title = JOB_PSYCHOLOGIST
 	description = "Следите за рассудком экипажа, а также за своим, и помогайте экипажу \
-		с их бедами с бошкой."
-	department_head = list(JOB_HEAD_OF_PERSONNEL)
+		с их бедами с башкой."
 	faction = FACTION_STATION
 	total_positions = 1
 	spawn_positions = 1
@@ -32,6 +31,7 @@
 	)
 	rpg_title = "Snake Oil Salesman"
 	job_flags = STATION_JOB_FLAGS
+	tgui_icon = FA_ICON_BRAIN
 
 
 /datum/outfit/job/psychologist
@@ -48,7 +48,7 @@
 		/obj/item/storage/pill_bottle/paxpsych,
 		/obj/item/storage/pill_bottle/psicodine,
 		)
-	belt = /obj/item/modular_computer/pda/psychologist
+	belt = /obj/item/modular_computer/pda/crew/psychologist
 	ears = /obj/item/radio/headset/headset_srvmed
 	shoes = /obj/item/clothing/shoes/laceup
 	l_hand = /obj/item/clipboard

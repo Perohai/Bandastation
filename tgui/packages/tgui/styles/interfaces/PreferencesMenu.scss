@@ -1,19 +1,5 @@
-@use 'sass:map';
 @use '../base.scss';
-
-$department_map: (
-  'Assistant': var(--color-gray),
-  'Captain': var(--color-command),
-  'Cargo': var(--color-cargo),
-  'Security': var(--color-security),
-  'Engineering': var(--color-engineering),
-  'Medical': var(--color-medical),
-  'Science': var(--color-science),
-  'Service': var(--color-service),
-  'Silicon': var(--color-silicon),
-  'NTRepresentation': var(--color-centcom),
-  'Justice': var(--color-justice),
-);
+@use '../colors.scss' as colors;
 
 .ColorInput {
   &__Text {
@@ -27,6 +13,12 @@ $department_map: (
     border: 2px solid hsl(from var(--color-primary) h s calc(l + 5));
     transform: scale(0.75);
   }
+}
+
+.ChoicedSelection {
+  padding: var(--space-m);
+  background-color: var(--color-base);
+  box-shadow: 0 0.5em 1em hsla(0, 0%, 0%, 0.5);
 }
 
 // MARK: PreferencesPage
@@ -83,6 +75,99 @@ $department_map: (
     border-right: none;
     box-shadow: inset 0.25rem 0.25rem 0.5rem -0.25rem var(--color-primary);
   }
+
+  /* BANDASTATION: Character Preferences
+  &__Jobs {
+    > * {
+      flex: 1;
+    }
+
+    &__characterMenu {
+      box-shadow: var(--dropdown-menu-blur);
+      background-color: var(--dropdown-menu-background);
+      border: var(--dropdown-menu-border);
+      border-radius: var(--dropdown-menu-border-radius);
+      transition: opacity 0.35s ease-out;
+
+      &--hidden {
+        opacity: 0;
+        pointer-events: none;
+
+        @at-root .Floating:has(> #{&}) {
+          pointer-events: none;
+        }
+      }
+    }
+
+    &__departments {
+      &.head {
+        background: colors.bg(var(--department-color));
+
+        .job-name {
+          font-weight: bold;
+          &.hovered {
+            background: colors.hover(colors.bg(var(--department-color)));
+          }
+        }
+      }
+
+      background: colors.fg(var(--department-color));
+      border: var(--border-thickness-small) outset
+        colors.fg(var(--department-color));
+      color: black;
+
+      .options {
+        padding-right: var(--space-xxs);
+        padding-bottom: 0.2em;
+        background: hsla(0, 0%, 0%, 0.2);
+      }
+      .job-name {
+        &.hovered {
+          background: colors.hover(colors.fg(var(--department-color)));
+        }
+      }
+
+      &--Captain {
+        border: var(--border-thickness-medium) outset hsla(60, 100%, 39.2%, 1);
+
+        &:first-child {
+          border-top: var(--border-thickness-medium) outset
+            hsla(60, 100%, 39.2%, 1);
+        }
+
+        .job-name {
+          font-size: 17px;
+          &.hovered {
+            background: colors.hover(colors.fg(var(--department-color)));
+          }
+        }
+      }
+
+      &__priority {
+        border: var(--border-thickness-tiny) solid hsla(0, 0%, 0%, 0.3);
+
+        &--off::after {
+          content: '';
+
+          background: hsla(0, 0%, 0%, 0.2);
+          display: block;
+          height: 80%;
+          left: 50%;
+          position: relative;
+          top: 50%;
+          transform: translateX(-50%) translateY(-50%) rotate(40deg);
+          width: 2px;
+        }
+      }
+    }
+
+    &__PriorityHeader {
+      font-weight: bold;
+      transform: translateX(-8px) translateY(-8px) rotate(315deg);
+      white-space: nowrap;
+      width: 19px;
+    }
+    */
 
   &__Preference {
     user-select: none;
@@ -249,15 +334,16 @@ $department_map: (
 // MARK: JobPage
 .PreferencesMenu {
   &__Department {
-    --head-color: oklch(from var(--background-color) calc(l * 0.85) c h);
-    --border-color: oklch(from var(--background-color) calc(l * 1.1) c h);
+    --text-shadow: 1px 1px 2px hsla(0, 0%, 0%, 0.75);
+    --head-color: oklch(from var(--department-color) calc(l * 0.85) c h);
+    --border-color: oklch(from var(--department-color) calc(l * 1.1) c h);
     --border-color-darker: oklch(from var(--border-color) calc(l * 0.8) c h);
     --button-width: 40px;
     --button-gap: 0.33rem;
 
     user-select: none;
     overflow: hidden;
-    background-color: var(--background-color);
+    background-color: var(--department-color);
     border: var(--border-thickness-tiny) solid;
     border-color: var(--border-color) var(--border-color-darker)
       var(--border-color-darker) var(--border-color);
@@ -276,14 +362,16 @@ $department_map: (
       text-overflow: ellipsis;
       line-height: 1.2em;
       padding: var(--space-s) var(--space-m);
-      text-shadow: 1px 1px 2px hsla(0, 0%, 0%, 0.75);
+      text-shadow: var(--text-shadow);
     }
 
     .options {
       display: flex;
+      max-width: 50%;
       gap: var(--button-gap);
       padding: 2px;
       text-align: right;
+      z-index: 1;
 
       .Button--color--default {
         overflow: visible;
@@ -299,7 +387,7 @@ $department_map: (
         &:before {
           content: '';
           position: absolute;
-          background-color: var(--background-color);
+          background-color: var(--department-color);
           inset: calc(-1 * var(--button-gap) + 1px);
           z-index: -2;
         }
@@ -329,6 +417,20 @@ $department_map: (
           height: 1.667em;
         }
       }
+
+      .restricted {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        line-height: var(--button-height);
+        text-shadow: var(--text-shadow);
+
+        &.ban {
+          margin-right: 0.33em;
+          font-weight: bold;
+          color: hsl(from var(--border-color) h calc(s + 20) calc(l + 20));
+        }
+      }
     }
 
     &:first-child {
@@ -343,21 +445,15 @@ $department_map: (
       border-radius: var(--border-radius-medium);
     }
 
-    @each $department-name, $color in $department_map {
-      &--#{$department-name} {
-        --background-color: #{$color};
-      }
-    }
-
     &--Captain {
       position: relative;
       border-color: hsla(0, 0%, 100%, 0.15) hsla(0, 0%, 0%, 0.2)
         hsla(0, 0%, 0%, 0.2) hsla(0, 0%, 100%, 0.15);
       background: linear-gradient(
         in oklch 45deg,
-        var(--background-color) 15%,
-        oklch(from var(--background-color) calc(l * 1.5) c h) 20%,
-        var(--background-color) 25%
+        var(--department-color) 15%,
+        oklch(from var(--department-color) calc(l * 1.5) c h) 20%,
+        var(--department-color) 25%
       );
       background-size: 250%;
       animation: captain 4s infinite ease-in-out;
@@ -366,7 +462,7 @@ $department_map: (
         content: '';
         position: absolute;
         inset: 0;
-        background-color: var(--background-color);
+        background-color: var(--department-color);
         z-index: 0;
       }
 

@@ -191,7 +191,7 @@
 /obj/structure/closet/crate,
 /obj/effect/spawner/random/engineering/material_cheap,
 /obj/effect/spawner/random/engineering/tool,
-/obj/item/relic,
+/obj/item/assembly/relic,
 /turf/open/floor/plating,
 /area/station/maintenance/department/cargo)
 "yB" = (
@@ -245,7 +245,7 @@
 "Gy" = (
 /obj/modular_map_connector,
 /turf/template_noop,
-/area/template_noop)
+/area/space/nearstation)
 "HP" = (
 /obj/structure/flora/bush/sparsegrass/style_random,
 /turf/open/floor/grass,

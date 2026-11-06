@@ -10,9 +10,12 @@
 	/// Don't change this unless you know what you're doing.
 	var/config_tag
 
-	/// What flag to check for jobbans? Optional, if unset, uses pref_flag
+	/// What flag to check for jobbans?
+	/// Optional, if unset, uses pref_flag for jobbans instead
 	var/jobban_flag
-	/// What flag to check for prefs? Required if the antag has an associated preference
+	/// What flag to check for prefs?
+	/// Required if the antag has an associated preference, and must be unique
+	/// (unless RULESET_VARIATION is set in ruleset_flags)
 	var/pref_flag
 	/// Flags for this ruleset
 	var/ruleset_flags = NONE
@@ -30,7 +33,7 @@
 	 * Or
 	 * - A single weight for all tiers.
 	 */
-	var/list/weight = 0
+	var/alist/weight = 0
 	/**
 	 * The min population for which this ruleset is available.
 	 *
@@ -40,7 +43,7 @@
 	 * Or
 	 * - A single min population for all tiers.
 	 */
-	var/list/min_pop = 0
+	var/alist/min_pop = 0
 	/// List of roles that are blacklisted from this ruleset
 	/// For roundstart rulesets, it will prevent players from being selected for this ruleset if they have one of these roles
 	/// For latejoin or midround rulesets, it will prevent players from being assigned to this ruleset if they have one of these roles
@@ -77,6 +80,8 @@
 	var/minimum_required_age = 0
 	/// Templates necessary for this ruleset to be executed
 	VAR_PROTECTED/list/ruleset_lazy_templates
+	/// Extra logging information can be set here, to be output into any admin messaging and dynamic logs.
+	VAR_FINAL/log_data
 
 /datum/dynamic_ruleset/New(list/dynamic_config)
 	for(var/new_var in dynamic_config?[config_tag])
@@ -105,6 +110,7 @@
 	if(new_var in locked_config_values)
 		log_dynamic("Bad config edit rejected: [new_var]")
 		return FALSE
+
 	if(islist(new_val) && (new_var == NAMEOF(src, weight) || new_var == NAMEOF(src, min_pop)))
 		new_val = load_tier_list(new_val)
 
@@ -116,46 +122,23 @@
 		return FALSE
 	return ..()
 
-/// Used to create tier lists for weights and min_pop values
+/// Used to create tier alists for weights and min_pop values
 /datum/dynamic_ruleset/proc/load_tier_list(list/incoming_list)
 	PRIVATE_PROC(TRUE)
 
-	var/list/tier_list = new /list(4)
-	// loads a list of list("2" = 1, "3" = 3) into a list(null, 1, 3, null)
+	var/alist/tier_list = alist()
+	// loads a list of list("2" = 1, "3" = 3) into an alist(2 = 1, 3 = 3)
 	for(var/tier in incoming_list)
-		tier_list[text2num(tier)] = incoming_list[tier]
-
-	// turn list(null, 1, 3, null) into list(1, 1, 3, null)
-	for(var/i in 1 to length(tier_list))
-		var/val = tier_list[i]
-		if(isnum(val))
-			break
-		for(var/j in i to length(tier_list))
-			var/other_val = tier_list[j]
-			if(!isnum(other_val))
-				continue
-			tier_list[i] = other_val
-			break
-
-	// turn list(1, 1, 3, null) into list(1, 1, 3, 3)
-	for(var/i in length(tier_list) to 1 step -1)
-		var/val = tier_list[i]
-		if(isnum(val))
-			break
-		for(var/j in i to 1 step -1)
-			var/other_val = tier_list[j]
-			if(!isnum(other_val))
-				continue
-			tier_list[i] = other_val
-			break
-
-	// we can assert that tier[1] and tier[4] are not null, but we cannot say the same for tier[2] and tier[3]
-	// this can be happen due to the following setup: list(1, null, null, 4)
-	// (which is an invalid config, and should be fixed by the operator)
-	if(isnull(tier_list[2]))
-		tier_list[2] = tier_list[1]
-	if(isnull(tier_list[3]))
-		tier_list[3] = tier_list[4]
+		var/tier_value = text2num(tier)
+		if (tier_value > DYNAMIC_TIER_HIGH)
+			stack_trace("Dynamic config for [name] encountered a tier value exceeding DYNAMIC_TIER_HIGH!")
+			message_admins(span_boldannounce("Dynamic config for [name] encountered a tier value exceeding DYNAMIC_TIER_HIGH!"))
+			tier_value = DYNAMIC_TIER_HIGH
+		else if (tier_value < DYNAMIC_TIER_GREEN)
+			stack_trace("Dynamic config for [name] encountered a negative tier value, below DYNAMIC_TIER_GREEN!")
+			message_admins(span_boldannounce("Dynamic config for [name] encountered a negative tier value, below DYNAMIC_TIER_GREEN!"))
+			tier_value = DYNAMIC_TIER_GREEN
+		tier_list[tier_value] = incoming_list[tier]
 
 	return tier_list
 
@@ -164,6 +147,25 @@
  */
 /datum/dynamic_ruleset/proc/can_be_selected()
 	return TRUE
+
+/// Gets the list value for the given tier, otherwise use next highest tier,
+/// or failing that, next lowest
+/datum/dynamic_ruleset/proc/get_tier_specific_value(alist/values, tier)
+	PRIVATE_PROC(TRUE)
+	if(isnum(values[tier]))
+		return values[tier]
+
+	// search higher tiers
+	for(var/i in tier to 4)
+		if(isnum(values[i]))
+			return values[i]
+
+	// no dice, lower tiers?
+	for(var/i in tier to 1 step -1)
+		if(isnum(values[i]))
+			return values[i]
+
+	return 0
 
 /**
  * Calculates the weight of this ruleset for the given tier.
@@ -178,11 +180,11 @@
 		return 0
 	if(!can_be_selected())
 		return 0
-	var/final_minpop = islist(min_pop) ? min_pop[tier] : min_pop
+	var/final_minpop = islist(min_pop) ? get_tier_specific_value(min_pop, tier) : min_pop
 	if(final_minpop > population_size)
 		return 0
 
-	var/final_weight = islist(weight) ? weight[tier] : weight
+	var/final_weight = islist(weight) ? get_tier_specific_value(weight, tier) : weight
 	for(var/datum/dynamic_ruleset/other_ruleset as anything in SSdynamic.executed_rulesets)
 		if(other_ruleset == src)
 			continue
@@ -220,6 +222,7 @@
 
 	// This is (mostly) redundant, buuuut the (potential) sleep above makes it iffy, so let's just be safe
 	if(!can_be_selected())
+		log_data = "Reason: Ruleset cannot be selected."
 		return FALSE
 
 	var/max_candidates = get_antag_cap(population_size, max_antag_cap || min_antag_cap)
@@ -227,6 +230,7 @@
 
 	var/list/selected_candidates = select_candidates(antag_candidates, max_candidates)
 	if(length(selected_candidates) < min_candidates)
+		log_data = "Reason: Not enough eligible candidates. Have: [length(selected_candidates)], Need: [min_candidates]"
 		return FALSE
 
 	for(var/mob/candidate as anything in selected_candidates)
@@ -276,6 +280,9 @@
 		var/client/candidate_client = GET_CLIENT(candidate)
 		if(isnull(candidate_client))
 			continue
+		// BANDASTATION EDIT - Respect the lobby preference to opt out of all Dynamic antagonist rolls
+		if(!candidate_client.prefs.read_preference(/datum/preference/toggle/antag_roll))
+			continue
 		if(candidate_client.get_remaining_days(minimum_required_age) > 0)
 			continue
 		if(pref_flag && !(pref_flag in candidate_client.prefs.be_special))
@@ -295,13 +302,42 @@
 	if(num_candidates <= 0)
 		return list()
 
-	// technically not pure
-	var/list/resulting_candidates = shuffle(trim_candidates(antag_candidates)) || list()
-	if(length(resulting_candidates) <= num_candidates)
+	// BANDASTATION EDIT START - Weighted candidate selection
+	var/list/mob/valid_candidates = trim_candidates(antag_candidates)
+	if(!length(valid_candidates))
+		return list()
+
+	if(!CONFIG_GET(flag/antag_weighted_selection))
+		// Fallback to old random selection
+		var/list/resulting_candidates = shuffle(valid_candidates)
+		if(length(resulting_candidates) <= num_candidates)
+			return resulting_candidates
+		resulting_candidates.Cut(num_candidates + 1)
 		return resulting_candidates
 
-	resulting_candidates.Cut(num_candidates + 1)
+	// Build weighted list of candidates
+	var/list/mob/weighted_candidates = list()
+	for(var/mob/candidate as anything in valid_candidates)
+		var/client/candidate_client = GET_CLIENT(candidate)
+		if(!candidate_client)
+			continue
+		var/weight = get_candidate_weight(candidate_client.ckey)
+		weighted_candidates[candidate] = weight
+
+	if(!length(weighted_candidates))
+		return list()
+
+	// Select candidates using weighted random selection
+	var/list/mob/resulting_candidates = list()
+	for(var/i in 1 to min(num_candidates, length(weighted_candidates)))
+		if(!length(weighted_candidates))
+			break
+		var/mob/picked = pick_weight(weighted_candidates)
+		resulting_candidates += picked
+		weighted_candidates -= picked
+
 	return resulting_candidates
+	// BANDASTATION EDIT END
 
 /// Handles loading map templates that this ruleset requires
 /datum/dynamic_ruleset/proc/load_templates()

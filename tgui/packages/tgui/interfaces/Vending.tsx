@@ -38,6 +38,7 @@ type UserData = {
   cash: number;
   job: string;
   department: string;
+  is_captain_card: boolean;
 };
 
 type Category = {
@@ -46,7 +47,6 @@ type Category = {
 
 type VendingData = {
   all_products_free: boolean;
-  onstation: boolean;
   ad: string;
   department: string;
   jobDiscount: number;
@@ -66,7 +66,7 @@ export const Vending = () => {
   const { data } = useBackend<VendingData>();
 
   const {
-    onstation,
+    all_products_free,
     ad,
     product_records = [],
     coin_records = [],
@@ -97,7 +97,7 @@ export const Vending = () => {
   }
 
   const filteredCategories = Object.fromEntries(
-    Object.entries(data.categories).filter(([categoryName]) => {
+    Object.entries(categories).filter(([categoryName]) => {
       return inventory.find((product) => {
         if ('category' in product) {
           return product.category === categoryName;
@@ -112,7 +112,7 @@ export const Vending = () => {
     <Window width={431} height={635}>
       <Window.Content>
         <Stack fill vertical>
-          {!!onstation && (
+          {!all_products_free && (
             <Stack.Item>
               <UserDetails />
             </Stack.Item>
@@ -260,7 +260,9 @@ const Product = (props: ProductProps) => {
 
   const colorable = !!product.colorable;
   const free = all_products_free || productStock.free || product.price === 0;
-  const discount = !product.premium && department === user?.department;
+  const discount =
+    !product.premium &&
+    (user?.is_captain_card || department === user?.department);
   const remaining = productStock.amount;
   const redPrice = Math.round(product.price * jobDiscount);
   const disabled =
@@ -284,7 +286,7 @@ const Product = (props: ProductProps) => {
     onClick: () => {
       act('vend', {
         ref: product.ref,
-        discountless: !!product.premium,
+        premium: !!product.premium,
       });
     },
   };
@@ -392,11 +394,11 @@ const ProductPrice = (props: ProductPriceProps) => {
   const { data } = useBackend<VendingData>();
   const { displayed_currency_name } = data;
   const { discount, free, product, redPrice } = props;
-  let standardPrice = product.price + '';
+  let standardPrice = `${product.price}`;
   if (free) {
     standardPrice = 'Бесплатно';
   } else if (discount) {
-    standardPrice = redPrice + '';
+    standardPrice = `${redPrice}`;
   }
   return (
     <Stack.Item fontSize={0.85} color={'gold'}>

@@ -30,7 +30,7 @@
 	// screenshot test of holding an EVA suit
 	// should show the autogen'd legs once more
 	suit.attempt_pickup(dummy, skip_grav = TRUE)
-	TEST_ASSERT((suit in dummy.held_items), "Dummy (Ashwalker) should be holding the EVA suit!")
+	TEST_ASSERT(dummy.is_holding(suit), "Dummy (Ashwalker) should be holding the EVA suit!")
 	finished_icon = icon(finished_icon)
 	finished_icon.Insert(getFlatIcon(dummy, no_anim = TRUE), dir = SOUTH, frame = 4)
 
@@ -67,7 +67,7 @@
 	// finally, screenshot test of taking jumpsuit (everything) off
 	// which should test that the autogen legs disappear (here to cover a bug in which it does not disappear)
 	dummy.delete_equipment()
-	TEST_ASSERT_EQUAL(length(dummy.get_equipped_items()), 0, "Dummy (Ashwalker) should have no equipment!")
+	TEST_ASSERT_EQUAL(length(dummy.get_equipped_items(INCLUDE_POCKETS|INCLUDE_HELD)), 0, "Dummy (Ashwalker) should have no equipment!")
 	finished_icon = icon(finished_icon)
 	finished_icon.Insert(getFlatIcon(dummy, no_anim = TRUE), dir = SOUTH, frame = 9)
 

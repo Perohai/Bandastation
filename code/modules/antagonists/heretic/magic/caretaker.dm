@@ -1,5 +1,5 @@
 /datum/action/cooldown/spell/caretaker
-	name = "Caretaker’s Last Refuge"
+	name = "Последнее прибежище Опекуна"
 	desc = "Перемещает вас в Убежище Опекуна, делая вас прозрачным и безтелесным. \
 		Пока вы находитесь в Убежище, ваше движения не ограничены, но вы не можете использовать свои руки или заклинания. \
 		Вы не можете войти в Убежище, если рядом с вами находятся разумные существа, \
@@ -17,8 +17,7 @@
 	spell_requirements = NONE
 
 /datum/action/cooldown/spell/caretaker/Remove(mob/living/remove_from)
-	if(remove_from.has_status_effect(/datum/status_effect/caretaker_refuge))
-		remove_from.remove_status_effect(/datum/status_effect/caretaker_refuge)
+	remove_from.remove_status_effect(/datum/status_effect/caretaker_refuge)
 	return ..()
 
 /datum/action/cooldown/spell/caretaker/is_valid_target(atom/cast_on)
@@ -30,7 +29,7 @@
 		return
 
 	for(var/mob/living/alive in orange(5, owner))
-		if(alive.stat != DEAD && alive.client)
+		if(alive.stat != DEAD && alive.client && (owner in view(alive)))
 			owner.balloon_alert(owner, "рядом есть другие!")
 			return . | SPELL_CANCEL_CAST
 

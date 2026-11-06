@@ -15,6 +15,7 @@
 		/obj/item/reagent_containers/cup/soda_cans/pwr_game = 10,
 		/obj/item/reagent_containers/cup/soda_cans/lemon_lime = 10,
 		/obj/item/reagent_containers/cup/soda_cans/sol_dry = 10,
+		/obj/item/reagent_containers/cup/soda_cans/lipo = 5, // BANDASTATION ADDITION
 		/obj/item/reagent_containers/cup/glass/waterbottle = 10,
 		/obj/item/reagent_containers/cup/glass/bottle/mushi_kombucha = 3,
 		/obj/item/reagent_containers/cup/soda_cans/volt_energy = 3,
@@ -35,7 +36,6 @@
 	default_price = PAYCHECK_CREW * 0.7
 	extra_price = PAYCHECK_CREW
 	payment_department = ACCOUNT_SRV
-	allow_custom = TRUE
 
 	var/static/list/spiking_booze = list(
 		// Your "common" spiking booze
@@ -54,6 +54,15 @@
 		/datum/reagent/consumable/ethanol/gargle_blaster = 1,
 		/datum/reagent/consumable/ethanol/neurotoxin = 1,
 		)
+
+/obj/machinery/vending/cola/Initialize(mapload)
+	. = ..()
+	if(!mapload || !is_station_level(z) || !HAS_TRAIT(SSstation, STATION_TRAIT_VENDING_SHORTAGE))
+		return
+
+	for(var/datum/data/vending_product/product_record as anything in product_records + coin_records + hidden_records)
+		product_record.amount = 0
+		credits_contained += rand(1, 5)
 
 /obj/machinery/vending/cola/on_dispense(obj/item/vended_item, dispense_returned = FALSE)
 	// Only apply to newly dispensed items
@@ -152,8 +161,13 @@
 	product_slogans = "~Встряхни мне немного сока Шамблера!~"
 	product_ads = "Освежает!;Жажда ДНК? Утолите свою жажду!;Выпито более триллиона душ!;Сделано с использованием настоящей ДНК!;Коллективный разум требует вашей жажды!;Пей на здоровье!;Поглотите свою жажду."
 	light_mask = "shamblers-light-mask"
+	refill_canister = /obj/item/vending_refill/cola/shamblers
 	light_color = COLOR_MOSTLY_PURE_PINK
-	allow_custom = FALSE
+
+
+/obj/item/vending_refill/cola/shamblers
+	machine_name = "Shambler's Vendor"
+	icon_state = "refill_shamblers"
 
 /obj/machinery/vending/cola/shamblers/Initialize(mapload)
 	. = ..()

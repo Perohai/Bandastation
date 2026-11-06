@@ -16,7 +16,7 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 
 /obj/machinery/power/supermatter_crystal
 	name = "supermatter crystal"
-	desc = "A strangely translucent and iridescent crystal."
+	desc = "Странно переливающийся и светящийся кристалл."
 	icon = 'icons/obj/machines/engine/supermatter.dmi'
 	density = TRUE
 	anchored = TRUE
@@ -26,7 +26,10 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	critical_machine = TRUE
 	base_icon_state = "sm"
 	icon_state = "sm"
-	light_on = FALSE
+	light_on = TRUE
+	light_range = MINIMUM_USEFUL_LIGHT_RANGE
+	light_power = 2
+	light_color = SUPERMATTER_COLOUR
 
 	///The id of our supermatter
 	var/uid = 1
@@ -78,6 +81,8 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	var/explosion_point = 100
 	///Are we exploding?
 	var/final_countdown = FALSE
+	/// Whether this countdown must continue despite healing.
+	var/countdown_forced = FALSE
 	///A scaling value that affects the severity of explosions.
 	var/explosion_power = 35
 	///Time in 1/10th of seconds since the last sent warning
@@ -186,6 +191,9 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	/// If the SM is decorated with holiday lights
 	var/holiday_lights = FALSE
 
+	/// The emissive light mask for the SM
+	var/light_mask_icon = "sm-emissive"
+
 	/// Cooldown for sending emergency alerts to the common radio channel
 	COOLDOWN_DECLARE(common_radio_cooldown)
 
@@ -257,15 +265,15 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	var/immune = HAS_MIND_TRAIT(user, TRAIT_MADNESS_IMMUNE)
 	if(isliving(user))
 		if (!immune && (get_dist(user, src) < SM_HALLUCINATION_RANGE(internal_energy)))
-			. += span_danger("You get headaches just from looking at it.")
+			. += span_danger("У вас начинает болеть голова, стоит только посмотреть на него.")
 		var/mob/living/living_user = user
 		if (HAS_TRAIT(user, TRAIT_REMOTE_TASTING))
-			to_chat(user, span_warning("The taste is overwhelming and indescribable!"))
+			to_chat(user, span_warning("Вкус ошеломляющий и неописуемый!"))
 			living_user.electrocute_act(shock_damage = 15, source = src, flags = SHOCK_KNOCKDOWN | SHOCK_NOGLOVES)
 			. += span_notice("It could use a little more Sodium Chloride...")
 
 	if(holiday_lights)
-		. += span_notice("Radiating both festive cheer and actual radiation, it has a dazzling spectacle lights wrapped lovingly around the base transforming it from a potential doomsday device into a cosmic yuletide centerpiece.")
+		. += span_notice("Излучая как праздничное веселье, так и настоящую радиацию, оно имеет ослепительное зрелище огней, заботливо обёрнутых вокруг основания, превращающее его из потенциального устройства Судного дня в космическую рождественскую композицию.")
 
 	. += delamination_strategy.examine(src)
 	return .
@@ -281,7 +289,7 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	if(isclosedturf(local_turf))
 		var/turf/did_it_melt = local_turf.Melt()
 		if(!isclosedturf(did_it_melt)) //In case some joker finds way to place these on indestructible walls
-			visible_message(span_warning("[src] melts through [local_turf]!"))
+			visible_message(span_warning("[capitalize(src.declent_ru(NOMINATIVE))] плавится сквозь [local_turf.declent_ru(ACCUSATIVE)]!"))
 		return
 
 	// PART 2: GAS PROCESSING
@@ -292,7 +300,7 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	// Extra effects should always fire after the compositions are all finished
 	// Some extra effects like [/datum/sm_gas/carbon_dioxide/extra_effects]
 	// needs more than one gas and rely on a fully parsed gas_percentage.
-	for (var/gas_path in absorbed_gasmix.gases)
+	for (var/gas_path in absorbed_gasmix.moles)
 		var/datum/sm_gas/sm_gas = current_gas_behavior[gas_path]
 		sm_gas?.extra_effects(src)
 
@@ -303,7 +311,7 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	var/accumulated_energy = accumulate_energy(ZAP_ENERGY_ACCUMULATION_NORMAL, energy = internal_energy * zap_transmission_rate * delta_time)
 	if(accumulated_energy && (last_power_zap + (4 - internal_energy * 0.001) SECONDS) < world.time)
 		var/discharged_energy = discharge_energy(ZAP_ENERGY_ACCUMULATION_NORMAL)
-		playsound(src, 'sound/items/weapons/emitter2.ogg', 70, TRUE)
+		playsound(src, 'sound/items/weapons/emitter2.ogg', 35, TRUE) // BANDASTATION EDIT: orig volume = 70, less ear damage
 		hue_angle_shift = clamp(903 * log(10, (internal_energy + 8000)) - 3590, -50, 240)
 		var/zap_color = color_matrix_rotate_hue(hue_angle_shift)
 		supermatter_zap(
@@ -340,8 +348,8 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	merged_gasmix.temperature += device_energy * waste_multiplier / THERMAL_RELEASE_MODIFIER
 	merged_gasmix.temperature = clamp(merged_gasmix.temperature, TCMB, 2500 * waste_multiplier)
 	merged_gasmix.assert_gases(/datum/gas/plasma, /datum/gas/oxygen)
-	merged_gasmix.gases[/datum/gas/plasma][MOLES] += max(device_energy * waste_multiplier / PLASMA_RELEASE_MODIFIER, 0)
-	merged_gasmix.gases[/datum/gas/oxygen][MOLES] += max(((device_energy + merged_gasmix.temperature * waste_multiplier) - T0C) / OXYGEN_RELEASE_MODIFIER, 0)
+	merged_gasmix.moles[/datum/gas/plasma] += max(device_energy * waste_multiplier / PLASMA_RELEASE_MODIFIER, 0)
+	merged_gasmix.moles[/datum/gas/oxygen] += max(((device_energy + merged_gasmix.temperature * waste_multiplier) - T0C) / OXYGEN_RELEASE_MODIFIER, 0)
 	merged_gasmix.garbage_collect()
 	env.merge(merged_gasmix)
 	air_update_turf(FALSE, FALSE)
@@ -521,6 +529,8 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 		else
 			. += mutable_appearance(icon, "holiday_lights")
 			. += emissive_appearance(icon, "holiday_lights_e", src, alpha = src.alpha)
+	if(light_mask_icon)
+		. += emissive_appearance(icon, light_mask_icon, src, alpha = src.alpha)
 	return .
 
 /obj/machinery/power/supermatter_crystal/update_icon(updates)
@@ -556,20 +566,27 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
  * By last second changes, we mean that it's possible for say, a tesla delam to
  * just explode normally if at the absolute last second it loses power and switches to default one.
  * Even after countdown is already in progress.
+ *
+ * Setting force prevents healing from stopping the countdown. An active countdown
+ * is promoted without restarting its timer.
  */
-/obj/machinery/power/supermatter_crystal/proc/count_down()
+/obj/machinery/power/supermatter_crystal/proc/count_down(force = FALSE)
 	set waitfor = FALSE
 
+	if(force)
+		countdown_forced = TRUE
+
 	if(final_countdown) // We're already doing it go away
-		stack_trace("[src] told to delaminate again while it's already delaminating.")
+		if(!force)
+			stack_trace("[src] told to delaminate again while it's already delaminating.")
 		return
 
 	final_countdown = TRUE
 
 	notify_ghosts(
-		"[src] has begun the delamination process!",
+		"[capitalize(src.declent_ru(NOMINATIVE))] начал процесс расслоения!",
 		source = src,
-		header = "Meltdown Incoming",
+		header = "Плавление начинается!",
 	)
 
 	var/list/count_down_messages = delamination_strategy.count_down_messages()
@@ -587,8 +604,8 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 		delamination_countdown_time = SUPERMATTER_SLIVER_REMOVED_COUNTDOWN_TIME
 		radio.talk_into(
 			src,
-			"WARNING: Projected time until full crystal delamination significantly lower than expected. \
-			Please inspect crystal for structural abnormalities or sabotage!",
+			"ПРЕДУПРЕЖДЕНИЕ: Предполагаемое время до полного расслоения кристалла значительно ниже ожидаемого. \
+			Осмотрите кристалл на предмет структурных аномалий или саботажа!",
 			emergency_channel,
 			list(SPAN_COMMAND)
 			)
@@ -597,11 +614,13 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 		var/message
 		var/healed = FALSE
 
-		if(damage < explosion_point) // Cutting it a bit close there engineers
+		if(!countdown_forced && damage < explosion_point) // Cutting it a bit close there engineers
 			message = count_down_messages[2]
 			healed = TRUE
 		else if((i % 50) != 0 && i > 50) // A message once every 5 seconds until the final 5 seconds which count down individualy
 			sleep(1 SECONDS)
+			if(QDELETED(src))
+				return
 			continue
 		else if(i > 50)
 			message = "[DisplayTimeText(i, TRUE)] [count_down_messages[3]]"
@@ -625,6 +644,8 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 
 			return // delam averted
 		sleep(1 SECONDS)
+		if(QDELETED(src))
+			return
 
 	delamination_strategy.delaminate(src)
 
@@ -659,8 +680,7 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 	var/total_moles = absorbed_gasmix.total_moles()
 	if(total_moles < MINIMUM_MOLE_COUNT) //it's not worth processing small amounts like these, total_moles can also be 0 in vacuume
 		return
-	for (var/gas_path in absorbed_gasmix.gases)
-		var/mole_count = absorbed_gasmix.gases[gas_path][MOLES]
+	for (var/gas_path, mole_count in absorbed_gasmix.moles)
 		if(mole_count < MINIMUM_MOLE_COUNT) //save processing power from small amounts like these
 			continue
 		gas_percentage[gas_path] = mole_count / total_moles
@@ -1098,7 +1118,55 @@ GLOBAL_DATUM(main_supermatter_engine, /obj/machinery/power/supermatter_crystal)
 /// Adds the hat flavor text when examined
 /obj/machinery/power/supermatter_crystal/proc/holiday_hat_examine(atom/source, mob/user, list/examine_list)
 	SIGNAL_HANDLER
-	examine_list += span_info("There's a santa hat placed atop it. How it got there without being dusted is a mystery.")
+	examine_list += span_info("На нём размещена шляпа Санты. Как она туда попала, не превратившись в пыль, остаётся загадкой.")
+
+// Warp Effect //
+
+/atom/movable/warp_effect
+	plane = DISPLACEMENT_PLANE
+	appearance_flags = PIXEL_SCALE|LONG_GLIDE // no tile bound so you can see it around corners and so
+	icon = 'icons/effects/light_overlays/light_352.dmi'
+	icon_state = "light"
+	pixel_x = -176
+	pixel_y = -176
+
+/atom/movable/warp_effect/Initialize(mapload)
+	. = ..()
+	var/turf/new_turf = get_turf(src)
+	if(new_turf)
+		var/new_offset = GET_TURF_PLANE_OFFSET(new_turf)
+		ADD_TRAIT(GLOB, TRAIT_DISTORTION_IN_USE(new_offset), ref(src))
+
+/atom/movable/warp_effect/Destroy(force)
+	// Just in case I've forgotten how the movement api works
+	var/offset = GET_TURF_PLANE_OFFSET(loc)
+	REMOVE_TRAIT(GLOB, TRAIT_DISTORTION_IN_USE(offset), ref(src))
+	return ..()
+
+/atom/movable/warp_effect/Moved(atom/old_loc, movement_dir, forced, list/old_locs, momentum_change)
+	. = ..()
+	var/turf/new_turf = get_turf(src)
+	var/turf/old_turf = get_turf(old_loc)
+	if(!new_turf)
+		var/old_offset = GET_TURF_PLANE_OFFSET(old_turf)
+		REMOVE_TRAIT(GLOB, TRAIT_DISTORTION_IN_USE(old_offset), ref(src))
+		return
+	else if(get_turf(old_loc))
+		return
+	// If we're in a thing on a turf we COUNT as a distortion source
+	var/new_offset = GET_TURF_PLANE_OFFSET(new_turf)
+	ADD_TRAIT(GLOB, TRAIT_DISTORTION_IN_USE(new_offset), ref(src))
+
+/atom/movable/warp_effect/on_changed_z_level(turf/old_turf, turf/new_turf, same_z_layer, notify_contents)
+	. = ..()
+	if(same_z_layer)
+		return
+	if(old_turf)
+		var/old_offset = GET_TURF_PLANE_OFFSET(old_turf)
+		REMOVE_TRAIT(GLOB, TRAIT_DISTORTION_IN_USE(old_offset), ref(src))
+	if(new_turf)
+		var/new_offset = GET_TURF_PLANE_OFFSET(new_turf)
+		ADD_TRAIT(GLOB, TRAIT_DISTORTION_IN_USE(new_offset), ref(src))
 
 #undef BIKE
 #undef COIL

@@ -3,7 +3,7 @@ SUBSYSTEM_DEF(job)
 	dependencies = list(
 		/datum/controller/subsystem/processing/station,
 	)
-	flags = SS_NO_FIRE
+	ss_flags = SS_NO_FIRE
 
 	/// List of all jobs.
 	var/list/datum/job/all_occupations = list()
@@ -31,7 +31,7 @@ SUBSYSTEM_DEF(job)
 	var/list/prioritized_jobs = list()
 	var/list/latejoin_trackers = list()
 
-	var/overflow_role = /datum/job/assistant
+	var/datum/job/overflow_role = /datum/job/assistant
 
 	var/list/level_order = list(JP_HIGH, JP_MEDIUM, JP_LOW)
 
@@ -97,6 +97,13 @@ SUBSYSTEM_DEF(job)
 	if(CONFIG_GET(flag/load_jobs_from_txt))
 		load_jobs_from_config()
 	set_overflow_role(CONFIG_GET(string/overflow_job)) // this must always go after load_jobs_from_config() due to how the legacy systems operate, this always takes precedent.
+
+	// Initialize RETA system - must be after setup_occupations() so all jobs are loaded - code/modules/reta/reta_system.dm
+	log_game("RETA: Jobs subsystem Initialize() calling RETA initialization")
+	initialize_reta_system()
+	populate_reta_job_trims()
+	log_game("RETA: Jobs subsystem Initialize() RETA initialization completed")
+
 	return SS_INIT_SUCCESS
 
 /// Returns a list of jobs that we are allowed to fuck with during random events
@@ -184,7 +191,7 @@ SUBSYSTEM_DEF(job)
 					new_joinable_departments_by_type[department_type] = department
 				department.add_job(job)
 
-	sortTim(new_all_occupations, GLOBAL_PROC_REF(cmp_job_display_asc))
+	sortTim(new_all_occupations, GLOBAL_PROC_REF(cmp_job_display_with_departments_asc))
 	for(var/datum/job/job as anything in new_all_occupations)
 		if(!job.exp_granted_type)
 			continue
@@ -193,13 +200,13 @@ SUBSYSTEM_DEF(job)
 	sortTim(new_joinable_departments_by_type, GLOBAL_PROC_REF(cmp_department_display_asc), associative = TRUE)
 	for(var/department_type in new_joinable_departments_by_type)
 		var/datum/job_department/department = new_joinable_departments_by_type[department_type]
-		sortTim(department.department_jobs, GLOBAL_PROC_REF(cmp_job_display_asc))
+		sortTim(department.department_jobs, GLOBAL_PROC_REF(cmp_job_display_with_departments_asc))
 		new_joinable_departments += department
 		if(department.department_experience_type)
 			new_experience_jobs_map[department.department_experience_type] = department.department_jobs.Copy()
 
 	all_occupations = new_all_occupations
-	joinable_occupations = sortTim(new_joinable_occupations, GLOBAL_PROC_REF(cmp_job_display_asc))
+	joinable_occupations = sortTim(new_joinable_occupations, GLOBAL_PROC_REF(cmp_job_display_with_departments_asc))
 	joinable_departments = new_joinable_departments
 	joinable_departments_by_type = new_joinable_departments_by_type
 	experience_jobs_map = new_experience_jobs_map
@@ -519,7 +526,7 @@ SUBSYSTEM_DEF(job)
 	job_debug("DO: Handle unrejectable unassigned")
 	//Mop up people who can't leave.
 	for(var/mob/dead/new_player/player in unassigned) //Players that wanted to back out but couldn't because they're antags (can you feel the edge case?)
-		if(!give_priority_job(player)) /// BANDASTATION EDIT - Job Priority Staffing
+		if(!give_random_job(player))
 			if(!assign_role(player, get_job_type(overflow_role))) //If everything is already filled, make them an assistant
 				job_debug("DO: Forced antagonist could not be assigned any random job or the overflow role. divide_occupations failed.")
 				job_debug("---------------------------------------------------")
@@ -620,18 +627,22 @@ SUBSYSTEM_DEF(job)
 		CRASH("setup_officer_positions(): Security officer job is missing")
 
 	var/ssc = CONFIG_GET(number/security_scaling_coeff)
+	// BANDASTATION EDIT START - Configurable officer positions
+	var/min_positions = CONFIG_GET(number/security_min_positions)
+	var/max_positions = CONFIG_GET(number/security_max_positions)
 	if(ssc > 0)
 		if(J.spawn_positions > 0)
-			var/officer_positions = min(12, max(J.spawn_positions, round(unassigned.len / ssc))) //Scale between configured minimum and 12 officers
+			var/officer_positions = clamp(round(unassigned.len / ssc), min_positions, max_positions) //Scale between configured minimum and maximum officers
 			job_debug("SOP: Setting open security officer positions to [officer_positions]")
 			J.total_positions = officer_positions
 			J.spawn_positions = officer_positions
 
-	//Spawn some extra eqipment lockers if we have more than 5 officers
+	//Spawn some extra eqipment lockers if needed
 	var/equip_needed = J.total_positions
 	if(equip_needed < 0) // -1: infinite available slots
-		equip_needed = 12
-	for(var/i=equip_needed-5, i>0, i--)
+		equip_needed = max_positions
+	for(var/i = equip_needed - GLOB.security_closets_count, i > 0, i--)
+	// BANDASTATION EDIT END
 		if(GLOB.secequipment.len)
 			var/spawnloc = GLOB.secequipment[1]
 			new /obj/structure/closet/secure_closet/security/sec(spawnloc)
@@ -717,13 +728,19 @@ SUBSYSTEM_DEF(job)
 
 /atom/proc/JoinPlayerHere(mob/joining_mob, buckle)
 	// By default, just place the mob on the same turf as the marker or whatever.
-	joining_mob.forceMove(get_turf(src))
+	// Set joining_mob as the new mob so subtypes can use it as a proper mob.
+	if(ispath(joining_mob))
+		joining_mob = new joining_mob(get_turf(src))
+	else
+		joining_mob.forceMove(get_turf(src))
+	return joining_mob
 
 /obj/structure/chair/JoinPlayerHere(mob/joining_mob, buckle)
-	. = ..()
+	var/mob/created_joining_mob = ..()
 	// Placing a mob in a chair will attempt to buckle it, or else fall back to default.
-	if(buckle && isliving(joining_mob))
-		buckle_mob(joining_mob, FALSE, FALSE)
+	if(buckle && isliving(created_joining_mob))
+		buckle_mob(created_joining_mob, FALSE, FALSE)
+	return created_joining_mob
 
 /datum/controller/subsystem/job/proc/send_to_late_join(mob/M, buckle = TRUE)
 	var/atom/destination

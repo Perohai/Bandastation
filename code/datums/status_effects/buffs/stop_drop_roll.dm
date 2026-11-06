@@ -3,20 +3,28 @@
 	alert_type = null
 	tick_interval = 0.8 SECONDS
 	processing_speed = STATUS_EFFECT_PRIORITY
+	/// If FALSE the rolling is cancelled if we are immobilized
+	var/ignore_immobilize = FALSE
+	/// bar updates depending on how "on fire" you are
+	VAR_FINAL/datum/progressbar/bar
+
+/datum/status_effect/stop_drop_roll/on_creation(mob/living/new_owner, ignore_immobilize = FALSE)
+	src.ignore_immobilize = ignore_immobilize
+	return ..()
 
 /datum/status_effect/stop_drop_roll/on_apply()
 	if(!iscarbon(owner))
 		return FALSE
 
-	var/actual_interval = initial(tick_interval)
-	if(!owner.Knockdown(actual_interval * 2, ignore_canstun = TRUE) || owner.body_position != LYING_DOWN)
-		to_chat(owner, span_warning("You try to stop, drop, and roll - but you can't get on the ground!"))
+	if(!owner.Knockdown(tick_interval * 2, ignore_canstun = TRUE) || owner.body_position != LYING_DOWN)
+		to_chat(owner, span_warning("Вы пытаетесь остановиться, упасть и кататься по полу, но вы не можете опуститься на землю!"))
 		return FALSE
 
 	RegisterSignal(owner, COMSIG_MOVABLE_MOVED, PROC_REF(stop_rolling))
 	RegisterSignal(owner, COMSIG_LIVING_SET_BODY_POSITION, PROC_REF(body_position_changed))
 	ADD_TRAIT(owner, TRAIT_HANDS_BLOCKED, TRAIT_STATUS_EFFECT(id)) // they're kinda busy!
 
+	bar = new(owner, MAX_FIRE_STACKS, owner, get_bar_progress())
 	start_rolling()
 
 	for (var/obj/item/dropped in owner.loc)
@@ -26,26 +34,31 @@
 /datum/status_effect/stop_drop_roll/on_remove()
 	UnregisterSignal(owner, list(COMSIG_MOVABLE_MOVED, COMSIG_LIVING_SET_BODY_POSITION))
 	REMOVE_TRAIT(owner, TRAIT_HANDS_BLOCKED, TRAIT_STATUS_EFFECT(id))
+	bar.end_progress()
+	bar = null
+
+/// Get the current progress for the progress bar
+/datum/status_effect/stop_drop_roll/proc/get_bar_progress()
+	return MAX_FIRE_STACKS - max(0, owner.fire_stacks)
 
 /datum/status_effect/stop_drop_roll/proc/start_rolling()
 	owner.visible_message(
-		span_danger("[owner] rolls on the floor, trying to put [owner.p_them()]self out!"),
-		span_notice("You stop, drop, and roll!"),
+		span_danger("[owner.declent_ru(NOMINATIVE)] катается по полу, пытаясь потушить себя!"),
+		span_notice("Вы останавливаетесь, падаете и катаетесь!"),
 	)
 	// Start with one weaker roll
 	reduce_firestacks(0.25)
 
 /datum/status_effect/stop_drop_roll/tick(seconds_between_ticks)
-	if(HAS_TRAIT(owner, TRAIT_IMMOBILIZED) || HAS_TRAIT(owner, TRAIT_INCAPACITATED))
+	if((!ignore_immobilize && HAS_TRAIT(owner, TRAIT_IMMOBILIZED)) || HAS_TRAIT(owner, TRAIT_INCAPACITATED))
 		qdel(src)
 		return
 
-	var/actual_interval = initial(tick_interval)
-	if(!owner.Knockdown(actual_interval * 1.2, ignore_canstun = TRUE))
+	if(!owner.Knockdown(tick_interval * 1.2, ignore_canstun = TRUE))
 		stop_rolling()
 		return
 
-	owner.spin(spintime = actual_interval, speed = actual_interval / 4)
+	owner.spin(spintime = tick_interval, speed = tick_interval / 4)
 	if(!reduce_firestacks(1))
 		return
 
@@ -54,6 +67,7 @@
 /// Return TRUE to stop the us from rolling.
 /datum/status_effect/stop_drop_roll/proc/reduce_firestacks(amt = 1)
 	owner.adjust_fire_stacks(-1 * amt)
+	bar.update(get_bar_progress())
 	return owner.fire_stacks <= 0
 
 /// Called when we just, stop rolling, due to movement or other reasons. Maybe still on fire, maybe not.
@@ -61,14 +75,14 @@
 	SIGNAL_HANDLER
 
 	if(!QDELING(owner))
-		to_chat(owner, span_notice("You stop rolling around."))
+		to_chat(owner, span_notice("Вы прекращаете кататься."))
 	qdel(src)
 
 /// Called when we've successfully extinguished ourselves.
 /datum/status_effect/stop_drop_roll/proc/stop_rolling_successful()
 	owner.visible_message(
-		span_danger("[owner] successfully extinguishes [owner.p_them()]self!"),
-		span_notice("You extinguish yourself."),
+		span_danger("[owner.declent_ru(NOMINATIVE)] успешно тушит себя!"),
+		span_notice("Вы потушили себя."),
 	)
 	qdel(src)
 
@@ -87,10 +101,14 @@
 	src.hallucination_weakref = hallucination_weakref
 	return ..()
 
+/datum/status_effect/stop_drop_roll/hallucinating/get_bar_progress()
+	var/datum/hallucination/fire/hallucination = hallucination_weakref?.resolve()
+	return 20 - max(0, hallucination?.fake_firestacks)
+
 /datum/status_effect/stop_drop_roll/hallucinating/start_rolling()
 	owner.visible_message(
-		span_danger("[owner] starts rolling around on the floor, flailing about!"),
-		span_notice("You stop, drop, and roll!"),
+		span_danger("[owner.declent_ru(NOMINATIVE)] начинает кататься по полу, размахивая руками!"),
+		span_notice("Вы останавливаетесь, падаете и катаетесь!"),
 	)
 	reduce_firestacks(1) // more effective cause it's not real
 
@@ -100,6 +118,7 @@
 		return TRUE
 
 	hallucination.fake_firestacks += (-1 * amt)
+	bar.update(get_bar_progress())
 	if(hallucination.fake_firestacks <= 0)
 		hallucination.clear_fire()
 		return TRUE
@@ -111,7 +130,7 @@
 		hallucination.clear_fire()
 
 	owner.visible_message(
-		span_danger("[owner] stops flailing around on the ground."),
-		span_notice("You extinguish yourself."),
+		span_danger("[owner.declent_ru(NOMINATIVE)] прекращает размахивать руками на полу."),
+		span_notice("Вы потушили себя."),
 	)
 	qdel(src)

@@ -29,5 +29,8 @@
 		/obj/item/bodypart/leg/right/digitigrade
 	)
 
-/datum/bodypart_overlay/simple/body_marking/tajaran_limb/get_accessory(name)
-	return SSaccessories.tajaran_limb_markings_list[name]
+/datum/bodypart_overlay/simple/body_marking/tajaran_limb/can_draw_on_bodypart(obj/item/bodypart/bodypart_owner)
+	. = ..()
+	if(!.)
+		return
+	return CHECK_DIGI_LEGS(bodypart_owner.owner)

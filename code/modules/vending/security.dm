@@ -18,6 +18,7 @@
 		/obj/item/clothing/gloves/tackler = 5,
 		/obj/item/holosign_creator/security = 2,
 		/obj/item/gun_maintenance_supplies = 2,
+		/obj/item/storage/belt/judobelt = 3,
 	)
 	contraband = list(
 		/obj/item/clothing/glasses/sunglasses = 2,
@@ -31,13 +32,12 @@
 		/obj/item/clothing/suit/armor/vest/blueshirt = 1,
 		/obj/item/grenade/stingbang = 1,
 		/obj/item/watertank/pepperspray = 2,
-		/obj/item/storage/belt/holster/energy = 4,
+		/obj/item/clothing/accessory/holster/energy = 4, // BANDASTATION EDIT: Accessory holsters
 	)
 	refill_canister = /obj/item/vending_refill/security
 	default_price = PAYCHECK_CREW
 	extra_price = PAYCHECK_COMMAND * 1.5
 	payment_department = ACCOUNT_SEC
-	allow_custom = TRUE
 
 /obj/machinery/vending/security/pre_throw(obj/item/thrown_item)
 	if(isgrenade(thrown_item))

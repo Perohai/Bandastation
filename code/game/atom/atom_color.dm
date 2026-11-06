@@ -120,20 +120,28 @@
 
 /// Same as update_atom_color, but simplifies overlay coloring
 /atom/proc/color_atom_overlay(mutable_appearance/overlay)
-	overlay.color = color
-	if (!cached_color_filter)
+	var/list/color_filter = cached_color_filter
+	if(islist(color))
+		overlay.color = null
+		color_filter ||= color_matrix_filter(color_to_full_rgba_matrix(color), FILTER_COLOR_RGB)
+	else
+		overlay.color = color
+
+	if(!color_filter)
 		return overlay
 	// Apply the atom's color filter to the overlay using named filters so that
 	// later calls to add_filter/update_filters (e.g., height displacement filters)
 	// do not wipe out our coloration. Mirror prior behavior by propagating to
 	// child overlays unless KEEP_TOGETHER is present.
-	overlay.add_filter(ATOM_PRIORITY_COLOR_FILTER, ATOM_PRIORITY_COLOR_FILTER_PRIORITY, cached_color_filter)
+	overlay.add_filter(ATOM_PRIORITY_COLOR_FILTER, ATOM_PRIORITY_COLOR_FILTER_PRIORITY, color_filter)
 
 	if(!(overlay.appearance_flags & KEEP_TOGETHER))
 		// Recursively ensure any nested overlays/underlays also get the color filter
 		for(var/mutable_appearance/child_overlay as anything in overlay.overlays)
-			color_atom_overlay(child_overlay)
+			if(!(child_overlay.appearance_flags & KEEP_APART))
+				color_atom_overlay(child_overlay)
 		for(var/mutable_appearance/child_underlay as anything in overlay.underlays)
-			color_atom_overlay(child_underlay)
+			if(!(child_underlay.appearance_flags & KEEP_APART))
+				color_atom_overlay(child_underlay)
 
 	return overlay

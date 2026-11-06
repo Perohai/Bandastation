@@ -125,9 +125,6 @@
 /datum/unit_test/speech/proc/handle_hearing(datum/source, list/hearing_args)
 	SIGNAL_HANDLER
 
-	// So it turns out that the `message` arg for COMSIG_MOVABLE_HEAR is super redundant and should probably
-	// be gutted out of both the Hear() proc and signal since it's never used
-	//TEST_ASSERT(hearing_args[HEARING_MESSAGE], "Handle hearing signal does not have a message arg")
 	TEST_ASSERT(hearing_args[HEARING_SPEAKER], "Handle hearing signal does not have a speaker arg")
 	TEST_ASSERT(hearing_args[HEARING_LANGUAGE], "Handle hearing signal does not have a language arg")
 	TEST_ASSERT(hearing_args[HEARING_RAW_MESSAGE], "Handle hearing signal does not have a raw message arg")
@@ -166,7 +163,7 @@
 	var/datum/client_interface/mock_client = new()
 	listener.mock_client = mock_client
 
-	RegisterSignal(speaker, COMSIG_MOB_SAY, PROC_REF(handle_speech)) //
+	RegisterSignal(speaker, COMSIG_MOB_SAY, PROC_REF(handle_speech))
 	RegisterSignal(speaker_radio, COMSIG_RADIO_NEW_MESSAGE, PROC_REF(handle_radio_hearing))
 
 	RegisterSignal(listener, COMSIG_MOVABLE_HEAR, PROC_REF(handle_hearing))
@@ -269,3 +266,39 @@
 
 #undef NORMAL_HEARING_RANGE
 #undef WHISPER_HEARING_RANGE
+
+/datum/unit_test/emphasis_characters
+	abstract_type = /datum/unit_test/emphasis_characters
+	var/base_input
+	var/expected_output
+
+/datum/unit_test/emphasis_characters/Run()
+	TEST_ASSERT_EQUAL(replacetext(apply_message_emphasis(base_input), "&#8203;", ""), expected_output, "")
+
+/datum/unit_test/emphasis_characters/basic
+	base_input = @"Blah Blah Blah"
+	expected_output = @"Blah Blah Blah"
+
+/datum/unit_test/emphasis_characters/complex
+	base_input = @"Blah + Blah = Blah :)"
+	expected_output = @"Blah + Blah = Blah :)"
+
+/datum/unit_test/emphasis_characters/italic
+	base_input = @"|Blah| Blah Blah"
+	expected_output = @"<i>Blah</i> Blah Blah"
+
+/datum/unit_test/emphasis_characters/bold
+	base_input = @"+Blah+ Blah Blah"
+	expected_output = @"<b>Blah</b> Blah Blah"
+
+/datum/unit_test/emphasis_characters/small
+	base_input = @"^Blah^ Blah Blah"
+	expected_output = @"<small>Blah</small> Blah Blah"
+
+/datum/unit_test/emphasis_characters/multiple
+	base_input = @"|Blah| Blah +Blah+"
+	expected_output = @"<i>Blah</i> Blah <b>Blah</b>"
+
+/datum/unit_test/emphasis_characters/escaped
+	base_input = @"\|Blah\| \+Blah\+ Blah"
+	expected_output = @"|Blah| +Blah+ Blah"

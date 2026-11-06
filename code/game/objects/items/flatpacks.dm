@@ -26,6 +26,7 @@
 			),
 		)
 	AddElement(/datum/element/contextual_screentip_tools, tool_behaviors)
+	AddComponent(/datum/component/two_handed, require_twohands = TRUE) // BANDASTATION Addition
 
 	board = !isnull(new_board) ? new_board : new board(src) // i got board
 	if(board.loc != src)
@@ -103,6 +104,7 @@
 	icon_state = "flatcart"
 	density = TRUE
 	opacity = FALSE
+	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 8, /datum/material/alloy/plasteel = SHEET_MATERIAL_AMOUNT)
 
 /obj/structure/flatpack_cart/Initialize(mapload)
 	. = ..()
@@ -170,6 +172,11 @@
 	name = "flatpacker"
 	board = /obj/item/circuitboard/machine/flatpacker
 	custom_premium_price = PAYCHECK_COMMAND
+
+/obj/item/flatpack/shuttle_engine
+	name = "shuttle propulsion engine"
+	board = /obj/item/circuitboard/machine/engine/propulsion
+	custom_premium_price = PAYCHECK_CREW * 2
 
 // Cargo flatpacks
 

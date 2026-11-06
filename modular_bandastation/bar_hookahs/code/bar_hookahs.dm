@@ -179,7 +179,7 @@
 	if(transferred <= 0)
 		to_chat(user, span_warning("В [src.declent_ru(PREPOSITIONAL)] нет места!"))
 		return
-		
+
 	user.visible_message(
 		span_notice("[user] переливает что-то в [src.declent_ru(NOMINATIVE)]."),
 		span_notice("Вы переливаете [transferred] единиц жидкости в [src.declent_ru(NOMINATIVE)].")
@@ -239,7 +239,7 @@
 				return CLICK_ACTION_BLOCKING
 
 			var/mob/living/living_user = user
-			if(!(hookah_mouthpiece in living_user.held_items))
+			if(!living_user.is_holding(hookah_mouthpiece))
 				return CLICK_ACTION_BLOCKING
 
 			user.visible_message(span_notice("[user] глубоко затягивается..."), span_notice("Вы делаете глубокую затяжку..."))
@@ -324,7 +324,7 @@
 	if(hookah_mouthpiece)
 		hookah_mouthpiece.source_hookah = null
 		hookah_mouthpiece.disconnect()
-		qdel(hookah_mouthpiece)
+		QDEL_NULL(hookah_mouthpiece)
 
 	set_light(0)
 	return ..()
@@ -459,7 +459,7 @@
 		if(!COOLDOWN_FINISHED(src, inhale_cooldown) || transferred > BASE_INHALE_LIMIT)
 			living_user.visible_message(span_warning(pick("[living_user] закашливается!", "[living_user] морщится, откашливаясь.", "[living_user] задыхается!")), span_warning(pick("Голова кружится...", "Вы закашливаетесь, морщась от острого покалывания в горле.", "Вы задыхаетесь!")))
 			living_user.emote("cough")
-			living_user.adjustStaminaLoss(BASE_COUGH_STAMINA_LOSS * (transferred / BASE_INHALE_LIMIT))
+			living_user.adjust_stamina_loss(BASE_COUGH_STAMINA_LOSS * (transferred / BASE_INHALE_LIMIT))
 
 		switch(smoke_efficiency * 100)
 			if(-INFINITY to 20)
@@ -477,9 +477,7 @@
 		addtimer(CALLBACK(src, PROC_REF(delayed_puff), living_user, amount_to_waste), 1 SECONDS)
 
 /obj/item/hookah_mouthpiece/proc/make_black_smoke(mob/living_user, location, datum/reagents/some_reagents)
-	var/datum/effect_system/fluid_spread/smoke/chem/black_smoke = new
-	black_smoke.set_up(2, location = location, carry = some_reagents)
-	black_smoke.start()
+	do_chem_smoke(2, null, location, carry = some_reagents)
 	QDEL_LIST(source_hookah.food_items)
 	some_reagents.clear_reagents()
 	to_chat(living_user, span_warning("Вы чувствуете резкий неприятный запах!"))
@@ -490,12 +488,10 @@
 		return
 
 	var/mob/living/carbon/human/human_user = living_user
-	human_user.adjustStaminaLoss(BASE_COUGH_STAMINA_LOSS * 4)
+	human_user.adjust_stamina_loss(BASE_COUGH_STAMINA_LOSS * 4)
 
 /obj/item/hookah_mouthpiece/proc/delayed_puff(mob/user, amount)
-	var/datum/effect_system/fluid_spread/smoke/chem/quick/puff = new
-	puff.set_up(amount / 5, amount * 0.2, location = user.loc, carry = source_hookah.reagents)
-	puff.start()
+	do_chem_smoke(amount / 5, null, user.loc, carry = source_hookah.reagents, amount = amount * 0.2, smoke_type = /datum/effect_system/fluid_spread/smoke/chem/quick)
 
 /obj/item/hookah_coals
 	name = "hookah coals"
@@ -509,7 +505,7 @@
 	. = ..()
 	. += span_info("В кучке три кубика.")
 
-/obj/machinery/vending/cigarette/Initialize()
+/obj/machinery/vending/cigarette/Initialize(mapload)
 	premium += list(
 		/obj/item/hookah_coals = 3,
 	)

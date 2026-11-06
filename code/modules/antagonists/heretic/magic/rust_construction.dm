@@ -1,6 +1,6 @@
 /datum/action/cooldown/spell/pointed/rust_construction
-	name = "Rust Formation"
-	desc = "Превращает ржавый пол в полноценную стену из ржавчины. Создание стены под мобом нанесет ему вред."
+	name = "Возведение ржавчины"
+	desc = "Превращает ржавый пол в полноценную стену из ржавчины. Создание стены под целью откинет её и нанесет вред."
 	background_icon_state = "bg_heretic"
 	overlay_icon_state = "bg_heretic_border"
 	button_icon_state = "shield"
@@ -8,7 +8,8 @@
 	check_flags = AB_CHECK_INCAPACITATED|AB_CHECK_CONSCIOUS|AB_CHECK_HANDS_BLOCKED
 
 	school = SCHOOL_FORBIDDEN
-	cooldown_time = 8 SECONDS
+	cooldown_time = 2 SECONDS
+	unset_after_click = FALSE
 
 	// Both of these are changed in before_cast
 	invocation = "Кто-то поднимает стену из ржавчины."

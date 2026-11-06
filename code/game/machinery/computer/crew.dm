@@ -6,6 +6,7 @@
 /obj/machinery/computer/crew
 	name = "crew monitoring console"
 	desc = "Used to monitor active health sensors built into most of the crew's uniforms."
+	icon_state = MAP_SWITCH("computer", "/obj/machinery/computer/crew")
 	icon_screen = "crew"
 	icon_keyboard = "med_key"
 	circuit = /obj/item/circuitboard/computer/crew
@@ -13,9 +14,7 @@
 
 /obj/machinery/computer/crew/Initialize(mapload, obj/item/circuitboard/C)
 	. = ..()
-	AddComponent(/datum/component/usb_port, list(
-		/obj/item/circuit_component/medical_console_data,
-	))
+	AddComponent(/datum/component/usb_port, typecacheof(list(/obj/item/circuit_component/medical_console_data), only_root_path = TRUE))
 
 /obj/item/circuit_component/medical_console_data
 	display_name = "Crew Monitoring Data"
@@ -69,13 +68,20 @@
 		entry["toxin"] = player_record["toxdam"]
 		entry["burn"] = player_record["burndam"]
 		entry["brute"] = player_record["brutedam"]
-		entry["location"] = player_record["area"]
+		// BANDASTATION MOD START: Location data
+		var/location_data = player_record["position"]
+		if(islist(location_data) && location_data["area"])
+			entry["location"] = location_data["area"]
+		else
+			entry["location"] = player_record["area"]
+		// BANDASTATION MOD END: Location data
 		entry["health"] = player_record["health"]
 		new_table += list(entry)
 
 	records.set_output(new_table)
 
 /obj/machinery/computer/crew/syndie
+	icon_state = MAP_SWITCH("computer", "/obj/machinery/computer/crew/syndie")
 	icon_keyboard = "syndie_key"
 
 /** BANDASTATION REMOVAL - Crew Monitor NanoMap
@@ -95,51 +101,60 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 	/// Map of job to ID for sorting purposes
 	var/list/jobs = list(
 		// Note that jobs divisible by 10 are considered heads of staff, and bolded
+		//BANDASTATION EDIT - Start
 		// 00: Captain
 		JOB_CAPTAIN = 0,
 		JOB_HUMAN_AI = 1,
-		// 10-19: Security
-		JOB_HEAD_OF_SECURITY = 10,
-		JOB_WARDEN = 11,
-		JOB_SECURITY_OFFICER = 12,
-		JOB_SECURITY_OFFICER_MEDICAL = 13,
-		JOB_SECURITY_OFFICER_ENGINEERING = 14,
-		JOB_SECURITY_OFFICER_SCIENCE = 15,
-		JOB_SECURITY_OFFICER_SUPPLY = 16,
-		JOB_DETECTIVE = 17,
-		// 20-29: Medbay
-		JOB_CHIEF_MEDICAL_OFFICER = 20,
-		JOB_CHEMIST = 21,
-		JOB_MEDICAL_DOCTOR = 22,
-		JOB_PARAMEDIC = 23,
-		JOB_CORONER = 24,
-		// 30-39: Science
-		JOB_RESEARCH_DIRECTOR = 30,
-		JOB_SCIENTIST = 31,
-		JOB_ROBOTICIST = 32,
-		JOB_GENETICIST = 33,
-		// 40-49: Engineering
-		JOB_CHIEF_ENGINEER = 40,
-		JOB_STATION_ENGINEER = 41,
-		JOB_ATMOSPHERIC_TECHNICIAN = 42,
-		// 50-59: Cargo
-		JOB_QUARTERMASTER = 50,
-		JOB_SHAFT_MINER = 51,
-		JOB_CARGO_TECHNICIAN = 52,
-		JOB_BITRUNNER = 53,
-		// 60+: Service
-		JOB_HEAD_OF_PERSONNEL = 60,
-		JOB_BARTENDER = 61,
-		JOB_CHEF = 62,
-		JOB_COOK = 63,
-		JOB_BOTANIST = 64,
-		JOB_CURATOR = 65,
-		JOB_CHAPLAIN = 66,
-		JOB_CLOWN = 67,
-		JOB_MIME = 68,
-		JOB_JANITOR = 69,
-		JOB_LAWYER = 71,
-		JOB_PSYCHOLOGIST = 72,
+		JOB_BRIDGE_ASSISTANT = 2,
+		// 10-19: Representation
+		JOB_NANOTRASEN_REPRESENTATIVE = 10,
+		JOB_BLUESHIELD = 11,
+		// 20-29: Justice
+		JOB_MAGISTRATE = 20,
+		JOB_LAWYER = 21,
+		// 30-39: Security
+		JOB_HEAD_OF_SECURITY = 30,
+		JOB_WARDEN = 31,
+		JOB_SECURITY_OFFICER = 32,
+		JOB_SECURITY_OFFICER_MEDICAL = 33,
+		JOB_SECURITY_OFFICER_ENGINEERING = 34,
+		JOB_SECURITY_OFFICER_SCIENCE = 35,
+		JOB_SECURITY_OFFICER_SUPPLY = 36,
+		JOB_DETECTIVE = 37,
+		JOB_VETERAN_ADVISOR = 38,
+		// 40-49: Medbay
+		JOB_CHIEF_MEDICAL_OFFICER = 40,
+		JOB_CHEMIST = 41,
+		JOB_MEDICAL_DOCTOR = 42,
+		JOB_PARAMEDIC = 43,
+		JOB_CORONER = 44,
+		// 50-59: Science
+		JOB_RESEARCH_DIRECTOR = 50,
+		JOB_SCIENTIST = 51,
+		JOB_ROBOTICIST = 52,
+		JOB_GENETICIST = 53,
+		// 60-69: Engineering
+		JOB_CHIEF_ENGINEER = 60,
+		JOB_STATION_ENGINEER = 61,
+		JOB_ATMOSPHERIC_TECHNICIAN = 62,
+		// 70-79: Cargo
+		JOB_QUARTERMASTER = 70,
+		JOB_SHAFT_MINER = 71,
+		JOB_CARGO_TECHNICIAN = 72,
+		JOB_BITRUNNER = 73,
+		// 80+: Service
+		JOB_HEAD_OF_PERSONNEL = 80,
+		JOB_BARTENDER = 81,
+		JOB_CHEF = 82,
+		JOB_COOK = 83,
+		JOB_BOTANIST = 84,
+		JOB_CURATOR = 85,
+		JOB_CHAPLAIN = 86,
+		JOB_CLOWN = 87,
+		JOB_MIME = 88,
+		JOB_JANITOR = 89,
+		JOB_PSYCHOLOGIST = 91,
+		//BANDASTATION EDIT - End
 		// 200-229: Centcom
 		JOB_CENTCOM_ADMIRAL = 200,
 		JOB_CENTCOM = 201,
@@ -255,21 +270,23 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 			entry["burndam"] = rand(0,175)
 			entry["brutedam"] = rand(0,175)
 			entry["health"] = -50
-			entry["can_track"] = tracked_living_mob.can_track()
 			results[++results.len] = entry
 			continue
 
 		// Current status
-		if (sensor_mode >= SENSOR_LIVING)
+		if (sensor_mode >= SENSOR_VITALS)
 			entry["life_status"] = tracked_living_mob.stat
+		else if (sensor_mode == SENSOR_LIVING)
+			// binary sensors should only report alive or dead
+			entry["life_status"] = (tracked_living_mob.stat == DEAD) ? DEAD : STABLE
 
 		// Damage
 		if (sensor_mode >= SENSOR_VITALS)
 			entry += list(
-				"oxydam" = round(tracked_living_mob.getOxyLoss(), 1),
-				"toxdam" = round(tracked_living_mob.getToxLoss(), 1),
-				"burndam" = round(tracked_living_mob.getFireLoss(), 1),
-				"brutedam" = round(tracked_living_mob.getBruteLoss(), 1),
+				"oxydam" = round(tracked_living_mob.get_oxy_loss(), 1),
+				"toxdam" = round(tracked_living_mob.get_tox_loss(), 1),
+				"burndam" = round(tracked_living_mob.get_fire_loss(), 1),
+				"brutedam" = round(tracked_living_mob.get_brute_loss(), 1),
 				"health" = round(tracked_living_mob.health, 1),
 			)
 
@@ -285,9 +302,6 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 				"z" = tracked_living_mob.z,
 			)
 			// BANDASTATION REPLACEMENT - END
-
-		// Trackability
-		entry["can_track"] = tracked_living_mob.can_track()
 
 		results[++results.len] = entry
 
@@ -306,7 +320,11 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 			var/mob/living/silicon/ai/AI = usr
 			if(!istype(AI))
 				return
-			AI.ai_tracking_tool.track_name(AI, params["name"])
+			// We need to do this because the ID might add an honorific and otherwise break tracking
+			var/mob/living/target = locate(params["ref"]) in GLOB.mob_living_list
+			if(isnull(target))
+				return
+			AI.ai_tracking_tool.track_mob(AI, target)
 
 #undef SENSORS_UPDATE_PERIOD
 #undef UNKNOWN_JOB_ID

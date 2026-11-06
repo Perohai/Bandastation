@@ -22,10 +22,17 @@
 		if(WOUND_SEVERITY_CRITICAL)
 			return span_boldwarning("It's leaking blood from a major [LOWER_TEXT(undiagnosed_name || name)]!!")
 
+/datum/wound/slash/wound_injury(datum/wound/old_wound, attack_direction)
+	var/obj/item/stack/medical/wrap/current_gauze = LAZYACCESS(limb.applied_items, LIMB_ITEM_GAUZE)
+	if(!old_wound && !isnull(current_gauze) && (wound_flags & ACCEPTS_GAUZE))
+		// oops your existing gauze got cut through! need a new one now
+		limb.seep_gauze(initial(current_gauze.absorption_capacity) * 0.8)
+	return ..()
+
 /datum/wound_pregen_data/flesh_slash
 	abstract = TRUE
 
-	required_wounding_types = list(WOUND_SLASH)
+	required_wounding_type = WOUND_SLASH
 	required_limb_biostate = BIO_FLESH
 
 	wound_series = WOUND_SERIES_FLESH_SLASH_BLEED
@@ -34,8 +41,6 @@
 	name = "Slashing (Cut) Flesh Wound"
 	threshold_penalty = 5
 	processes = TRUE
-	treatable_by = list(/obj/item/stack/medical/suture)
-	treatable_by_grabbed = list(/obj/item/gun/energy/laser)
 	treatable_tools = list(TOOL_CAUTERY)
 	base_treat_time = 3 SECONDS
 	wound_flags = (ACCEPTS_GAUZE|CAN_BE_GRASPED)
@@ -68,7 +73,7 @@
 			old_wound.clear_highest_scar()
 	else
 		set_blood_flow(initial_flow)
-		if(limb.can_bleed() && attack_direction && victim.blood_volume > BLOOD_VOLUME_OKAY)
+		if(limb.can_bleed() && attack_direction && victim.get_blood_volume() > BLOOD_VOLUME_OKAY)
 			victim.spray_blood(attack_direction, severity)
 
 	if(!highest_scar)
@@ -89,19 +94,20 @@
 	SIGNAL_HANDLER
 	set_highest_scar(null)
 
-/datum/wound/slash/flesh/remove_wound(ignore_limb, replaced)
+/datum/wound/slash/flesh/remove_wound(ignore_limb, replaced, destroying)
 	if(!replaced && highest_scar)
 		already_scarred = TRUE
 		highest_scar.lazy_attach(limb)
 	return ..()
 
 /datum/wound/slash/flesh/get_wound_description(mob/user)
-	if(!limb.current_gauze)
+	var/obj/item/stack/medical/wrap/current_gauze = LAZYACCESS(limb.applied_items, LIMB_ITEM_GAUZE)
+	if(!current_gauze)
 		return ..()
 
-	var/list/msg = list("Порезы на [victim.ru_p_them()] [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone] перевязаны [limb.current_gauze.declent_ru(INSTRUMENTAL)]. Перевязка ")
+	var/list/msg = list("Порезы на [victim.ru_p_them()] [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone] перевязаны [current_gauze.declent_ru(INSTRUMENTAL)]. Перевязка ")
 	// how much life we have left in these bandages
-	switch(limb.current_gauze.absorption_capacity)
+	switch(current_gauze.absorption_capacity)
 		if(0 to 1.25)
 			msg += "почти спала"
 		if(1.25 to 2.75)
@@ -110,7 +116,7 @@
 			msg += "слегка запачкана кровью"
 		if(4 to INFINITY)
 			msg += "чиста"
-	msg += "!"
+	msg += "[current_gauze.name]!"
 
 	return "<B>[msg.Join()]</B>"
 
@@ -128,9 +134,8 @@
 	// compare with being at 100 brute damage before, where you bled (brute/100 * 2), = 2 blood per tile
 	var/bleed_amt = min(blood_flow * 0.1, 1) // 3 * 3 * 0.1 = 0.9 blood total, less than before! the share here is .3 blood of course.
 
-	if(limb.current_gauze) // gauze stops all bleeding from dragging on this limb, but wears the gauze out quicker
-		limb.seep_gauze(bleed_amt * 0.33)
-		return
+	if(limb.seep_gauze(bleed_amt * 0.33)) // gauze stops all bleeding from dragging on this limb, but wears the gauze out quicker
+		return 0
 
 	return bleed_amt
 
@@ -138,14 +143,14 @@
 	//basically if a species doesn't bleed, the wound is stagnant and will not heal on its own (nor get worse)
 	if(!limb.can_bleed())
 		return BLOOD_FLOW_STEADY
-	if(HAS_TRAIT(victim, TRAIT_BLOODY_MESS))
+	if(HAS_TRAIT(victim, TRAIT_BLOOD_FOUNTAIN))
 		return BLOOD_FLOW_INCREASING
-	if(limb.current_gauze || clot_rate > 0)
+	if(LAZYACCESS(limb.applied_items, LIMB_ITEM_GAUZE) || clot_rate > 0)
 		return BLOOD_FLOW_DECREASING
 	if(clot_rate < 0)
 		return BLOOD_FLOW_INCREASING
 
-/datum/wound/slash/flesh/handle_process(seconds_per_tick, times_fired)
+/datum/wound/slash/flesh/handle_process(seconds_per_tick)
 	if (!victim || HAS_TRAIT(victim, TRAIT_STASIS))
 		return
 
@@ -156,32 +161,34 @@
 			if(QDELETED(src))
 				return
 
-		if(HAS_TRAIT(victim, TRAIT_BLOODY_MESS))
+		if(HAS_TRAIT(victim, TRAIT_BLOOD_FOUNTAIN))
 			adjust_blood_flow(0.25) // old heparin used to just add +2 bleed stacks per tick, this adds 0.5 bleed flow to all open cuts which is probably even stronger as long as you can cut them first
 
-	if(limb.current_gauze)
-		var/gauze_power = limb.current_gauze.absorption_rate
+	var/obj/item/stack/medical/wrap/current_gauze = LAZYACCESS(limb.applied_items, LIMB_ITEM_GAUZE)
+	if(current_gauze?.absorption_rate)
+		var/gauze_power = current_gauze.absorption_rate
 		limb.seep_gauze(gauze_power * seconds_per_tick)
 		adjust_blood_flow(-gauze_power * seconds_per_tick)
 
 /* BEWARE, THE BELOW NONSENSE IS MADNESS. bones.dm looks more like what I have in mind and is sufficiently clean, don't pay attention to this messiness */
 
-/datum/wound/slash/flesh/check_grab_treatments(obj/item/I, mob/user)
-	if(istype(I, /obj/item/gun/energy/laser))
+/datum/wound/slash/flesh/check_grab_treatments(obj/item/tool, mob/user)
+	if(istype(tool, /obj/item/gun/energy/laser))
 		return TRUE
-	if(I.get_temperature()) // if we're using something hot but not a cautery, we need to be aggro grabbing them first, so we don't try treating someone we're eswording
+	if(tool.get_temperature() >= FIRE_MINIMUM_TEMPERATURE_TO_EXIST) // if we're using something hot but not a cautery, we need to be aggro grabbing them first, so we don't try treating someone we're eswording
 		return TRUE
+	return FALSE
 
-/datum/wound/slash/flesh/treat(obj/item/I, mob/user)
-	if(istype(I, /obj/item/gun/energy/laser))
-		return las_cauterize(I, user)
-	else if(I.tool_behaviour == TOOL_CAUTERY || I.get_temperature())
-		return tool_cauterize(I, user)
+/datum/wound/slash/flesh/treat(obj/item/tool, mob/user)
+	if(istype(tool, /obj/item/gun/energy/laser))
+		las_cauterize(tool, user)
+	else if(tool.tool_behaviour == TOOL_CAUTERY || tool.get_temperature() >= FIRE_MINIMUM_TEMPERATURE_TO_EXIST)
+		tool_cauterize(tool, user)
 
 /datum/wound/slash/flesh/try_handling(mob/living/user)
 	if(user.pulling != victim || !HAS_TRAIT(user, TRAIT_WOUND_LICKER) || !victim.try_inject(user, injection_flags = INJECT_TRY_SHOW_ERROR_MESSAGE))
 		return FALSE
-	if(!isnull(user.hud_used?.zone_select) && user.zone_selected != limb.body_zone)
+	if(!isnull(user.hud_used?.screen_objects[HUD_MOB_ZONE_SELECTOR]) && user.zone_selected != limb.body_zone)
 		return FALSE
 
 	if(DOING_INTERACTION_WITH_TARGET(user, victim))
@@ -196,8 +203,7 @@
 			to_chat(user, span_warning("Вы не можете лизать раны без языка!")) // f in chat
 			return
 
-	lick_wounds(user)
-	return TRUE
+	return lick_wounds(user)
 
 /// if a felinid is licking this cut to reduce bleeding
 /datum/wound/slash/flesh/proc/lick_wounds(mob/living/carbon/human/user)
@@ -207,10 +213,13 @@
 			continue
 		user.ForceContractDisease(iter_disease)
 
+	if(user.combat_mode)
+		return FALSE
+
 	user.visible_message(span_notice("[capitalize(user.declent_ru(NOMINATIVE))] начинает лизать раны на [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone] у [victim.declent_ru(GENITIVE)]."), span_notice("Вы начинаете лизать раны на [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone] у [victim.declent_ru(GENITIVE)]..."), ignored_mobs=victim)
 	to_chat(victim, span_notice("[capitalize(user.declent_ru(NOMINATIVE))] начинает лизать раны на вашей [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone]."))
 	if(!do_after(user, base_treat_time, target = victim, extra_checks = CALLBACK(src, PROC_REF(still_exists))))
-		return
+		return FALSE
 
 	user.visible_message(span_notice("[capitalize(user.declent_ru(NOMINATIVE))] лижет раны на [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone] у [victim.declent_ru(GENITIVE)]."), span_notice("Вы лижете некоторые из ран на [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone] у [victim.declent_ru(GENITIVE)]"), ignored_mobs=victim)
 	to_chat(victim, span_green("[capitalize(user.declent_ru(NOMINATIVE))] лижет раны на вашей [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone]!"))
@@ -221,6 +230,8 @@
 		try_handling(user)
 	else if(demotes_to)
 		to_chat(user, span_green("Вы успешно снижаете тяжесть порезов у [user == victim_stored ? "себя" : victim_stored.declent_ru(GENITIVE)]."))
+
+	return TRUE
 
 /datum/wound/slash/flesh/adjust_blood_flow(adjust_by, minimum)
 	. = ..()
@@ -253,9 +264,8 @@
 	if(!lasgun.process_fire(victim, victim, TRUE, null, limb.body_zone))
 		return
 	victim.emote("scream")
-	adjust_blood_flow(-1 * (damage / (5 * self_penalty_mult))) // 20 / 5 = 4 bloodflow removed, p good
 	victim.visible_message(span_warning("Порезы на [limb.ru_plaintext_zone[PREPOSITIONAL] || limb.plaintext_zone] у [victim.declent_ru(GENITIVE)] заживают!"))
-	return TRUE
+	adjust_blood_flow(-1 * (damage / (5 * self_penalty_mult))) // 20 / 5 = 4 bloodflow removed, p good
 
 /// If someone is using either a cautery tool or something with heat to cauterize this cut
 /datum/wound/slash/flesh/proc/tool_cauterize(obj/item/I, mob/user)
@@ -277,7 +287,7 @@
 
 	playsound(user, 'sound/items/handling/surgery/cautery2.ogg', 75, TRUE)
 
-	var/bleeding_wording = (!limb.can_bleed() ? "cuts" : "bleeding")
+	var/bleeding_wording = (limb.can_bleed() ? "bleeding" : "cuts")
 	user.visible_message(span_green("[user] cauterizes some of the [bleeding_wording] on [victim]."), span_green("You cauterize some of the [bleeding_wording] on [victim]."))
 	victim.apply_damage(2 + severity, BURN, limb, wound_bonus = CANT_WOUND)
 	if(prob(30))
@@ -287,11 +297,10 @@
 	adjust_blood_flow(-blood_cauterized)
 
 	if(blood_flow > minimum_flow)
-		return try_treating(I, user)
+		try_treating(I, user)
+
 	else if(demotes_to)
 		to_chat(user, span_green("Вы успешно снижаете тяжесть порезов у [user == victim_stored ? "себя" : victim_stored.declent_ru(GENITIVE)]."))
-		return TRUE
-	return FALSE
 
 /datum/wound/slash/get_limb_examine_description()
 	return span_warning("Кожа на этой конечности выглядит сильно порезанной.")
@@ -306,9 +315,9 @@
 	occur_text = "разрезается, начиная медленно кровоточить"
 	sound_effect = 'sound/effects/wounds/blood1.ogg'
 	severity = WOUND_SEVERITY_MODERATE
-	initial_flow = 2
+	initial_flow = 1.75
 	minimum_flow = 0.5
-	clot_rate = 0.05
+	clot_rate = 0.04
 	series_threshold_penalty = 10
 	status_effect_type = /datum/status_effect/wound/slash/flesh/moderate
 	scar_keyword = "slashmoderate"
@@ -338,13 +347,14 @@
 	occur_text = "разрывается, и вены начинают брызгать кровью"
 	sound_effect = 'sound/effects/wounds/blood2.ogg'
 	severity = WOUND_SEVERITY_SEVERE
-	initial_flow = 3.25
-	minimum_flow = 2.75
-	clot_rate = 0.03
+	initial_flow = 2.75
+	minimum_flow = 2
+	clot_rate = 0.02
 	series_threshold_penalty = 25
 	demotes_to = /datum/wound/slash/flesh/moderate
 	status_effect_type = /datum/status_effect/wound/slash/flesh/severe
 	scar_keyword = "slashsevere"
+	surgery_states = SURGERY_SKIN_CUT | SURGERY_VESSELS_UNCLAMPED
 
 	simple_treat_text = "<b>Наложение повязки</b> на рану является важным и уменьшит потерю крови. После этого рану можно <b>зашить</b>, желательно, чтобы пациент отдыхал и/или держал свою рану."
 	homemade_treat_text = "Простыни можно разорвать, чтобы сделать <b>самодельный бинт</b>. <b>Мука, соль и соленая вода</b>, нанесенные на кожу, помогут, но чистая поваренная соль НЕ рекомендуется. Падение на землю и удерживание раны снизит кровотечение."
@@ -371,13 +381,14 @@
 	occur_text = "разрывается, брызгая кровью"
 	sound_effect = 'sound/effects/wounds/blood3.ogg'
 	severity = WOUND_SEVERITY_CRITICAL
-	initial_flow = 4
-	minimum_flow = 3.85
-	clot_rate = -0.015 // critical cuts actively get worse instead of better
+	initial_flow = 3.75
+	minimum_flow = 3.5
+	clot_rate = -0.012 // critical cuts actively get worse instead of better
 	threshold_penalty = 15
 	demotes_to = /datum/wound/slash/flesh/severe
 	status_effect_type = /datum/status_effect/wound/slash/flesh/critical
 	scar_keyword = "slashcritical"
+	surgery_states = SURGERY_SKIN_OPEN | SURGERY_VESSELS_UNCLAMPED
 	wound_flags = (ACCEPTS_GAUZE | MANGLES_EXTERIOR | CAN_BE_GRASPED)
 	simple_treat_text = "<b>Наложение повязки</b> на рану является важным, как и немедленное обращение за помощью - <b>Смерть</b> наступит, если лечение будет задержано, так как нехватка <b>кислорода</b> убивает пациента, поэтому <b>пища, железо и солево-глюкозный раствор</b> всегда рекомендуется после лечения. Эта рана не заживет сама по себе."
 	homemade_treat_text = "Простыни можно порвать, чтобы сделать <b>самодельный бинт</b>. <b>Мука, соль и соленая вода</b>, нанесенные на кожу, помогут. Падение на землю и удерживание раны снизит кровотечение."

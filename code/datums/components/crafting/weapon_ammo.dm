@@ -25,8 +25,9 @@
 	name = "jagged iron rod"
 	result = /obj/item/ammo_casing/rebar/syndie
 	reqs = list(
-		/obj/item/stack/rods = 1,
+		/obj/item/stack/sheet/plasteel = 1,
 	)
+	result_amount = 2
 	tool_behaviors = list(TOOL_WIRECUTTER)
 	time = 0.1 SECONDS
 	category = CAT_WEAPON_AMMO
@@ -40,7 +41,7 @@
 	)
 	time = 0.1 SECONDS
 	category = CAT_WEAPON_AMMO
-	crafting_flags = CRAFT_CHECK_DENSITY
+	crafting_flags = CRAFT_CHECK_DENSITY | CRAFT_SKIP_MATERIALS_PARITY // BANDASTATION ADDITION - Crafting unit test workaround
 
 /datum/crafting_recipe/pulseslug
 	name = "Pulse Slug Shell"
@@ -49,17 +50,6 @@
 		/obj/item/ammo_casing/shotgun/techshell = 1,
 		/obj/item/stock_parts/capacitor/adv = 2,
 		/obj/item/stock_parts/micro_laser/ultra = 1,
-	)
-	tool_behaviors = list(TOOL_SCREWDRIVER)
-	time = 0.5 SECONDS
-	category = CAT_WEAPON_AMMO
-
-/datum/crafting_recipe/dragonsbreath
-	name = "Dragonsbreath Shell"
-	result = /obj/item/ammo_casing/shotgun/dragonsbreath
-	reqs = list(
-		/obj/item/ammo_casing/shotgun/techshell = 1,
-		/datum/reagent/phosphorus = 5,
 	)
 	tool_behaviors = list(TOOL_SCREWDRIVER)
 	time = 0.5 SECONDS
@@ -101,6 +91,7 @@
 	tool_behaviors = list(TOOL_SCREWDRIVER)
 	time = 1.2 SECONDS
 	category = CAT_WEAPON_AMMO
+	crafting_flags = CRAFT_SKIP_MATERIALS_PARITY
 
 /datum/crafting_recipe/trashball
 	name = "Trashball"
@@ -111,6 +102,7 @@
 	)
 	category = CAT_WEAPON_AMMO
 	crafting_flags = CRAFT_CHECK_DENSITY | CRAFT_MUST_BE_LEARNED
+	unit_test_spawn_extras = list(/obj/item/stack/sheet/iron = 5) //the sheet type is abstract
 
 /datum/crafting_recipe/arrow
 	name = "Arrow"
@@ -176,3 +168,13 @@
 	time = 5 SECONDS
 	category = CAT_WEAPON_AMMO
 	crafting_flags = CRAFT_CHECK_DENSITY | CRAFT_MUST_BE_LEARNED
+
+/datum/crafting_recipe/ashen_arrow
+	name = "Ashen Arrow"
+	result = /obj/item/ammo_casing/arrow/ashen
+	reqs = list(
+		/obj/item/stack/sheet/bone = 1,
+		/obj/item/stack/sheet/sinew = 1,
+	)
+	time = 5 SECONDS
+	category = CAT_WEAPON_AMMO

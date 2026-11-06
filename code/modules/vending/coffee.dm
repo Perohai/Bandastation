@@ -19,7 +19,15 @@
 	payment_department = ACCOUNT_SRV
 	light_mask = "coffee-light-mask"
 	light_color = COLOR_DARK_MODERATE_ORANGE
-	allow_custom = TRUE
+
+/obj/machinery/vending/coffee/Initialize(mapload)
+	. = ..()
+	if(!mapload || !is_station_level(z) || !HAS_TRAIT(SSstation, STATION_TRAIT_VENDING_SHORTAGE))
+		return
+
+	for(var/datum/data/vending_product/product_record as anything in product_records + coin_records + hidden_records)
+		product_record.amount = 0
+		credits_contained += rand(1, 5)
 
 /obj/item/vending_refill/coffee
 	machine_name = "Solar's Best Hot Drinks"

@@ -13,10 +13,11 @@
 		TRAIT_UNHUSKABLE,
 		TRAIT_NO_FLOATING_ANIM,
 		TRAIT_MOVE_FLYING,
+		TRAIT_GHOSTLY_MOB,
 	)
 	inherent_biotypes = MOB_SPIRIT | MOB_UNDEAD
 	no_equip_flags = ITEM_SLOT_FEET
-	changesource_flags = MIRROR_BADMIN | WABBAJACK | SLIME_EXTRACT
+	changesource_flags = MIRROR_BADMIN | MIRROR_PRIDE | MIRROR_MAGIC | WABBAJACK | SLIME_EXTRACT
 	sexes = FALSE
 	meat = /obj/item/ectoplasm
 
@@ -108,7 +109,7 @@
 		BODY_ZONE_L_ARM = /obj/item/bodypart/arm/left/ghost,
 		BODY_ZONE_R_ARM = /obj/item/bodypart/arm/right/ghost,
 	)
-	changesource_flags = MIRROR_BADMIN | MIRROR_PRIDE | MIRROR_MAGIC
+	changesource_flags = MIRROR_BADMIN | WABBAJACK
 	halloween_exclusive = FALSE
 
 	///Innate passthrough ability given to ghosts that allows them to phase but drops their stuff.
@@ -190,7 +191,8 @@
 		return FALSE
 	//technically you can trap a ghost by blessing them as theyre phasing,
 	//but they can still be dragged out.
-	if(locate(/obj/effect/blessing) in get_turf(owner))
+	var/turf/owner_turf = get_turf(owner)
+	if(HAS_TRAIT(owner_turf, TRAIT_TURF_BLESSED))
 		return FALSE
 	var/obj/item/bodypart/chest/their_chest = living_owner.get_bodypart(BODY_ZONE_CHEST)
 	if(!their_chest || !(their_chest.bodytype & BODYTYPE_GHOST))
@@ -249,8 +251,9 @@
 		UnregisterSignal(carbon_owner, COMSIG_MOB_CLIENT_PRE_LIVING_MOVE)
 
 ///Called when attempting to move to a new tile while the action is active, returns to cancel moving.
-/datum/action/innate/toggle_passthrough/proc/attempt_move(mob/source, new_loc, direct)
+/datum/action/innate/toggle_passthrough/proc/attempt_move(mob/source, atom/new_loc, direct)
 	SIGNAL_HANDLER
-	if(locate(/obj/effect/blessing) in new_loc)
+
+	if(new_loc && HAS_TRAIT(new_loc, TRAIT_TURF_BLESSED))
 		to_chat(source, span_warning("Holy energies block your path!"))
 		return COMSIG_MOB_CLIENT_BLOCK_PRE_LIVING_MOVE

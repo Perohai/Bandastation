@@ -1,7 +1,7 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
 "a" = (
 /turf/closed/mineral/random/stationside/asteroid/porus,
-/area/template_noop)
+/area/space/nearstation)
 "c" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/structure/table/wood,
@@ -33,7 +33,7 @@
 /area/station/maintenance/department/cargo)
 "p" = (
 /obj/effect/decal/cleanable/dirt,
-/obj/structure/reagent_dispensers/beerkeg,
+/obj/effect/spawner/random/food_or_drink/keg,
 /turf/open/floor/iron/smooth,
 /area/station/maintenance/department/cargo)
 "q" = (

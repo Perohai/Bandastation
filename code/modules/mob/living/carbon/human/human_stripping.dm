@@ -19,8 +19,11 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 	/datum/strippable_item/mob_item_slot/pocket/right,
 	/datum/strippable_item/hand/left,
 	/datum/strippable_item/hand/right,
+	/datum/strippable_item/hand/upper_left,
+	/datum/strippable_item/hand/upper_right,
 	/datum/strippable_item/mob_item_slot/handcuffs,
 	/datum/strippable_item/mob_item_slot/legcuffs,
+	/datum/strippable_item/headpocket,
 )))
 
 /mob/living/carbon/human/proc/should_strip(mob/user)
@@ -45,23 +48,23 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 	key = STRIPPABLE_ITEM_JUMPSUIT
 	item_slot = ITEM_SLOT_ICLOTHING
 
-/datum/strippable_item/mob_item_slot/jumpsuit/get_alternate_actions(atom/source, mob/user)
-	var/obj/item/clothing/under/jumpsuit = get_item(source)
+/datum/strippable_item/mob_item_slot/jumpsuit/get_alternate_actions(atom/source, mob/user, obj/item/item)
+	. = ..()
+	var/obj/item/clothing/under/jumpsuit = item
 	if (!istype(jumpsuit))
-		return null
+		return
 
-	var/list/actions = list()
 	if(jumpsuit.has_sensor == HAS_SENSORS)
-		actions += "adjust_sensor"
+		. += "adjust_sensor"
 	if(jumpsuit.can_adjust)
-		actions += "adjust_jumpsuit"
+		. += "adjust_jumpsuit"
+	if(length(jumpsuit.attached_accessories))
+		. += "strip_accessory"
 
-	return actions
-
-/datum/strippable_item/mob_item_slot/jumpsuit/perform_alternate_action(atom/source, mob/user, action_key)
+/datum/strippable_item/mob_item_slot/jumpsuit/perform_alternate_action(atom/source, mob/user, action_key, obj/item/item)
 	if (!..())
 		return
-	var/obj/item/clothing/under/jumpsuit = get_item(source)
+	var/obj/item/clothing/under/jumpsuit = item
 	if (!istype(jumpsuit))
 		return null
 
@@ -70,6 +73,8 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 			do_adjust_jumpsuit(source, user, jumpsuit)
 		if("adjust_sensor")
 			do_adjust_sensor(source, user, jumpsuit)
+		if("strip_accessory")
+			do_strip_accessory(source, user, jumpsuit)
 		else
 			stack_trace("Unknown action key: [action_key] for [type]")
 
@@ -104,8 +109,8 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 		"[SENSOR_COORDS]" = "Слежение",
 	)
 
-	var/new_mode = tgui_input_list(user, "Переключение датчиков комбинезона", "Переключение датчиков", sensor_mode_text_to_num, senor_mode_num_to_text["[jumpsuit.sensor_mode]"])
-	new_mode = sensor_mode_text_to_num[new_mode]
+	var/new_mode_str = tgui_input_list(user, "Переключение датчиков комбинезона", "Переключение датчиков", sensor_mode_text_to_num, senor_mode_num_to_text["[jumpsuit.sensor_mode]"])
+	var/new_mode = sensor_mode_text_to_num[new_mode_str]
 	if(isnull(new_mode)) // also catches returning null
 		return
 
@@ -114,15 +119,45 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 		return
 
 	to_chat(source, span_notice("[capitalize(user.declent_ru(NOMINATIVE))] пытается переключить датчики [jumpsuit.ru_p_yours(GENITIVE)] [jumpsuit.declent_ru(GENITIVE)]."))
-	if(!do_after(user, jumpsuit.strip_delay * 0.5, source)) // takes the same amount of time as adjusting it
+	if(!do_after(user, jumpsuit.strip_delay * 0.5, source) || !jumpsuit.set_sensor_mode(new_mode)) // takes the same amount of time as adjusting it
 		source.balloon_alert(user, "не удалось!")
 		return
 	source.balloon_alert(user, "датчики переключены")
-	jumpsuit.sensor_mode = new_mode
 	to_chat(source, span_notice("[capitalize(user.declent_ru(NOMINATIVE))] успешно переключает датчики [jumpsuit.ru_p_yours(GENITIVE)] [jumpsuit.declent_ru(GENITIVE)]."))
-	if(ishuman(source))
-		var/mob/living/carbon/human/humano = source
-		humano.update_suit_sensors()
+	user.log_message("изменил(а) режим датчиков костюма [key_name(source)] на [new_mode_str]", LOG_ATTACK, color="red")
+	source.log_message("режим датчиков костюма изменен на [new_mode_str] игроком [key_name(user)]", LOG_VICTIM, color="orange", log_globally=FALSE)
+
+/datum/strippable_item/mob_item_slot/jumpsuit/proc/do_strip_accessory(atom/source, mob/user, obj/item/clothing/under/jumpsuit)
+	var/list/accessory_choices = list()
+	for(var/obj/item/clothing/accessory/jumpsuit_accessory as anything in jumpsuit.attached_accessories)
+		if(!istype(jumpsuit_accessory))
+			continue
+		accessory_choices[jumpsuit_accessory.name] += jumpsuit_accessory
+
+	var/chosen_accessory_name = tgui_input_list(user, "Select which accessory to strip", "Select Accessory", accessory_choices)
+	var/obj/item/clothing/accessory/chosen_accessory = accessory_choices[chosen_accessory_name]
+	if(isnull(chosen_accessory))
+		return
+
+	if(!user.Adjacent(source))
+		source.balloon_alert(user, "can't reach!")
+		return
+
+	to_chat(source, span_notice("[user] is trying to take [chosen_accessory] off of [jumpsuit]!"))
+	if(!do_after(user, chosen_accessory.strip_delay, source))
+		source.balloon_alert(user, "failed!")
+		return
+
+	to_chat(source, span_notice("[user] has taken [chosen_accessory] off of [jumpsuit]."))
+	jumpsuit.remove_accessory(chosen_accessory)
+	jumpsuit.update_appearance()
+	chosen_accessory.forceMove(jumpsuit.drop_location())
+
+	if(!ismob(source))
+		return
+
+	var/mob/mob_source = source
+	mob_source.update_worn_undersuit()
 
 /datum/strippable_item/mob_item_slot/suit
 	key = STRIPPABLE_ITEM_SUIT
@@ -136,24 +171,25 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 	key = STRIPPABLE_ITEM_FEET
 	item_slot = ITEM_SLOT_FEET
 
-/datum/strippable_item/mob_item_slot/feet/get_alternate_actions(atom/source, mob/user)
-	var/obj/item/clothing/shoes/shoes = get_item(source)
+/datum/strippable_item/mob_item_slot/feet/get_alternate_actions(atom/source, mob/user, obj/item/item)
+	. = ..()
+	var/obj/item/clothing/shoes/shoes = item
 	if (!istype(shoes) || shoes.fastening_type == SHOES_SLIPON)
-		return null
+		return
 
 	switch (shoes.tied)
 		if (SHOES_UNTIED)
-			return list("knot")
+			. += "knot"
 		if (SHOES_TIED)
-			return list("untie")
+			. += "untie"
 		if (SHOES_KNOTTED)
-			return list("unknot")
+			. += "unknot"
 
-/datum/strippable_item/mob_item_slot/feet/perform_alternate_action(atom/source, mob/user, action_key)
+/datum/strippable_item/mob_item_slot/feet/perform_alternate_action(atom/source, mob/user, action_key, obj/item/item)
 	if(!..())
 		return
 
-	var/obj/item/clothing/shoes/shoes = get_item(source)
+	var/obj/item/clothing/shoes/shoes = item
 	if (!istype(shoes))
 		return
 	switch(action_key)
@@ -166,14 +202,15 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 	key = STRIPPABLE_ITEM_SUIT_STORAGE
 	item_slot = ITEM_SLOT_SUITSTORE
 
-/datum/strippable_item/mob_item_slot/suit_storage/get_alternate_actions(atom/source, mob/user)
-	return get_strippable_alternate_action_internals(get_item(source), source)
+/datum/strippable_item/mob_item_slot/suit_storage/get_alternate_actions(atom/source, mob/user, obj/item/item)
+	. = ..()
+	. += get_strippable_alternate_action_internals(item, source)
 
-/datum/strippable_item/mob_item_slot/suit_storage/perform_alternate_action(atom/source, mob/user, action_key)
+/datum/strippable_item/mob_item_slot/suit_storage/perform_alternate_action(atom/source, mob/user, action_key, obj/item/item)
 	if(!..())
 		return
-	if(action_key in get_strippable_alternate_action_internals(get_item(source), source))
-		strippable_alternate_action_internals(get_item(source), source, user)
+	if(action_key in get_strippable_alternate_action_internals(item, source))
+		strippable_alternate_action_internals(item, source, user)
 
 /datum/strippable_item/mob_item_slot/id
 	key = STRIPPABLE_ITEM_ID
@@ -183,15 +220,79 @@ GLOBAL_LIST_INIT(strippable_human_items, create_strippable_list(list(
 	key = STRIPPABLE_ITEM_BELT
 	item_slot = ITEM_SLOT_BELT
 
-/datum/strippable_item/mob_item_slot/belt/get_alternate_actions(atom/source, mob/user)
-	return get_strippable_alternate_action_internals(get_item(source), source)
+/datum/strippable_item/mob_item_slot/belt/get_alternate_actions(atom/source, mob/user, obj/item/item)
+	. = ..()
+	. += get_strippable_alternate_action_internals(item, source)
 
-/datum/strippable_item/mob_item_slot/belt/perform_alternate_action(atom/source, mob/user, action_key)
+/datum/strippable_item/mob_item_slot/belt/perform_alternate_action(atom/source, mob/user, action_key, obj/item/item)
 	if (!..())
 		return
-	if(action_key in get_strippable_alternate_action_internals(get_item(source), source))
-		strippable_alternate_action_internals(get_item(source), source, user)
+	if(action_key in get_strippable_alternate_action_internals(item, source))
+		strippable_alternate_action_internals(item, source, user)
+// BANDASTATION ADD BEGIN: Skrell Headpocket
+/datum/strippable_item/headpocket
+	key = STRIPPABLE_ITEM_HEADPOCKET
+/datum/strippable_item/headpocket/proc/get_storage(atom/source)
+	RETURN_TYPE(/datum/storage)
+	if(!ishuman(source))
+		return null
+	var/mob/living/carbon/human/human_source = source
+	return human_source.get_bodypart(BODY_ZONE_HEAD)?.atom_storage
 
+/datum/strippable_item/headpocket/should_show(atom/source, mob/user)
+	return get_storage(source)
+
+/datum/strippable_item/headpocket/get_item(atom/source)
+	RETURN_TYPE(/obj/item)
+	return locate(/obj/item) in get_storage(source)?.real_location
+
+/datum/strippable_item/headpocket/get_obscuring(atom/source)
+	if(!ishuman(source))
+		return STRIPPABLE_OBSCURING_NONE
+	var/mob/living/carbon/human/human_source = source
+	if (human_source.obscured_slots & HIDEHAIR)
+		return STRIPPABLE_OBSCURING_COMPLETELY
+	return isnull(get_item(source)) ? STRIPPABLE_OBSCURING_NONE : STRIPPABLE_OBSCURING_HIDDEN
+
+/datum/strippable_item/headpocket/try_equip(atom/source, obj/item/equipping, mob/user)
+	. = ..()
+	if (!.)
+		return
+
+	return get_storage(source)?.can_insert(equipping, user)
+
+/datum/strippable_item/headpocket/start_equip(atom/source, obj/item/equipping, mob/user)
+	. = ..()
+	if (!. || !do_after(user, POCKET_EQUIP_DELAY, source))
+		return FALSE
+
+	return user.temporarilyRemoveItemFromInventory(equipping)
+
+/datum/strippable_item/headpocket/finish_equip(atom/source, obj/item/equipping, mob/user)
+	if (!get_storage(source)?.attempt_insert(equipping, user, override = TRUE))
+		equipping.forceMove(user.drop_location())
+		return
+
+	finish_equip_mob(equipping, source, user)
+
+/datum/strippable_item/headpocket/start_unequip(atom/source, mob/user)
+	var/obj/item/item = get_item(source)
+	if (isnull(item))
+		return FALSE
+
+	source.visible_message(
+		span_warning("[capitalize(user.declent_ru(NOMINATIVE))] пытается опустошить полость в щупальцах у [source.declent_ru(GENITIVE)]."),
+		span_userdanger("[capitalize(user.declent_ru(NOMINATIVE))] пытается опустошить вашу полость в щупальцах!"),
+		blind_message = span_hear("Вы слышите шорох."),
+		ignored_mobs = user,
+	)
+
+	to_chat(user, span_notice("Вы пытаетесь опустошить полость в щупальцах [source.declent_ru(GENITIVE)]."))
+	return start_unequip_mob(item, source, user, strip_delay = POCKET_STRIP_DELAY, hidden = TRUE)
+
+/datum/strippable_item/headpocket/finish_unequip(atom/source, mob/user)
+	return get_item(source)?.forceMove(source.drop_location())
+// BANDASTATION ADD END: Skrell Headpocket
 /datum/strippable_item/mob_item_slot/pocket
 	/// Which pocket we're referencing. Used for visible text.
 	var/pocket_side

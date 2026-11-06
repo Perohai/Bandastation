@@ -11,6 +11,8 @@
 		/obj/item/clothing/head/beret/blueshield/navy = 1,
 		/obj/item/clothing/mask/gas/sechailer = 1,
 		/obj/item/clothing/under/rank/blueshield = 1,
+		/obj/item/clothing/under/blueshield/skirt/blue = 1,
+		/obj/item/clothing/under/blueshield/skirt/black = 1,
 		/obj/item/clothing/under/rank/blueshield/skirt = 1,
 		/obj/item/clothing/under/rank/blueshield/casual = 1,
 		/obj/item/clothing/under/rank/blueshield/casual/skirt = 1,
@@ -40,6 +42,7 @@
 		/obj/item/clothing/under/rank/nanotrasen_representative/skirt = 1,
 		/obj/item/clothing/under/rank/nanotrasen_representative/formal = 1,
 		/obj/item/clothing/under/suit/nanotrasen_representative_female_suit = 1,
+		/obj/item/clothing/suit/hooded/wintercoat/nanotrasen_representative = 1
 	)
 	generate_items_inside(items_inside, src)
 
@@ -54,6 +57,7 @@
 		/obj/item/clothing/under/rank/magistrate/skirt = 1,
 		/obj/item/clothing/under/rank/magistrate/formal = 1,
 		/obj/item/clothing/suit/magirobe = 1,
+		/obj/item/clothing/suit/magistrate_jacket = 1,
 		/obj/item/clothing/shoes/laceup = 1,
 		/obj/item/clothing/glasses/sunglasses = 1,
 		/obj/item/clothing/gloves/color/white = 1,

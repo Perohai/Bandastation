@@ -3,18 +3,17 @@
 	description = "Выдавайте доступы, руководите сервисным отделом, \
 		защищайте Иана, управляйте станцией в случае смерти капитана."
 	auto_deadmin_role_flags = DEADMIN_POSITION_HEAD
-	department_head = list(JOB_CAPTAIN)
-	head_announce = list(RADIO_CHANNEL_SERVICE)
+	head_announce = RADIO_CHANNEL_SERVICE
 	faction = FACTION_STATION
 	total_positions = 1
 	spawn_positions = 1
 	supervisors = JOB_CAPTAIN_RU
 	req_admin_notify = 1
 	minimal_player_age = 10
-	exp_requirements = 180
+	exp_requirements = 1200
 	exp_required_type = EXP_TYPE_CREW
 	exp_required_type_department = EXP_TYPE_SERVICE
-	exp_granted_type = EXP_TYPE_CREW
+	exp_granted_type = EXP_TYPE_COMMAND
 	config_tag = "HEAD_OF_PERSONNEL"
 
 	outfit = /datum/outfit/job/hop
@@ -45,6 +44,7 @@
 	human_authority = JOB_AUTHORITY_HUMANS_ONLY
 
 	voice_of_god_power = 1.4 //Command staff has authority
+	tgui_icon = FA_ICON_DOG
 
 
 /datum/job/head_of_personnel/get_captaincy_announcement(mob/living/captain)
@@ -100,7 +100,7 @@
 	backpack_contents = list(
 		/obj/item/melee/baton/telescopic/silver = 1,
 		)
-	belt = /obj/item/modular_computer/pda/heads/hop
+	belt = /obj/item/modular_computer/pda/crew/heads/hop
 	ears = /obj/item/radio/headset/heads/hop
 	head = /obj/item/clothing/head/hats/hopcap
 	shoes = /obj/item/clothing/shoes/laceup
@@ -111,15 +111,18 @@
 		/obj/item/stamp/head/hop,
 		)
 
+	wintercoat = /obj/item/clothing/suit/hooded/wintercoat/hop
+
 /datum/outfit/job/hop/pre_equip(mob/living/carbon/human/H)
 	..()
 	if(check_holidays(IAN_HOLIDAY))
-		undershirt = /datum/sprite_accessory/undershirt/ian
+		undershirt = /datum/sprite_accessory/clothing/undershirt/ian
 
 //only pet worth reviving
 /datum/job/head_of_personnel/get_mail_goodies(mob/recipient)
-	. = ..()
+	var/list/base_goodies = ..()
+	. = base_goodies.Copy()
 	// Strange Reagent if the pet is dead.
-	for(var/mob/living/basic/pet/dog/corgi/ian/staff_pet in GLOB.dead_mob_list)
-		. += list(/datum/reagent/medicine/strange_reagent = 20)
-		break
+	var/mob/living/basic/pet/dog/corgi/ian/staff_pet = locate() in GLOB.dead_mob_list
+	if(staff_pet)
+		. += list(/obj/item/reagent_containers/cup/bottle/strange_reagent = 20)

@@ -5,6 +5,7 @@
  * as much as possible to the components/elements system
  */
 /atom
+	abstract_type = /atom
 	layer = ABOVE_NORMAL_TURF_LAYER
 	plane = GAME_PLANE
 	appearance_flags = TILE_BOUND|LONG_GLIDE
@@ -72,17 +73,23 @@
 	var/light_power = 1
 	///Hexadecimal RGB string representing the colour of the light. White by default.
 	var/light_color = COLOR_WHITE
+	///Boolean variable for toggleable lights. Has no effect without the proper light_system, light_range and light_power values.
+	var/light_on = TRUE
+	///Bitflags to determine lighting-related atom properties.
+	var/light_flags = NONE
+
+	// OVERLAY_LIGHT only values
+	/// An optional render_source to apply to this atom's light overlay
+	var/light_render_source = ""
+
+	// COMPLEX_LIGHT only values
 	/// Angle of light to show in light_dir
 	/// 360 is a circle, 90 is a cone, etc.
 	var/light_angle = 360
 	/// What angle to project light in
 	var/light_dir = NORTH
-	///Boolean variable for toggleable lights. Has no effect without the proper light_system, light_range and light_power values.
-	var/light_on = TRUE
 	/// How many tiles "up" this light is. 1 is typical, should only really change this if it's a floor light
 	var/light_height = LIGHTING_HEIGHT
-	///Bitflags to determine lighting-related atom properties.
-	var/light_flags = NONE
 	///Our light source. Don't fuck with this directly unless you have a good reason!
 	var/tmp/datum/light_source/light
 	///Any light sources that are "inside" of us, for example, if src here was a mob that's carrying a flashlight, that flashlight's light source would be part of this list.
@@ -137,6 +144,12 @@
 	/// Flags to check for in can_perform_action for mouse drag & drop checks. To bypass checks see interaction_flags_atom mouse drop flags
 	var/interaction_flags_mouse_drop = NONE
 
+	/// Generally for niche objects, atoms blacklisted can spawn if enabled by spawner.
+	var/spawn_blacklisted = FALSE
+
+	/// What color this shows up as on the tactical map
+	var/tacmap_color = TACMAP_SOLID
+
 /**
  * Top level of the destroy chain for most atoms
  *
@@ -172,6 +185,9 @@
 		overlays.Cut()
 
 	LAZYNULL(managed_overlays)
+	// SSvis_overlays shares these between atoms and deletes them on its own, so don't hold them while we wait in the gc queue
+	if(managed_vis_overlays)
+		managed_vis_overlays = null
 	if(ai_controller)
 		QDEL_NULL(ai_controller)
 	if(light)
@@ -221,7 +237,12 @@
 	if(!mover.generic_canpass)
 		return mover.CanPassThrough(src, REVERSE_DIR(border_dir), .)
 
-/// Returns true or false to allow the mover to move through src
+/**
+ * Returns true or false to allow the mover to move through src
+ * @params
+ * 	mover: The mob trying to move into this atom.
+ * 	border_dir: Typically the direction that mover has in relation to src.
+ */
 /atom/proc/CanAllowThrough(atom/movable/mover, border_dir)
 	SHOULD_CALL_PARENT(TRUE)
 	//SHOULD_BE_PURE(TRUE)
@@ -333,30 +354,38 @@
 	return FALSE
 
 /**
- * Ensure a list of atoms/reagents exists inside this atom
+ * Called whenever an item is crafted, either via stack recipes or crafting recipes from the crafting menu
  *
- * Cycles through the list of movables used up in the recipe and calls used_in_craft() for each of them
- * then it either moves them inside the object or deletes
- * them depending on whether they're in the list of parts for the recipe or not
+ * By default, it just cycles through the list of movables used in the recipe and calls used_in_craft() for each of them,
+ * then it either moves them inside the object if they're in the list of parts for the recipe
+ * or deletes them if they're not.
+ * The proc can be overriden by subtypes, as long as it always call parent.
  */
 /atom/proc/on_craft_completion(list/components, datum/crafting_recipe/current_recipe, atom/crafter)
 	SHOULD_CALL_PARENT(TRUE)
+
+	if(isliving(crafter))
+		var/mob/living/person = crafter
+		if(person.mind)
+			ADD_TRAIT(src, TRAIT_HANDMADE, REF(person.mind))
+
 	SEND_SIGNAL(src, COMSIG_ATOM_ON_CRAFT, components, current_recipe)
-	var/list/remaining_parts = current_recipe?.parts?.Copy()
-	var/list/parts_by_type = remaining_parts?.Copy()
+
+	var/list/remaining_parts = LAZYLISTDUPLICATE(current_recipe?.parts)
+	var/list/parts_by_type = LAZYLISTDUPLICATE(remaining_parts)
 	for(var/parttype in parts_by_type) //necessary for our is_type_in_list() call with the zebra arg set to true
 		parts_by_type[parttype] = parttype
-	for(var/obj/item/item in components) // machinery or structure objects in the list are guaranteed to be used up. We only check items.
-		item.used_in_craft(src, current_recipe)
-		var/matched_type = is_type_in_list(item, parts_by_type, zebra = TRUE)
+	for(var/atom/movable/movable as anything in components) // machinery or structure objects in the list are guaranteed to be used up. We only check items.
+		movable.used_in_craft(src, current_recipe)
+		var/matched_type = is_type_in_list(movable, parts_by_type, zebra = TRUE)
 		if(!matched_type)
 			continue
 
-		if(isliving(item.loc))
-			var/mob/living/living = item.loc
-			living.transferItemToLoc(item, src)
+		if(isliving(movable.loc) && isitem(movable))
+			var/mob/living/living = movable.loc
+			living.transferItemToLoc(movable, src)
 		else
-			item.forceMove(src)
+			movable.forceMove(src)
 
 		if(matched_type)
 			remaining_parts[matched_type] -= 1
@@ -372,11 +401,8 @@
 	return null
 
 ///Return the current air environment in this atom
-/atom/proc/return_air()
-	if(loc)
-		return loc.return_air()
-	else
-		return null
+/atom/proc/return_air() as /datum/gas_mixture
+	return loc?.return_air()
 
 ///Return the air if we can analyze it
 /atom/proc/return_analyzable_air()
@@ -391,11 +417,11 @@
 	return is_refillable() && is_drainable()
 
 /// Is this atom injectable into other atoms
-/atom/proc/is_injectable(mob/user, allowmobs = TRUE)
+/atom/proc/is_injectable()
 	return reagents && (reagents.flags & (INJECTABLE | REFILLABLE))
 
 /// Can we draw from this atom with an injectable atom
-/atom/proc/is_drawable(mob/user, allowmobs = TRUE)
+/atom/proc/is_drawable()
 	return reagents && (reagents.flags & (DRAWABLE | DRAINABLE))
 
 /// Can this atoms reagents be refilled
@@ -405,6 +431,10 @@
 /// Is this atom drainable of reagents
 /atom/proc/is_drainable()
 	return reagents && (reagents.flags & DRAINABLE)
+
+/// Can we dunk stuff into this container?
+/atom/proc/is_dunkable()
+	return reagents && (reagents.flags & DUNKABLE)
 
 /** Handles exposing this atom to a list of reagents.
  *
@@ -425,12 +455,16 @@
 	for(var/datum/reagent/current_reagent as anything in reagents)
 		. |= current_reagent.expose_atom(src, reagents[current_reagent], methods)
 
-/// Are you allowed to drop this atom
+/// Are you allowed to drop stuff inside this atom
 /atom/proc/AllowDrop()
 	return FALSE
 
 ///Is this atom within 1 tile of another atom
 /atom/proc/HasProximity(atom/movable/proximity_check_mob as mob|obj)
+	return
+
+/// has a previously nearby atom moved away
+/atom/proc/OnProximityExit(atom/movable/proximity_check_mob as mob|obj)
 	return
 
 /// Sets the wire datum of an atom
@@ -537,7 +571,7 @@
  *
  * (e.g. A mob with nightvision loses its nightvision while looking through a normal camera)
  */
-/atom/proc/update_remote_sight(mob/living/user)
+/atom/proc/update_remote_sight(mob/living/user, list/new_sight)
 	return
 
 
@@ -570,14 +604,10 @@
 /atom/proc/wash(clean_types)
 	SHOULD_CALL_PARENT(TRUE)
 	. = SEND_SIGNAL(src, COMSIG_COMPONENT_CLEAN_ACT, clean_types)
-	if(.)
-		return
-
 	// Basically "if has washable coloration"
 	if(length(atom_colours) >= WASHABLE_COLOUR_PRIORITY && atom_colours[WASHABLE_COLOUR_PRIORITY])
 		remove_atom_colour(WASHABLE_COLOUR_PRIORITY)
-		return COMPONENT_CLEANED|COMPONENT_CLEANED_GAIN_XP
-	return NONE
+		. |= COMPONENT_CLEANED|COMPONENT_CLEANED_GAIN_XP
 
 ///Where atoms should drop if taken from this atom
 /atom/proc/drop_location()
@@ -616,6 +646,7 @@
  */
 /atom/Exited(atom/movable/gone, direction)
 	SEND_SIGNAL(src, COMSIG_ATOM_EXITED, gone, direction)
+	SEND_SIGNAL(gone, COMSIG_ATOM_EXITING, src, direction)
 
 ///Return atom temperature
 /atom/proc/return_temperature()
@@ -649,7 +680,10 @@
 
 /atom/proc/StartProcessingAtom(mob/living/user, obj/item/process_item, list/chosen_option)
 	var/processing_time = chosen_option[TOOL_PROCESSING_TIME]
+	var/sound_to_play = chosen_option[TOOL_PROCESSING_SOUND]
 	to_chat(user, span_notice("You start working on [src]."))
+	if(sound_to_play)
+		playsound(src, sound_to_play, 50, TRUE)
 	if(!process_item.use_tool(src, user, processing_time, volume=50))
 		return
 	var/atom/atom_to_create = chosen_option[TOOL_PROCESSING_RESULT]
@@ -658,7 +692,7 @@
 	for(var/i = 1 to amount_to_create)
 		var/atom/created_atom = new atom_to_create(drop_location())
 		created_atom.OnCreatedFromProcessing(user, process_item, chosen_option, src)
-		if(custom_materials)
+		if(custom_materials || IS_EDIBLE(src)) //materials are ALWAYS inherited for food, even if the source has none
 			created_atom.set_custom_materials(custom_materials, 1 / amount_to_create)
 		created_atom.pixel_x = pixel_x
 		created_atom.pixel_y = pixel_y
@@ -682,7 +716,7 @@
 
 	SEND_SIGNAL(src, COMSIG_ATOM_CREATEDBY_PROCESSING, original_atom, chosen_option)
 	if(user.mind)
-		ADD_TRAIT(src, TRAIT_FOOD_CHEF_MADE, REF(user.mind))
+		ADD_TRAIT(src, TRAIT_HANDMADE, REF(user.mind))
 
 ///Connect this atom to a shuttle
 /atom/proc/connect_to_shuttle(mapload, obj/docking_port/mobile/port, obj/docking_port/stationary/dock)
@@ -774,7 +808,7 @@
  *
  * Override this if you want an atom to be usable as a supplypod.
  */
-/atom/proc/setOpened()
+/atom/proc/set_opened()
 	return
 
 /**
@@ -782,11 +816,13 @@
  *
  * Override this if you want an atom to be usable as a supplypod.
  */
-/atom/proc/setClosed()
+/atom/proc/set_closed()
 	return
 
 ///Called after the atom is 'tamed' for type-specific operations, Usually called by the tameable component but also other things.
 /atom/proc/tamed(mob/living/tamer, obj/item/food)
+	SHOULD_CALL_PARENT(TRUE)
+	ADD_TRAIT(src, TRAIT_TAMED, INNATE_TRAIT)
 	return
 
 /**
@@ -969,3 +1005,7 @@
 	if(pass_info.pass_flags & pass_flags_self)
 		return TRUE
 	. = !density
+
+/// Logic for adding reskin components goes here. Override for atom-specific reskin setups.
+/atom/proc/setup_reskins()
+	return

@@ -11,6 +11,7 @@
 
 //Parent to shields and blades because muh copypasted code.
 /datum/action/changeling/weapon
+	abstract_type = /datum/action/changeling/weapon
 	name = "Organic Weapon"
 	desc = "Go tell a coder if you see this"
 	helptext = "Yell at Miauw and/or Perakp"
@@ -40,9 +41,9 @@
 /// Removes weapon if it exists, returns true if we removed something
 /datum/action/changeling/weapon/proc/unequip_held(mob/user)
 	var/found_weapon = FALSE
-	for(var/obj/item/held in user.held_items)
+	for(var/obj/item/held as anything in user.get_held_items())
 		found_weapon = check_weapon(user, held) || found_weapon
-	return found_weapon
+	return !!found_weapon
 
 /datum/action/changeling/weapon/try_to_sting(mob/user, mob/target)
 	if (unequip_held(user))
@@ -87,6 +88,7 @@
 
 //Parent to space suits and armor.
 /datum/action/changeling/suit
+	abstract_type = /datum/action/changeling/suit
 	name = "Organic Suit"
 	desc = "Go tell a coder if you see this"
 	helptext = "Yell at Miauw and/or Perakp"
@@ -175,7 +177,8 @@
 	name = "Arm Blade"
 	desc = "Мы превращаем одну из наших рук в смертоносный клинок. Стоит 20 химикатов."
 	helptext = "Мы можем убрать свой клинок так же, как и сформировали его. Нельзя использовать, находясь в меньшей форме."
-	button_icon_state = "armblade"
+	button_icon_state = "arm_blade"
+	category = "combat"
 	chemical_cost = 20
 	dna_cost = 2
 	req_human = TRUE
@@ -225,6 +228,8 @@
 	)
 
 /obj/item/melee/arm_blade/afterattack(atom/target, mob/user, list/modifiers, list/attack_modifiers)
+	if(QDELETED(target))
+		return
 	if(istype(target, /obj/structure/table))
 		var/obj/smash = target
 		smash.deconstruct(FALSE)
@@ -269,6 +274,7 @@
 	В боевой стойке, поймав жертву, мы возьмем ее в захват; притянем к себе и нанесем удар, если в руках у нас также есть острое оружие. \
 	Не может быть использована в меньшей форме."
 	button_icon_state = "tentacle"
+	category = "combat"
 	chemical_cost = 10
 	dna_cost = 2
 	req_human = TRUE
@@ -295,7 +301,7 @@
 	fire_sound = 'sound/effects/splat.ogg'
 	force = 0
 	max_charges = 1
-	fire_delay = 1
+	fire_delay = 1 DECISECONDS
 	throwforce = 0 //Just to be on the safe side
 	throw_range = 0
 	throw_speed = 0
@@ -360,7 +366,7 @@
 
 /obj/projectile/tentacle/fire(setAngle)
 	if(firer)
-		chain = firer.Beam(src, icon_state = "tentacle", emissive = FALSE)
+		chain = firer.Beam(src, icon_state = "tentacle", emissive = NONE)
 	..()
 
 /obj/projectile/tentacle/proc/reset_throw(mob/living/carbon/human/user)
@@ -371,23 +377,12 @@
 	if(!user.Adjacent(victim))
 		return
 
-	if(user.get_active_held_item() && !user.get_inactive_held_item())
-		user.swap_hand()
-
-	if(user.get_active_held_item())
-		return
-
 	victim.grabbedby(user)
 	victim.grippedby(user, instant = TRUE) //instant aggro grab
 
-	for(var/obj/item/weapon in user.held_items)
+	for(var/obj/item/weapon as anything in user.get_held_items())
 		if(weapon.get_sharpness())
-			victim.visible_message(span_danger("[capitalize(user.declent_ru(NOMINATIVE))] протыкает [capitalize(victim.declent_ru(ACCUSATIVE))] с помощью [weapon.declent_ru(ACCUSATIVE)]!"), span_userdanger("[capitalize(user.declent_ru(NOMINATIVE))] протыкает вас с помощью [weapon.declent_ru(ACCUSATIVE)]!"))
-			victim.apply_damage(weapon.force, BRUTE, BODY_ZONE_CHEST, attacking_item = weapon)
-			user.do_item_attack_animation(victim, used_item = weapon, animation_type = ATTACK_ANIMATION_PIERCE)
-			user.add_blood_DNA_to_items(victim.get_blood_dna_list(), ITEM_SLOT_ICLOTHING|ITEM_SLOT_OCLOTHING)
-			playsound(get_turf(user),weapon.hitsound,75,TRUE)
-			return
+			weapon.melee_attack_chain(user, victim)
 
 /obj/projectile/tentacle/on_hit(atom/movable/target, blocked = 0, pierce_hit)
 	if(!isliving(firer) || !ismovable(target))
@@ -472,7 +467,7 @@
 	return BULLET_ACT_HIT
 
 /obj/projectile/tentacle/Destroy()
-	qdel(chain)
+	QDEL_NULL(chain)
 	source = null
 	return ..()
 
@@ -485,6 +480,7 @@
 	desc = "Мы превращаем одну из наших рук в твердый щит. Стоит 20 химикатов."
 	helptext = "Органическая ткань не может вечно сопротивляться повреждениям; щит может сломаться, после того, как по нему нанесут слишком много ударов. Чем больше генов мы поглощаем, тем сильнее он становится. Невозможно использовать, находясь в меньшей форме."
 	button_icon_state = "organic_shield"
+	category = "combat"
 	chemical_cost = 20
 	dna_cost = 1
 	req_human = TRUE
@@ -521,6 +517,9 @@
 		loc.visible_message(span_warning("Конец руки [loc.declent_ru(GENITIVE)] быстро раздувается, образуя огромную массу, похожую на щит!"), span_warning("Мы надуваем руку, превращая ее в прочный щит."), span_hear("Вы слышите, как рвется и разрывается органическая масса!"))
 
 /obj/item/shield/changeling/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK, damage_type = BRUTE)
+	if(attack_type == OVERWHELMING_ATTACK)
+		return FALSE
+
 	if(remaining_uses < 1)
 		if(ishuman(loc))
 			var/mob/living/carbon/human/H = loc
@@ -539,6 +538,7 @@
 	desc = "Мы превращаем нашу кожу в прочный хитин, чтобы защитить себя от повреждений. Стоит 20 химикатов."
 	helptext = "На поддержание брони требуется небольшой расход химикатов. Доспехи обеспечивают достойную защиту от грубой силы и энергетического оружия. Не может быть использована в меньшей форме."
 	button_icon_state = "chitinous_armor"
+	category = "combat"
 	chemical_cost = 20
 	dna_cost = 1
 	req_human = TRUE
@@ -560,6 +560,7 @@
 	flags_inv = HIDEJUMPSUIT
 	cold_protection = 0
 	heat_protection = 0
+	bodyshapes_with_variations = BODYSHAPE_CERULEAN
 
 /datum/armor/armor_changeling
 	melee = 40
@@ -605,6 +606,7 @@
 	desc = "Мы покрываем голову восковым покрытием, похожим на пчелиный улей, которое можно использовать для производства пчел, атакующих наших врагов. Стоит 15 химикатов."
 	helptext = "Хотя голова улья не дает особой брони, она позволяет посылать пчел в атаку на цели. Внутрь улья можно насыпать реагенты, чтобы все выпущенные пчелы впрыскивали эти реагенты."
 	button_icon_state = "hive_head"
+	category = "combat"
 	chemical_cost = 15
 	dna_cost = 2
 	req_human = FALSE
@@ -646,9 +648,9 @@
 	if(!istype(tool, /obj/item/organ/monster_core/regenerative_core/legion) || !holds_reagents)
 		return NONE
 	visible_message(span_boldwarning("Когда [user.declent_ru(NOMINATIVE)] запихивает [tool.declent_ru(ACCUSATIVE)] в [declent_ru(ACCUSATIVE)], [declent_ru(NOMINATIVE)] начинает мутировать."))
-	var/mob/living/carbon/wearer = loc
+	var/mob/living/carbon/human/wearer = loc
 	playsound(wearer, 'sound/effects/blob/attackblob.ogg', 60, TRUE)
-	wearer.temporarilyRemoveItemFromInventory(wearer.head, TRUE)
+	wearer.temporarilyRemoveItemFromInventory(src, TRUE)
 	wearer.equip_to_slot_if_possible(new /obj/item/clothing/head/helmet/changeling_hivehead/legion(wearer), ITEM_SLOT_HEAD, 1, 1, 1)
 	qdel(tool)
 	return ITEM_INTERACT_SUCCESS
@@ -680,7 +682,8 @@
 		spawns = 1
 	for(var/i in 1 to spawns)
 		var/mob/living/basic/summoned_minion = new spawn_type(owner.drop_location())
-		summoned_minion.faction = list("[REF(owner)]")
+		summoned_minion.set_allies(list("[REF(owner)]"))
+		summoned_minion.set_faction(null)
 		minion_additional_changes(summoned_minion)
 
 ///Our tell that we're using this ability. Usually a sound and a visible message.area
@@ -691,9 +694,9 @@
 ///Stuff we want to do to our minions. This is in its own proc so subtypes can override this behaviour.
 /datum/action/cooldown/hivehead_spawn_minions/proc/minion_additional_changes(mob/living/basic/minion)
 	var/mob/living/basic/bee/summoned_bee = minion
-	var/mob/living/carbon/wearer = owner
-	if(istype(summoned_bee) && length(wearer.head.reagents.reagent_list))
-		summoned_bee.assign_reagent(pick(wearer.head.reagents.reagent_list))
+	var/obj/item/clothing/head/helmet/changeling_hivehead/hivehead = owner.get_item_by_slot(ITEM_SLOT_HEAD)
+	if(istype(summoned_bee) && istype(hivehead) && length(hivehead.reagents.reagent_list))
+		summoned_bee.assign_reagent(pick(hivehead.reagents.reagent_list))
 
 /obj/item/clothing/head/helmet/changeling_hivehead/legion
 	name = "legion hive head"
@@ -708,7 +711,7 @@
 	button_icon = 'icons/mob/simple/lavaland/lavaland_monsters.dmi'
 	button_icon_state = "legion_head"
 	cooldown_time = 15 SECONDS
-	spawn_type = /mob/living/basic/legion_brood
+	spawn_type = /mob/living/basic/mining/legion_brood
 	spawn_count = 4
 
 /datum/action/cooldown/hivehead_spawn_minions/legion/do_tell()
@@ -716,6 +719,6 @@
 	playsound(owner, 'sound/effects/blob/attackblob.ogg', 60, TRUE)
 
 /datum/action/cooldown/hivehead_spawn_minions/legion/minion_additional_changes(mob/living/basic/minion)
-	var/mob/living/basic/legion_brood/brood = minion
+	var/mob/living/basic/mining/legion_brood/brood = minion
 	if (istype(brood))
 		brood.assign_creator(owner, FALSE)

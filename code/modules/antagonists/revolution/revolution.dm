@@ -1,14 +1,15 @@
 /datum/antagonist/rev
-	name = "\improper Revolutionary"
+	name = "Революционер"
 	roundend_category = "Революционеры" // if by some miracle revolutionaries without revolution happen
-	antagpanel_category = "Revolution"
+	antagpanel_category = "Революция"
 	pref_flag = ROLE_REV
 	antag_moodlet = /datum/mood_event/revolution
 	antag_hud_name = "rev"
-	suicide_cry = "VIVA LA REVOLUTION!!"
+	suicide_cry = "ВИВА ЛА РЕВОЛЮЦИОН!!"
 	stinger_sound = 'sound/music/antag/revolutionary_tide.ogg'
-	var/datum/team/revolution/rev_team
+	ui_name = "AntagInfoRevolution"
 
+	var/datum/team/revolution/rev_team
 	/// When this antagonist is being de-antagged, this is the source. Can be a mob (for mindshield/blunt force trauma) or a #define string.
 	var/deconversion_source
 
@@ -20,26 +21,14 @@
 	return ..()
 
 /datum/antagonist/rev/admin_add(datum/mind/new_owner, mob/admin)
-	// No revolution exists which means admin adding this will create a new revolution team
-	// This causes problems because revolution teams (currently) require a dynamic datum to process its victory / defeat conditions
-	if(!(locate(/datum/team/revolution) in GLOB.antagonist_teams))
-		var/confirm = tgui_alert(admin, "Notice: Revolutions do not function 100% when created via traitor panel instead of dynamic. \
-			The leaders will be able to convert as normal, but the shuttle will not be blocked and there will be no announcements when either side wins. \
-			Are you sure?", "Be Wary", list("Yes", "No"))
-		if(QDELETED(src) || QDELETED(new_owner.current) || confirm != "Yes")
-			return
-
-	go_through_with_admin_add(new_owner, admin)
-
-/datum/antagonist/rev/proc/go_through_with_admin_add(datum/mind/new_owner, mob/admin)
 	new_owner.add_antag_datum(src)
 	message_admins("[key_name_admin(admin)] has rev'ed [key_name_admin(new_owner)].")
 	log_admin("[key_name(admin)] has rev'ed [key_name(new_owner)].")
-	to_chat(new_owner.current, span_userdanger("You are a member of the revolution!"))
+	to_chat(new_owner.current, span_userdanger("Вы – участник революции!"))
 
 /datum/antagonist/rev/apply_innate_effects(mob/living/mob_override)
 	var/mob/living/M = mob_override || owner.current
-	handle_clown_mutation(M, mob_override ? null : "Your training has allowed you to overcome your clownish nature, allowing you to wield weapons without harming yourself.")
+	handle_clown_mutation(M, mob_override ? null : "Ваши тренировки позволили вам преодолеть свою клоунскую натуру, позволив вам владеть оружием, не нанося себе вреда.")
 	add_team_hud(M, /datum/antagonist/rev)
 
 /datum/antagonist/rev/remove_innate_effects(mob/living/mob_override)
@@ -56,12 +45,7 @@
 /datum/antagonist/rev/on_gain()
 	. = ..()
 	equip_rev()
-	owner.current.log_message("has been converted to the revolution!", LOG_ATTACK, color="red")
-
-/datum/antagonist/rev/greet()
-	. = ..()
-	to_chat(owner, span_userdanger("Help your cause. Do not harm your fellow freedom fighters. You can identify your comrades by the red \"R\" icons, and your leaders by the blue \"R\" icons. Help them kill the heads to win the revolution!"))
-	owner.announce_objectives()
+	owner.current.log_message("has been converted to the revolution!", LOG_ATTACK, color = COLOR_CULT_RED)
 
 /datum/antagonist/rev/create_team(datum/team/revolution/new_team)
 	if(!new_team)
@@ -86,7 +70,7 @@
 	new_revhead.silent = TRUE
 	old_owner.add_antag_datum(new_revhead,old_team)
 	new_revhead.silent = FALSE
-	to_chat(old_owner, span_userdanger("You have proved your devotion to revolution! You are a head revolutionary now!"))
+	to_chat(old_owner, span_userdanger("Вы доказали свою преданность революции! Теперь вы глава революционеров!"))
 
 /datum/antagonist/rev/get_admin_commands()
 	. = ..()
@@ -98,14 +82,48 @@
 	message_admins("[key_name_admin(admin)] has head-rev'ed [O].")
 	log_admin("[key_name(admin)] has head-rev'ed [O].")
 
-/datum/antagonist/rev/head/go_through_with_admin_add(datum/mind/new_owner, mob/admin)
+/datum/antagonist/rev/ui_static_data(mob/user)
+	. = ..()
+	.["leader"] = (pref_flag == ROLE_REV_HEAD)
+	.["heads"] = list()
+	for(var/datum/mind/head_of_staff as anything in SSjob.get_all_heads())
+		.["heads"] += list(list("name" = head_of_staff.name, "role" = head_of_staff.assigned_role.title))
+
+/datum/antagonist/rev/head/ui_static_data(mob/user)
+	. = ..()
+	.["code_phrases"] = rev_team.head_chose_phrase_raw
+	.["code_responses"] = rev_team.head_code_responses_raw
+	.["lone_wolf"] = !roundstart || length(rev_team.get_head_revolutionaries()) == 1
+	.["conversion_objective_max_length"] = MAX_CHARTER_LEN // it's poetic, not lazy reuse, I swear
+	.["conversion_objective"] = html_decode(conversion_objective)
+
+/datum/antagonist/rev/head/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
+	. = ..()
+	switch(action)
+		if("set_conversion_objective")
+			if(!params["conversion_objective"])
+				conversion_objective = ""
+				return
+
+			var/new_objective = trim(sanitize(params["conversion_objective"]), MAX_CHARTER_LEN)
+			if(!new_objective)
+				tgui_alert(usr, "Your objective is invalid. Please try again.")
+				return
+			if(is_ic_filtered(new_objective))
+				tgui_alert(usr, "Your objective contains IC filtered words. Please remove them and try again.")
+				return
+
+			conversion_objective = new_objective
+			owner.current.log_message("set their conversion guideline to: [conversion_objective]", color = COLOR_CULT_RED)
+
+/datum/antagonist/rev/head/admin_add(datum/mind/new_owner, mob/admin)
 	give_flash = TRUE
 	give_hud = TRUE
 	remove_clumsy = TRUE
 	new_owner.add_antag_datum(src)
 	message_admins("[key_name_admin(admin)] has head-rev'ed [key_name_admin(new_owner)].")
 	log_admin("[key_name(admin)] has head-rev'ed [key_name(new_owner)].")
-	to_chat(new_owner.current, span_userdanger("You are a member of the revolutionaries' leadership now!"))
+	to_chat(new_owner.current, span_userdanger("Теперь вы являетесь частью руководства революционеров!"))
 
 /datum/antagonist/rev/head/get_admin_commands()
 	. = ..()
@@ -151,16 +169,20 @@
 	demote()
 
 /datum/antagonist/rev/head
-	name = "\improper Head Revolutionary"
+	name = "Глава Революционеров"
 	antag_hud_name = "rev_head"
 	pref_flag = ROLE_REV_HEAD
 
 	preview_outfit = /datum/outfit/revolutionary
 	hardcore_random_bonus = TRUE
 
+	/// Headrev-set objective sent to any player they convert
+	var/conversion_objective = ""
+
 	var/remove_clumsy = FALSE
 	var/give_flash = FALSE
 	var/give_hud = TRUE
+	var/roundstart = FALSE
 
 /datum/antagonist/rev/head/pre_mindshield(mob/implanter, mob/living/mob_override)
 	return COMPONENT_MINDSHIELD_RESISTED
@@ -180,28 +202,35 @@
 	. = ..()
 	var/mob/living/real_mob = mob_override || owner.current
 	real_mob.AddComponentFrom(REF(src), /datum/component/can_flash_from_behind)
-	RegisterSignal(real_mob, COMSIG_MOB_SUCCESSFUL_FLASHED_CARBON, PROC_REF(on_flash_success))
+	RegisterSignal(real_mob, COMSIG_MOB_SUCCESSFUL_FLASHED_MOB, PROC_REF(on_flash_success))
+
+	real_mob.AddComponent(/datum/component/codeword_hearing, rev_team.head_code_phrases, "blue", src)
+	real_mob.AddComponent(/datum/component/codeword_hearing, rev_team.head_code_responses, "red", src)
 
 /datum/antagonist/rev/head/remove_innate_effects(mob/living/mob_override)
 	. = ..()
 	var/mob/living/real_mob = mob_override || owner.current
 	real_mob.RemoveComponentSource(REF(src), /datum/component/can_flash_from_behind)
-	UnregisterSignal(real_mob, COMSIG_MOB_SUCCESSFUL_FLASHED_CARBON)
+	UnregisterSignal(real_mob, COMSIG_MOB_SUCCESSFUL_FLASHED_MOB)
 
-/// Signal proc for [COMSIG_MOB_SUCCESSFUL_FLASHED_CARBON].
+	for(var/datum/component/codeword_hearing/component as anything in real_mob.GetComponents(/datum/component/codeword_hearing))
+		component.delete_if_from_source(src)
+
+/// Signal proc for [COMSIG_MOB_SUCCESSFUL_FLASHED_MOB].
 /// Bread and butter of revolution conversion, successfully flashing a carbon will make them a revolutionary
-/datum/antagonist/rev/head/proc/on_flash_success(mob/living/source, mob/living/carbon/flashed, obj/item/assembly/flash/flash, deviation)
+/datum/antagonist/rev/head/proc/on_flash_success(mob/living/source, mob/living/flashed, obj/item/assembly/flash/flash, deviation)
 	SIGNAL_HANDLER
 
-	if(flashed.stat == DEAD)
+	if(flashed.stat == DEAD || issilicon(flashed) || isdrone(flashed))
 		return
-	if(flashed.stat != CONSCIOUS)
-		to_chat(source, span_warning("[flashed.p_They()] must be conscious before you can convert [flashed.p_them()]!"))
+	if(IS_UNCONSCIOUS_OR_CRIT(flashed))
+		to_chat(source, span_warning("[flashed.p_They()] должен быть в сознании, прежде чем вы сможете конвертировать [flashed.p_them()]!"))
 		return
 
 	if(isnull(flashed.mind) || !GET_CLIENT(flashed))
-		to_chat(source, span_warning("[flashed]'s mind is so vacant that it is not susceptible to influence!"))
+		to_chat(source, span_warning("Разум [flashed] настолько пуст, что не поддается влиянию!"))
 		return
+	rev_team.check_size()  /// BANDASTATION EDIT - Revolution Overhaul
 
 	var/holiday_meme_chance = check_holidays(APRIL_FOOLS) && prob(10)
 	if(add_revolutionary(flashed.mind, mute = !holiday_meme_chance)) // don't mute if we roll the meme holiday chance
@@ -209,7 +238,7 @@
 			INVOKE_ASYNC(src, PROC_REF(_async_holiday_meme_say), flashed)
 		flash.times_used-- // Flashes are less likely to burn out for headrevs, when used for conversion
 	else
-		to_chat(source, span_warning("[flashed] seems resistant to [flash]!"))
+		to_chat(source, span_warning("[flashed] кажется устойчивым к [flash]!"))
 
 /// Used / called async from [proc/on_flash] to deliver a funny meme line
 /datum/antagonist/rev/head/proc/_async_holiday_meme_say(mob/living/carbon/flashed)
@@ -222,21 +251,21 @@
 	return ..() + "(Leader)"
 
 /datum/antagonist/rev/head/get_preview_icon()
-	var/icon/final_icon = render_preview_outfit(preview_outfit)
+	var/datum/universal_icon/final_icon = render_preview_outfit(preview_outfit)
 
-	final_icon.Blend(make_assistant_icon("Business Hair"), ICON_UNDERLAY, -8, 0)
-	final_icon.Blend(make_assistant_icon("CIA"), ICON_UNDERLAY, 8, 0)
+	final_icon.blend_icon(make_assistant_icon("Business Hair"), ICON_UNDERLAY, -8, 0)
+	final_icon.blend_icon(make_assistant_icon("CIA"), ICON_UNDERLAY, 8, 0)
 
 	// Apply the rev head HUD, but scale up the preview icon a bit beforehand.
 	// Otherwise, the R gets cut off.
-	final_icon.Scale(64, 64)
+	final_icon.scale(64, 64)
 
-	var/icon/rev_head_icon = icon('icons/mob/huds/antag_hud.dmi', "rev_head")
-	rev_head_icon.Scale(48, 48)
-	rev_head_icon.Crop(1, 1, 64, 64)
-	rev_head_icon.Shift(EAST, 10)
-	rev_head_icon.Shift(NORTH, 16)
-	final_icon.Blend(rev_head_icon, ICON_OVERLAY)
+	var/datum/universal_icon/rev_head_icon = uni_icon('icons/mob/huds/antag_hud.dmi', "rev_head")
+	rev_head_icon.scale(48, 48)
+	rev_head_icon.crop(1, 1, 64, 64)
+	rev_head_icon.shift(EAST, 10)
+	rev_head_icon.shift(NORTH, 16)
+	final_icon.blend_icon(rev_head_icon, ICON_OVERLAY)
 
 	return finish_preview_icon(final_icon)
 
@@ -244,8 +273,8 @@
 	var/mob/living/carbon/human/dummy/consistent/assistant = new
 	assistant.set_hairstyle(hairstyle, update = TRUE)
 
-	var/icon/assistant_icon = render_preview_outfit(/datum/outfit/job/assistant/consistent, assistant)
-	assistant_icon.ChangeOpacity(0.5)
+	var/datum/universal_icon/assistant_icon = render_preview_outfit(/datum/outfit/job/assistant/consistent, assistant)
+	assistant_icon.change_opacity(0.5)
 
 	qdel(assistant)
 
@@ -279,8 +308,34 @@
 		rev_mind.current.Stun(10 SECONDS)
 
 	rev_mind.add_memory(/datum/memory/recruited_by_headrev, protagonist = rev_mind.current, antagonist = owner.current)
-	rev_mind.add_antag_datum(/datum/antagonist/rev,rev_team)
+	rev_mind.add_antag_datum(/datum/antagonist/rev, rev_team)
 	return TRUE
+
+/datum/antagonist/rev/head/add_revolutionary(datum/mind/rev_mind, stun = TRUE, mute = TRUE)
+	. = ..()
+	if(!. || !conversion_objective)
+		return
+
+	addtimer(CALLBACK(src, PROC_REF(report_conversion_objective), rev_mind, conversion_objective), 2 SECONDS, TIMER_DELETE_ME)
+
+/datum/antagonist/rev/head/proc/report_conversion_objective(datum/mind/rev_mind, set_conversion_objective)
+	if(QDELETED(rev_mind))
+		return
+
+	if(isnull(rev_mind?.current?.client))
+		if(isnull(rev_mind?.current))
+			return
+		// Try again until they get a client - presumably they're actively being polled for (due to a jobban or something).
+		addtimer(CALLBACK(src, PROC_REF(report_conversion_objective), rev_mind, set_conversion_objective), 3 SECONDS, TIMER_DELETE_ME)
+		return
+
+	var/conversion_formatted = span_slightly_larger(span_hypnophrase(set_conversion_objective))
+	var/hint_formatted = span_warning("This is a guideline instilled upon you from your (new) leader - \
+		while you are expected to follow it where possible, it is not a strict order. \
+		Further orders from your (new) leader(s) may supersede this.")
+
+	to_chat(rev_mind.current, fieldset_block(span_warning("A directive echoes through your mind..."), "[conversion_formatted]<br>[hint_formatted]", "boxed_message red_box"))
+	rev_mind.current.log_message("has been given a conversion guideline from [key_name(owner.current)]: [set_conversion_objective]", color = COLOR_CULT_RED)
 
 /datum/antagonist/rev/head/proc/demote()
 	var/datum/mind/old_owner = owner
@@ -291,36 +346,36 @@
 	new_rev.silent = TRUE
 	old_owner.add_antag_datum(new_rev,old_team)
 	new_rev.silent = FALSE
-	to_chat(old_owner, span_userdanger("Revolution has been disappointed of your leader traits! You are a regular revolutionary now!"))
+	to_chat(old_owner, span_userdanger("Революция разочарована вашими лидерскими качествами! Теперь вы обычный революционер!"))
 
 /datum/antagonist/rev/farewell()
 	if(!owner.current)
 		return
-	owner.current.balloon_alert_to_viewers("deconverted!")
+	owner.current.balloon_alert_to_viewers("деконвертирован!")
 	if(ishuman(owner.current))
-		owner.current.visible_message(span_deconversion_message("[owner.current] looks like [owner.current.p_theyve()] just remembered [owner.current.p_their()] real allegiance!"), null, null, null, owner.current)
-		to_chat(owner, "<span class='deconversion_message bold'>You are no longer a brainwashed revolutionary! Your memory is hazy from the time you were a rebel...the only thing you remember is the name of the one who brainwashed you....</span>")
+		owner.current.visible_message(span_deconversion_message("[owner.current] похоже, [owner.current.p_theyve()] только что вспомнил [owner.current.p_their()] истинную приверженность!"), null, null, null, owner.current)
+		to_chat(owner, "<span class='deconversion_message bold'>Вы больше не революционер с промытыми мозгами! Ваши воспоминания о временах, когда вы были бунтарем туманны... единственное, что вы помните — это имя того, кто промыл вам мозги...</span>")
 	else if(issilicon(owner.current))
-		owner.current.visible_message(span_deconversion_message("The frame beeps contentedly, purging the hostile memory engram from the MMI before initializing it."), null, null, null, owner.current)
-		to_chat(owner, span_userdanger("The frame's firmware detects and deletes your neural reprogramming! You remember nothing but the name of the one who flashed you."))
+		owner.current.visible_message(span_deconversion_message("Оправа издает одобрительный звуковой сигнал, удаляя враждебную энграмму из MMI перед инициализацией."), null, null, null, owner.current)
+		to_chat(owner, span_userdanger("Прошивка оправы обнаруживает и удаляет ваше нейронное перепрограммирование! Вы не помните ничего, кроме имени того, кто вас ослепил."))
 
 /datum/antagonist/rev/head/farewell()
 	if (deconversion_source == DECONVERTER_STATION_WIN || !owner.current)
 		return
-	owner.current.balloon_alert_to_viewers("deconverted!")
+	owner.current.balloon_alert_to_viewers("деконвертирован!")
 	if((ishuman(owner.current)))
 		if(owner.current.stat != DEAD)
-			owner.current.visible_message(span_deconversion_message("[owner.current] looks like [owner.current.p_theyve()] just remembered [owner.current.p_their()] real allegiance!"), null, null, null, owner.current)
-			to_chat(owner, "<span class='deconversion_message bold'>You have given up your cause of overthrowing the command staff. You are no longer a Head Revolutionary.</span>")
+			owner.current.visible_message(span_deconversion_message("[owner.current] похоже, [owner.current.p_theyve()] только что вспомнил [owner.current.p_their()] истинную приверженность!"), null, null, null, owner.current)
+			to_chat(owner, "<span class='deconversion_message bold'>Вы отказались от своей цели свергнуть командный состав. Вы больше не являетесь главой революционеров.</span>")
 		else
-			to_chat(owner, "<span class='deconversion_message bold'>The sweet release of death. You are no longer a Head Revolutionary.</span>")
+			to_chat(owner, "<span class='deconversion_message bold'>Долгожданное облегчение после смерти. Вы больше не являетесь главой революционеров.</span>")
 	else if(issilicon(owner.current))
-		owner.current.visible_message(span_deconversion_message("The frame beeps contentedly, suppressing the disloyal personality traits from the MMI before initializing it."), null, null, null, owner.current)
-		to_chat(owner, span_userdanger("The frame's firmware detects and suppresses your unwanted personality traits! You feel more content with the leadership around these parts."))
+		owner.current.visible_message(span_deconversion_message("Оправа издает одобрительный звуковой сигнал, подавляя нелояльные черты личности из MMI перед инициализацией."), null, null, null, owner.current)
+		to_chat(owner, span_userdanger("Прошивка оправы обнаруживает и подавляет ваши нежелательные черты характера! Вы чувствуете себя более удовлетворенными руководством в этих краях."))
 
 /// Handles rev removal via IC methods such as borging, mindshielding, blunt force trauma to the head or revs losing.
 /datum/antagonist/rev/proc/remove_revolutionary(deconverter)
-	owner.current.log_message("has been deconverted from the revolution by [ismob(deconverter) ? key_name(deconverter) : deconverter]!", LOG_ATTACK, color=COLOR_CULT_RED)
+	owner.current.log_message("has been deconverted from the revolution by [ismob(deconverter) ? key_name(deconverter) : deconverter]!", LOG_ATTACK, color = COLOR_CULT_RED)
 	if(deconverter == DECONVERTER_BORGED)
 		message_admins("[ADMIN_LOOKUPFLW(owner.current)] has been borged while being a [name]")
 	if(iscarbon(owner.current) && deconverter)
@@ -347,18 +402,18 @@
 	if(give_flash)
 		var/where = carbon_owner.equip_conspicuous_item(new /obj/item/assembly/flash/handheld)
 		if (where)
-			to_chat(carbon_owner, "The flash in your [where] will help you to persuade the crew to join your cause.")
+			to_chat(carbon_owner, "Выданная вам вспышка поможет вам убедить команду присоединиться к вашему делу.")
 		else
-			to_chat(carbon_owner, "The Syndicate were unfortunately unable to get you a flash.")
+			to_chat(carbon_owner, "К сожалению, Синдикат не смог достать вам вспышку.")
 
 	if(give_hud)
 		var/obj/item/organ/cyberimp/eyes/hud/security/syndicate/hud = new()
 		hud.Insert(carbon_owner)
 		if(carbon_owner.get_quirk(/datum/quirk/body_purist))
-			to_chat(carbon_owner, "Being a body purist, you would never accept cybernetic implants. Upon hearing this, your employers signed you up for a special program, which... for \
-			some odd reason, you just can't remember... either way, the program must have worked, because you have gained the ability to keep track of who is mindshield-implanted, and therefore unable to be recruited.")
+			to_chat(carbon_owner, "Будучи приверженцем чистоты тела, вы никогда бы не согласились на кибернетические импланты. Узнав об этом, ваши работодатели записали вас в специальную программу, которую... \
+			по какой-то странной причине вы просто не можете вспомнить... В любом случае, программа должно быть сработала, потому что вы приобрели способность отслеживать кто имеет импланты защиты разума и следовательно не может быть завербован.")
 		else
-			to_chat(carbon_owner, "Your eyes have been implanted with a cybernetic security HUD which will help you keep track of who is mindshield-implanted, and therefore unable to be recruited.")
+			to_chat(carbon_owner, "В ваши глаза был имплантирован кибернетический охранный ИЛС, который поможет вам отслеживать кто имеет импланты защиты разума и следовательно не может быть завербован.")
 
 /datum/team/revolution
 	name = "\improper Revolution"
@@ -370,6 +425,25 @@
 
 	/// List of all ex-revs. Useful because dynamic removes antag status when it ends, so this can be kept for the roundend report.
 	var/list/datum/mind/ex_revs = list()
+
+	var/rev_ascendent = FALSE  /// BANDASTATION EDIT - Revolution Overhaul
+
+	/// List of code phrases
+	VAR_FINAL/list/head_chose_phrase_raw
+	/// Regex for code phrases that only headrevs hear
+	VAR_FINAL/regex/head_code_phrases
+	/// List of code responses
+	VAR_FINAL/list/head_code_responses_raw
+	/// Regex for code responses that only headrevs hear
+	VAR_FINAL/regex/head_code_responses
+
+/datum/team/revolution/New(starting_members)
+	. = ..()
+	head_chose_phrase_raw = generate_code_phrase(return_list = TRUE)
+	head_code_phrases = new("([jointext(head_chose_phrase_raw, "|")])", "ig")
+
+	head_chose_phrase_raw = generate_code_phrase(return_list = TRUE)
+	head_code_responses = new("([jointext(head_chose_phrase_raw, "|")])", "ig")
 
 /// Saves all current headrevs and revs
 /datum/team/revolution/proc/save_members()
@@ -405,10 +479,7 @@
 	for(var/datum/mind/khrushchev as anything in members - head_revolutionaries)
 		if(!can_be_headrev(khrushchev))
 			continue
-		var/client/khruschevs_client = GET_CLIENT(khrushchev.current)
-		if(!(ROLE_REV_HEAD in khruschevs_client.prefs.be_special) && !(ROLE_PROVOCATEUR in khruschevs_client.prefs.be_special))
-			continue
-		if(ismonkey(khrushchev.current))
+		if(HAS_TRAIT(khrushchev.current, TRAIT_LESSER_HUMANOID))
 			monkey_promotable += khrushchev
 		else
 			promotable += khrushchev
@@ -463,25 +534,25 @@
 
 	if(headrevs.len)
 		var/list/headrev_part = list()
-		headrev_part += span_header("The head revolutionaries were:")
+		headrev_part += span_header("Главными революционерами были:")
 		headrev_part += printplayerlist(headrevs, GLOB.revolution_handler.result != REVOLUTION_VICTORY)
 		result += headrev_part.Join("<br>")
 
 	if(revs.len)
 		var/list/rev_part = list()
-		rev_part += span_header("The revolutionaries were:")
+		rev_part += span_header("Революционерами были:")
 		rev_part += printplayerlist(revs, GLOB.revolution_handler.result != REVOLUTION_VICTORY)
 		result += rev_part.Join("<br>")
 
 	var/list/heads = SSjob.get_all_heads()
 	if(heads.len)
-		var/head_text = span_header("The heads of staff were:")
+		var/head_text = span_header("Командованием станции были:")
 		head_text += "<ul class='playerlist'>"
 		for(var/datum/mind/head in heads)
 			var/target = (head in targets)
 			head_text += "<li>"
 			if(target)
-				head_text += span_redtext("Target")
+				head_text += span_redtext("Цель")
 			head_text += "[printplayer(head, 1)]</li>"
 		head_text += "</ul><br>"
 		result += head_text

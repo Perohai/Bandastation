@@ -23,13 +23,15 @@
 	new /obj/item/clothing/glasses/night(src)
 	new /obj/item/ammo_box/magazine/m10mm(src)
 	new /obj/item/storage/belt/military(src)
-	new /obj/item/storage/belt/holster/nukie(src)
+	new /obj/item/clothing/accessory/holster/tacticool(src) //BANDASTATION EDIT: Accessory holsters
 	new /obj/item/radio/headset/syndicate(src)
 	new /obj/item/clothing/under/syndicate(src)
 	new /obj/item/clothing/under/syndicate/skirt(src)
 	new /obj/item/clothing/shoes/sneakers/black(src)
 	new /obj/item/mod/module/plasma_stabilizer(src)
 	new /obj/item/climbing_hook/syndicate(src)
+	new /obj/item/mod/module/thermal_regulator(src)
+	new /obj/item/mod/module/plasma_stabilizer(src)
 
 /obj/structure/closet/syndicate/nuclear
 	desc = "It's a storage unit for a Syndicate boarding party."

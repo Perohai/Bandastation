@@ -25,7 +25,7 @@ SUBSYSTEM_DEF(garbage)
 	name = "Garbage"
 	priority = FIRE_PRIORITY_GARBAGE
 	wait = 2 SECONDS
-	flags = SS_POST_FIRE_TIMING|SS_BACKGROUND|SS_NO_INIT
+	ss_flags = SS_POST_FIRE_TIMING|SS_BACKGROUND|SS_NO_INIT
 	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
 	init_stage = INITSTAGE_FIRST
 
@@ -228,7 +228,11 @@ SUBSYSTEM_DEF(garbage)
 					LAZYADD(I.extra_details, detail)
 
 				#ifdef TESTING
-				to_chat(get_holders_with_rights(R_ADMIN), "## TESTING: GC: -- [ADMIN_VV(D)] | [type] was unable to be GC'd --") /// BANDASTATION EDIT: Proper permissions
+				for(var/c in GLOB.admins) //Using testing() here would fill the logs with ADMIN_VV garbage
+					var/client/admin = c
+					if(!check_rights_for(admin, R_ADMIN))
+						continue
+					to_chat(admin, "## TESTING: GC: -- [ADMIN_VV(D)] | [type] was unable to be GC'd --")
 				#endif
 				I.failures++
 
@@ -370,7 +374,7 @@ SUBSYSTEM_DEF(garbage)
 	var/start_time = world.time
 	var/start_tick = world.tick_usage
 	SEND_SIGNAL(to_delete, COMSIG_QDELETING, force) // Let the (remaining) components know about the result of Destroy
-	var/hint = to_delete.Destroy(force) // Let our friend know they're about to get fucked up.
+	var/hint = UNLINT(to_delete.Destroy(force)) // Let our friend know they're about to get fucked up.
 
 	if(world.time != start_time)
 		trash.slept_destroy++

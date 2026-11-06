@@ -1,13 +1,13 @@
 /// Renders you unable to see people who were heretics at the time that this organ is gained
 /obj/item/organ/eyes/corrupt
 	name = "corrupt orbs"
-	desc = "These eyes have seen something they shouldn't have."
+	desc = "Эти глаза увидели то, чего не должны были видеть."
 	icon_state = "eyes_voidwalker"
 	iris_overlay = null
 	eye_color_left = COLOR_VOID_PURPLE
 	eye_color_right = COLOR_VOID_PURPLE
 	organ_flags = parent_type::organ_flags | ORGAN_HAZARDOUS
-	pupils_name = span_hypnophrase("pierced realities") //teeny tiny mansus portals, IN YOUR EYEBALLS (known to cause cancer in the state of california)
+	pupils_name = span_hypnophrase("пронзённые реальности") //teeny tiny mansus portals, IN YOUR EYEBALLS (known to cause cancer in the state of california)
 	penlight_message = "ARE THE LOCK, THE LIGHT IS THE KEY! THE HIGHER I RISE, THE MORE I-"
 	/// The override images we are applying
 	var/list/hallucinations
@@ -15,7 +15,7 @@
 /obj/item/organ/eyes/corrupt/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/corrupted_organ, FALSE)
-	AddElement(/datum/element/noticable_organ, "%PRONOUN_Their eyes have wide dilated pupils, and no iris. Something is moving in the darkness.", BODY_ZONE_PRECISE_EYES)
+	AddElement(/datum/element/noticable_organ, "Эти глаза имеют неестественно расширенные зрачки, совершенно без радужки. Что-то шевелится в темноте.", BODY_ZONE_PRECISE_EYES)
 
 /obj/item/organ/eyes/corrupt/on_mob_insert(mob/living/carbon/organ_owner, special, movement_flags)
 	. = ..()
@@ -39,12 +39,12 @@
 	if (!LAZYLEN(hallucinations))
 		return
 	organ_owner.client?.images -= hallucinations
-	QDEL_NULL(hallucinations)
+	LAZYNULL(hallucinations)
 
 /obj/item/organ/eyes/corrupt/penlight_examine(mob/living/viewer, obj/item/examtool)
 	viewer.playsound_local(src, 'sound/effects/magic/magic_block_mind.ogg', 75, FALSE)
 	if(!viewer.is_blind() && !IS_HERETIC_OR_MONSTER(viewer))
-		to_chat(viewer, span_danger("Your eyes sizzle in their sockets as eldritch energies assault them!"))
+		to_chat(viewer, span_danger("Ваши глаза загораются в ваших глазницах, когда на них обрушивается волна потусторонней энергии!"))
 		viewer.emote("scream")
 		viewer.add_mood_event("gates_of_mansus", /datum/mood_event/gates_of_mansus)
 		viewer.adjust_timed_status_effect(15 SECONDS, /datum/status_effect/speech/slurring/heretic)
@@ -56,34 +56,26 @@
 /// Sometimes speak in incomprehensible tongues
 /obj/item/organ/tongue/corrupt
 	name = "corrupt tongue"
-	desc = "This one tells only lies."
+	desc = "Он говорит только ложь."
 	organ_flags = parent_type::organ_flags | ORGAN_HAZARDOUS
 
 /obj/item/organ/tongue/corrupt/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/corrupted_organ)
-	AddElement(/datum/element/noticable_organ, "The inside of %PRONOUN_their mouth is full of stars.", BODY_ZONE_PRECISE_MOUTH)
+	AddElement(/datum/element/noticable_organ, "Рот полностью заполнен звёздами.", BODY_ZONE_PRECISE_MOUTH)
 
 /obj/item/organ/tongue/corrupt/on_mob_insert(mob/living/carbon/organ_owner, special, movement_flags)
 	. = ..()
-	RegisterSignal(organ_owner, COMSIG_MOB_SAY, PROC_REF(on_spoken))
+	organ_owner.apply_status_effect(/datum/status_effect/shadowspeak, 60)
 
 /obj/item/organ/tongue/corrupt/on_mob_remove(mob/living/carbon/organ_owner, special, movement_flags)
 	. = ..()
-	UnregisterSignal(organ_owner, COMSIG_MOB_SAY)
-
-/// When the mob speaks, sometimes put it in a different language
-/obj/item/organ/tongue/corrupt/proc/on_spoken(mob/living/organ_owner, list/speech_args)
-	SIGNAL_HANDLER
-	if (organ_owner.has_reagent(/datum/reagent/water/holywater) || prob(60))
-		return
-	speech_args[SPEECH_LANGUAGE] = /datum/language/shadowtongue
-
+	organ_owner.remove_status_effect(/datum/status_effect/shadowspeak)
 
 /// Randomly secretes alcohol or hallucinogens when you're drinking something
 /obj/item/organ/liver/corrupt
 	name = "corrupt liver"
-	desc = "After what you've seen you could really go for a drink."
+	desc = "После увиденного вам действительно не помешало бы выпить."
 	organ_flags = parent_type::organ_flags | ORGAN_HAZARDOUS
 	/// How much extra ingredients to add?
 	var/amount_added = 5
@@ -123,13 +115,13 @@
 	extra_reagents.add_reagent(pick(extra_ingredients), amount_added)
 	extra_reagents.trans_to(human, amount_added, transferred_by = src, methods = INJECT)
 	if (prob(20))
-		to_chat(human, span_warning("As you take a sip, you feel something bubbling in your stomach..."))
+		to_chat(human, span_warning("Когда вы делаете глоток, вы начинаете ощущать бурления у себя в животе..."))
 
 
 /// Rapidly become hungry if you are not digesting blood
 /obj/item/organ/stomach/corrupt
 	name = "corrupt stomach"
-	desc = "This parasite demands an unwholesome diet in order to be satisfied."
+	desc = "Этот паразит требует нездорового питания, чтобы насытиться."
 	organ_flags = parent_type::organ_flags | ORGAN_HAZARDOUS
 	/// Do we have an unholy thirst?
 	var/thirst_satiated = FALSE
@@ -141,7 +133,7 @@
 /obj/item/organ/stomach/corrupt/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/corrupted_organ)
-	AddElement(/datum/element/noticable_organ, "%PRONOUN_They %PRONOUN_have an unhealthy pallor.")
+	AddElement(/datum/element/noticable_organ, "Заметна нездоровая бледность.")
 
 /obj/item/organ/stomach/corrupt/on_mob_insert(mob/living/carbon/organ_owner, special, movement_flags)
 	. = ..()
@@ -162,12 +154,12 @@
 		return
 
 	if (!thirst_satiated)
-		to_chat(source, span_cult_italic("The thirst is satisfied... for now."))
+		to_chat(source, span_cult_italic("Жажда утолена... пока что."))
 	thirst_satiated = TRUE
 	deltimer(thirst_timer)
 	thirst_timer = addtimer(VARSET_CALLBACK(src, thirst_satiated, FALSE), 3 MINUTES, TIMER_STOPPABLE | TIMER_DELETE_ME)
 
-/obj/item/organ/stomach/corrupt/handle_hunger(mob/living/carbon/human/human, seconds_per_tick, times_fired)
+/obj/item/organ/stomach/corrupt/handle_hunger(mob/living/carbon/human/human, seconds_per_tick)
 	if (thirst_satiated || human.has_reagent(/datum/reagent/water/holywater))
 		return ..()
 
@@ -178,14 +170,14 @@
 	COOLDOWN_START(src, message_cooldown, 30 SECONDS)
 
 	var/static/list/blood_messages = list(
-		"Blood...",
-		"Everyone suddenly looks so tasty.",
-		"The blood...",
-		"There's an emptiness in you that only blood can fill.",
-		"You could really go for some blood right now.",
-		"You feel the blood rushing through your veins.",
-		"You think about biting someone's throat.",
-		"Your stomach growls and you feel a metallic taste in your mouth.",
+		"Кровь...",
+		"Внезапно все стали такими аппетитными.",
+		"Эта кровь...",
+		"Внутри есть пустота, которую может заполнить только кровь.",
+		"Прямо сейчас вы бы не отказались от крови.",
+		"Вы чувствуете, как кровь бежит по венам.",
+		"Вы думаете о том, как бы перегрызть кому-нибудь глотку.",
+		"Ваш живот урчит и вы чувствуете металлический привкус во рту.",
 	)
 	to_chat(human, span_cult_italic(pick(blood_messages)))
 
@@ -194,7 +186,7 @@
 /// Occasionally bombards you with spooky hands and lets everyone hear your pulse.
 /obj/item/organ/heart/corrupt
 	name = "corrupt heart"
-	desc = "What corruption is this spreading along with the blood?"
+	desc = "Какая скверна расползается вместе с кровью?"
 	beat_noise = "THE THUMPTHUMPTHUMPING OF THE CHISEL ON THE GLASS. OPEN THE FUTURE SHATTER THE-"
 	organ_flags = parent_type::organ_flags | ORGAN_HAZARDOUS
 	cell_line = CELL_LINE_ORGAN_HEART_CURSED
@@ -206,7 +198,7 @@
 	. = ..()
 	AddElement(/datum/element/corrupted_organ)
 
-/obj/item/organ/heart/corrupt/on_life(seconds_per_tick, times_fired)
+/obj/item/organ/heart/corrupt/on_life(seconds_per_tick)
 	. = ..()
 	if (!COOLDOWN_FINISHED(src, hand_cooldown) || IS_IN_MANSUS(owner) || !owner.needs_heart() || !is_beating() || owner.has_reagent(/datum/reagent/water/holywater))
 		return
@@ -221,12 +213,12 @@
 		hearer.adjust_timed_status_effect(15 SECONDS, /datum/status_effect/speech/slurring/heretic)
 		var/obj/item/bodypart/head/regret = hearer.get_bodypart(BODY_ZONE_HEAD)
 		regret?.force_wound_upwards(/datum/wound/pierce/bleed/severe/magicalearpain, wound_source = "stethoscoped a corrupted heart")
-	return "[owner.p_Their()] heart produces [span_hypnophrase(beat_noise)]"
+	return "[capitalize(owner.ru_p_them())] сердце производит [span_hypnophrase(beat_noise)]"
 
 /// Sometimes cough out some kind of dangerous gas
 /obj/item/organ/lungs/corrupt
 	name = "corrupt lungs"
-	desc = "Some things SHOULD be drowned in tar."
+	desc = "Некоторые вещи СЛЕДОВАЛО утопить в смоле"
 	organ_flags = parent_type::organ_flags | ORGAN_HAZARDOUS
 	breath_noise = "SECRET SONGS OF THE BREAKING OF THE MAKING OF THE WAKING FROM THE-"
 	/// How likely are we not to cough every time we take a breath?
@@ -251,8 +243,7 @@
 	breather.emote("cough");
 	var/chosen_gas = pick_weight(gas_types)
 	var/datum/gas_mixture/mix_to_spawn = new()
-	mix_to_spawn.add_gas(pick(chosen_gas))
-	mix_to_spawn.gases[chosen_gas][MOLES] = gas_amount
+	mix_to_spawn.adjust_gas(pick(chosen_gas), gas_amount)
 	mix_to_spawn.temperature = breather.bodytemperature
 	log_atmos("[owner] coughed some gas into the air due to their corrupted lungs.", mix_to_spawn)
 	var/turf/open/our_turf = get_turf(breather)
@@ -264,14 +255,13 @@
 		hearer.adjust_timed_status_effect(15 SECONDS, /datum/status_effect/speech/slurring/heretic)
 		hearer.emote("scream")
 		hearer.add_mood_event("gates_of_mansus", /datum/mood_event/gates_of_mansus)
-		var/obj/item/organ/ears/regret = hearer.get_organ_slot(ORGAN_SLOT_EARS)
-		regret?.adjustEarDamage(10,20)
-	return "[owner.p_Their()] lungs emit [span_hypnophrase(breath_noise)]"
+		hearer.sound_damage(10, 40 SECONDS)
+	return "[capitalize(owner.ru_p_them())] лёгкие испускают [span_hypnophrase(breath_noise)]"
 
 /// It's full of worms
 /obj/item/organ/appendix/corrupt
 	name = "corrupt appendix"
-	desc = "What kind of dark, cosmic force is even going to bother to corrupt an appendix?"
+	desc = "Что за тёмная космическая сила вообще потратила силы на то, чтобы проклясть аппендикс?"
 	organ_flags = parent_type::organ_flags | ORGAN_HAZARDOUS
 	/// How likely are we to spawn worms?
 	var/worm_chance = 2
@@ -279,11 +269,11 @@
 /obj/item/organ/appendix/corrupt/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/corrupted_organ)
-	AddElement(/datum/element/noticable_organ, "%PRONOUN_Their abdomen is distended... and wiggling.", BODY_ZONE_PRECISE_GROIN)
+	AddElement(/datum/element/noticable_organ, "Этот живот раздут... и шевелится.", BODY_ZONE_PRECISE_GROIN)
 
-/obj/item/organ/appendix/corrupt/on_life(seconds_per_tick, times_fired)
+/obj/item/organ/appendix/corrupt/on_life(seconds_per_tick)
 	. = ..()
-	if (owner.stat != CONSCIOUS || owner.has_reagent(/datum/reagent/water/holywater) || IS_IN_MANSUS(owner) || !SPT_PROB(worm_chance, seconds_per_tick))
+	if (IS_UNCONSCIOUS_OR_CRIT(owner) || owner.has_reagent(/datum/reagent/water/holywater) || IS_IN_MANSUS(owner) || !SPT_PROB(worm_chance, seconds_per_tick))
 		return
 	owner.vomit(MOB_VOMIT_MESSAGE | MOB_VOMIT_HARM, vomit_type = /obj/effect/decal/cleanable/vomit/nebula/worms, distance = 0)
 	owner.Knockdown(0.5 SECONDS)

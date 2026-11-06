@@ -16,6 +16,15 @@
 /datum/antagonist/nightmare/on_gain()
 	forge_objectives()
 	. = ..()
+	owner.set_assigned_role(SSjob.get_job_type(/datum/job/nightmare))
+
+/datum/antagonist/nightmare/apply_innate_effects(mob/living/mob_override)
+	var/mob/living/nightmare = mob_override || owner.current
+	nightmare.mob_mood.mood_modifier -= 1
+
+/datum/antagonist/nightmare/remove_innate_effects(mob/living/mob_override)
+	var/mob/living/nightmare = mob_override || owner.current
+	nightmare.mob_mood.mood_modifier += 1
 
 /datum/outfit/nightmare
 	name = "Nightmare (Preview only)"

@@ -4,8 +4,13 @@
 
 GLOBAL_LIST_INIT(blacklisted_builds, list(
 	"1622" = "Bug breaking rendering can lead to wallhacks.",
-	))
-
+))
+GLOBAL_LIST_INIT(unrecommended_builds, list(
+	"1670" = "Bug breaking in-world text rendering.",
+	"1671" = "Bug breaking in-world text rendering.",
+	"1675" = "Frequent crashing.",
+	"1676" = "Frequent crashing.",
+))
 #define LIMITER_SIZE 5
 #define CURRENT_SECOND 1
 #define SECOND_COUNT 2
@@ -75,7 +80,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			topiclimiter[SECOND_COUNT] = 0
 		topiclimiter[SECOND_COUNT] += 1
 		if (topiclimiter[SECOND_COUNT] > stl)
-			to_chat(src, span_danger("Your previous action was ignored because you've done too many in a second"))
+			to_chat(src, span_danger("Превышен лимит действий в секунду, ваше предыдущее действие было проигнорировано."))
 			return
 
 	// Tgui Topic middleware
@@ -101,9 +106,11 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(href_list["priv_msg"])
 		cmd_admin_pm(href_list["priv_msg"],null)
 		return
+	/* BANDASTATION REMOVAL
 	if (href_list["player_ticket_panel"])
 		view_latest_ticket()
 		return
+	*/
 	// Admin message
 	if(href_list["messageread"])
 		var/message_id = round(text2num(href_list["messageread"]), 1)
@@ -248,6 +255,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	///////////
 
 /client/New(TopicData)
+	new_started = TRUE
 	var/tdata = TopicData //save this for later use
 	TopicData = null //Prevent calls to client.Topic from connect
 
@@ -262,15 +270,14 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		reconnecting = TRUE
 		persistent_client = GLOB.persistent_clients_by_ckey[ckey]
 	else
-		persistent_client = new(ckey)
+		persistent_client = new(ckey, key) // BANDASTATION ADDITION - Mentors: (key)
 	persistent_client.set_client(src)
 
 	if(SScentral.can_run())
 		SScentral.update_player_discord_async(ckey)
 		SScentral.update_player_donate_tier_blocking(src)
 
-	if(byond_version >= 516)
-		winset(src, null, list("browser-options" = "find,byondstorage")) // BANDASTATION EDIT - Removed 'refresh'
+	winset(src, null, list("browser-options" = "find")) // BANDASTATION EDIT - Removed 'refresh'
 
 	// Instantiate stat panel
 	stat_panel = new(src, "statbrowser")
@@ -285,7 +292,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	set_right_click_menu_mode(TRUE)
 
-	GLOB.ahelp_tickets.ClientLogin(src)
+	GLOB.ticket_manager.client_login(persistent_client) // BANDASTATION REPLACEMENT - Original: GLOB.ahelp_tickets.ClientLogin(src)
 	GLOB.interviews.client_login(src)
 	GLOB.requests.client_login(src)
 	//preferences datum - also holds some persistent data for the client (because we may as well keep these datums to a minimum)
@@ -301,10 +308,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	prefs.last_id = computer_id //these are gonna be used for banning
 
 	if(fexists(roundend_report_file()))
-		add_verb(src, /client/proc/show_previous_roundend_report)
+		ASSIGN_GAME_VERB(src, /client, show_previous_roundend_report)
 
 	if(fexists("data/server_last_roundend_report.html"))
-		add_verb(src, /client/proc/show_servers_last_roundend_report)
+		ASSIGN_GAME_VERB(src, /client, show_servers_last_roundend_report)
 
 	var/full_version = "[byond_version].[byond_build ? byond_build : "xxx"]"
 	log_access("Login: [key_name(src)] from [address ? address : "localhost"]-[computer_id] || BYOND v[full_version]")
@@ -324,30 +331,47 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			if(!joined_player_preferences)
 				continue //this shouldn't happen.
 
-			var/client/C = GLOB.directory[joined_player_ckey]
-			var/in_round = ""
-			if (joined_players[joined_player_ckey])
-				in_round = " who has played in the current round"
-			var/message_type = "Notice"
+			var/client/potential_match = GLOB.directory[joined_player_ckey]
 
-			var/matches
+			var/matched_ip = null
+			var/matched_cid = null
+			var/same_round = FALSE
+
 			if(joined_player_preferences.last_ip == address)
-				matches += "IP ([address])"
+				matched_ip = "IP [address]"
+
 			if(joined_player_preferences.last_id == computer_id)
-				if(matches)
-					matches = "BOTH [matches] and "
-					alert_admin_multikey = TRUE
-					message_type = "MULTIKEY"
-				matches += "Computer ID ([computer_id])"
+				matched_cid = "Computer ID [computer_id]"
 				alert_mob_dupe_login = TRUE
 
-			if(matches)
-				if(C)
-					message_admins(span_danger("<B>[message_type]: </B></span><span class='notice'>Connecting player [key_name_admin(src)] has the same [matches] as [key_name_admin(C)]<b>[in_round]</b>."))
-					log_admin_private("[message_type]: Connecting player [key_name(src)] has the same [matches] as [key_name(C)][in_round].")
-				else
-					message_admins(span_danger("<B>[message_type]: </B></span><span class='notice'>Connecting player [key_name_admin(src)] has the same [matches] as [joined_player_ckey](no longer logged in)<b>[in_round]</b>. "))
-					log_admin_private("[message_type]: Connecting player [key_name(src)] has the same [matches] as [joined_player_ckey](no longer logged in)[in_round].")
+			if(isnull(matched_ip) && isnull(matched_cid))
+				continue
+
+			if (joined_players[joined_player_ckey])
+				same_round = TRUE
+
+			var/double_match = !isnull(matched_ip) && !isnull(matched_cid)
+
+			if(double_match && same_round)
+				alert_admin_multikey = TRUE
+
+			var/list/concatables = list()
+			concatables += span_danger(span_bold("[double_match ? "MULTIKEY" : "Notice"]:"))
+			concatables += "<span class='notice'>Connecting player [key_name_admin(src)] has the same"
+			if(double_match)
+				concatables += "!BOTH! [matched_ip] and [matched_cid]"
+			else
+				concatables += (!isnull(matched_ip) ? matched_ip : matched_cid)
+			concatables += "as [isnull(potential_match) ? "[joined_player_ckey] (no longer logged in)" : "[key_name_admin(potential_match)]"]"
+			if(same_round)
+				concatables += span_bold("in the current round")
+
+			concatables += "</span>"
+
+			var/sendable_string = jointext(concatables, " ")
+
+			message_admins(sendable_string)
+			log_admin_private(strip_html_full(sendable_string, MAX_MESSAGE_LEN))
 
 	. = ..() //calls mob.Login()
 
@@ -359,7 +383,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		admin_datum.associate(src)
 		connecting_admin = TRUE
 	else if(GLOB.deadmins[ckey])
-		add_verb(src, /client/proc/readmin)
+		ASSIGN_GAME_VERB(src, /client, readmin)
 		connecting_admin = TRUE
 	if(CONFIG_GET(flag/autoadmin))
 		if(!GLOB.admin_datums[ckey])
@@ -381,23 +405,23 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if (!length(GLOB.stickybanadminexemptions))
 			restore_stickybans()
 
-	if (byond_version >= 512)
-		if (!byond_build || byond_build < 1386)
-			message_admins(span_adminnotice("[key_name(src)] has been detected as spoofing their byond version. Connection rejected."))
-			add_system_note("Spoofed-Byond-Version", "Detected as using a spoofed byond version.")
-			log_suspicious_login("Failed Login: [key] - Spoofed byond version")
-			qdel(src)
+	if (!byond_build)
+		message_admins(span_adminnotice("[key_name(src)] has been detected as spoofing their BYOND version. Connection rejected."))
+		add_system_note("Spoofed-BYOND-Version", "Detected as using a spoofed BYOND version.")
+		log_suspicious_login("Failed Login: [key] - Spoofed BYOND version")
+		qdel(src)
+		return
 
-		if (num2text(byond_build) in GLOB.blacklisted_builds)
-			log_access("Failed login: [key] - blacklisted byond version")
-			to_chat_immediate(src, span_userdanger("Your version of byond is blacklisted."))
-			to_chat_immediate(src, span_danger("Byond build [byond_build] ([byond_version].[byond_build]) has been blacklisted for the following reason: [GLOB.blacklisted_builds[num2text(byond_build)]]."))
-			to_chat_immediate(src, span_danger("Please download a new version of byond. If [byond_build] is the latest, you can go to <a href=\"https://secure.byond.com/download/build\">BYOND's website</a> to download other versions."))
-			if(connecting_admin)
-				to_chat_immediate(src, "As an admin, you are being allowed to continue using this version, but please consider changing byond versions")
-			else
-				qdel(src)
-				return
+	if (num2text(byond_build) in GLOB.blacklisted_builds)
+		log_access("Failed login: [key] - blacklisted BYOND version")
+		to_chat_immediate(src, span_userdanger("Your version of BYOND is blacklisted."))
+		to_chat_immediate(src, span_danger("BYOND build [byond_build] ([byond_version].[byond_build]) has been blacklisted for the following reason: [GLOB.blacklisted_builds[num2text(byond_build)]]."))
+		to_chat_immediate(src, span_danger("Please download a new version of BYOND. If [byond_build] is the latest, you can go to <a href=\"https://secure.byond.com/download/build\">BYOND's website</a> to download other versions."))
+		if(connecting_admin)
+			to_chat_immediate(src, "As an admin, you are being allowed to continue using this version, but please consider changing BYOND versions.")
+		else
+			qdel(src)
+			return
 
 	if(SSinput.initialized)
 		set_macros()
@@ -417,15 +441,24 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	tgui_say.initialize()
 
+	initialize_escape_menu()
+
 	if(alert_mob_dupe_login && !holder)
-		var/dupe_login_message = "Your ComputerID has already logged in with another key this round, please log out of this one NOW or risk being banned!"
-		if (alert_admin_multikey)
-			dupe_login_message += "\nAdmins have been informed."
-			message_admins(span_danger("<B>MULTIKEYING: </B></span><span class='notice'>[key_name_admin(src)] has a matching CID+IP with another player and is clearly multikeying. They have been warned to leave the server or risk getting banned."))
-			log_admin_private("MULTIKEYING: [key_name(src)] has a matching CID+IP with another player and is clearly multikeying. They have been warned to leave the server or risk getting banned.")
-		spawn(0.5 SECONDS) //needs to run during world init, do not convert to add timer
-			alert(mob, dupe_login_message) //players get banned if they don't see this message, do not convert to tgui_alert (or even tg_alert) please.
-			to_chat_immediate(mob, span_danger(dupe_login_message))
+		// Notify admins if the connecting player's CID is configured to be ignored by stickybans
+		if (SSstickyban && (computer_id in SSstickyban.ignored_cids))
+			message_admins("<B>MULTIKEYING: </B></span><span class='notice'>[key_name_admin(src)] Connecting player joined with IGNORED CID [computer_id].")
+			log_admin_private("MULTIKEYING: [key_name(src)] Connecting player joined with IGNORED CID [computer_id].")
+		else
+			// If the CID is not ignored, notify the player with the pop-up.
+			var/dupe_login_message = "Your ComputerID has already logged in with another key this round, please log out of this one NOW or risk being banned!"
+			// Notify admins if the connecting player's CID is a duplicate of another player's CID
+			if (alert_admin_multikey)
+				dupe_login_message += "\nAdmins have been informed."
+				message_admins(span_danger("<B>MULTIKEYING: </B></span><span class='notice'>[key_name_admin(src)] has a matching CID+IP with another player and is clearly multikeying. They have been warned to leave the server or risk getting banned."))
+				log_admin_private("MULTIKEYING: [key_name(src)] has a matching CID+IP with another player and is clearly multikeying. They have been warned to leave the server or risk getting banned.")
+			spawn(0.5 SECONDS) //needs to run during world init, do not convert to add timer
+				alert(mob, dupe_login_message) //players get banned if they don't see this message, do not convert to tgui_alert (or even tg_alert) please.
+				to_chat_immediate(mob, span_danger(dupe_login_message))
 
 
 	connection_time = world.time
@@ -537,11 +570,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	apply_clickcatcher()
 
 	if(prefs.lastchangelog != GLOB.changelog_hash) //bolds the changelog button on the interface so we know there are updates.
-		to_chat(src, span_info("You have unread updates in the changelog."))
+		to_chat(src, span_info("У вас есть непрочитанные обновления в чейнджлоге."))
 		if(CONFIG_GET(flag/aggressive_changelog))
 			changelog()
-		else
-			winset(src, "infobuttons.changelog", "font-style=bold")
 
 	if(ckey in GLOB.clientmessages)
 		for(var/message in GLOB.clientmessages[ckey])
@@ -561,18 +592,16 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(!tooltips)
 		tooltips = new /datum/tooltip(src)
 
-	if (!interviewee)
-		initialize_menus()
-
 	loot_panel = new(src)
 
 	view_size = new(src)
-	set_fullscreen(logging_in = TRUE)
 	view_size.resetFormat()
 	view_size.setZoomMode()
+	view_size.apply()
 	Master.UpdateTickRate()
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_CLIENT_CONNECT, src)
 	fully_created = TRUE
+	set_fullscreen()
 
 //////////////
 //DISCONNECT//
@@ -591,6 +620,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	return ..()
 
 /client/Destroy()
+	if(!new_started)
+		..()
+		return QDEL_HINT_HARDDEL_NOW
+
 	if(mob)
 		var/stealth_admin = mob.client?.holder?.fakekey
 		var/announce_join = mob.client?.prefs?.read_preference(/datum/preference/toggle/broadcast_login_logout)
@@ -600,10 +633,14 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	GLOB.clients -= src
 	GLOB.directory -= ckey
-	persistent_client.set_client(null)
+	if(persistent_client)
+		GLOB.ticket_manager.client_logout(persistent_client) // BANDASTATION ADDITION
+		persistent_client.set_client(null)
+	else
+		stack_trace("A client was Del()'d without a persistent_client! This should not be happening.")
 
 	log_access("Logout: [key_name(src)]")
-	GLOB.ahelp_tickets.ClientLogout(src)
+	// GLOB.ahelp_tickets.ClientLogout(src) // BANDASTATION REMOVAL
 	GLOB.interviews.client_logout(src)
 	GLOB.requests.client_logout(src)
 	SSserver_maint.UpdateHubStatus()
@@ -619,13 +656,15 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	SSambience.remove_ambience_client(src)
 	SSmouse_entered.hovers -= src
 	SSping.currentrun -= src
+	SSsound_tokens.clients_needing_update -= src
+	SSsound_tokens.currentrun -= src
 	QDEL_NULL(view_size)
 	QDEL_NULL(void)
 	QDEL_NULL(tooltips)
 	QDEL_NULL(loot_panel)
-	QDEL_NULL(parallax_rock)
-	QDEL_LIST(parallax_layers_cached)
-	parallax_layers = null
+	QDEL_LIST(parallax_instances)
+	eye_parallax = null
+	QDEL_NULL(tgui_who_panel) // BANDASTATION ADDITION - TGUI Who
 	seen_messages = null
 	Master.UpdateTickRate()
 	..() //Even though we're going to be hard deleted there are still some things that want to know the destroy is happening
@@ -669,6 +708,20 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return
 
 	var/client_is_in_db = query_client_in_db.NextRow()
+
+	if(GLOB.clients.len >= CONFIG_GET(number/extreme_popcap))
+		if(!GLOB.joined_player_list.Find(ckey) && !holder && !GLOB.deadmins[ckey])
+			var/list/connectiontopic_a = params2list(connectiontopic)
+			var/list/panic_addr = CONFIG_GET(string/panic_server_address)
+			if(panic_addr && !connectiontopic_a["redirect"])
+				var/panic_name = CONFIG_GET(string/panic_server_name)
+				to_chat_immediate(src, span_notice("Sending you to [panic_name ? panic_name : panic_addr]."))
+				winset(src, null, "command=.options")
+				src << link("[panic_addr]?redirect=1")
+				qdel(query_client_in_db)
+				qdel(src)
+				return
+
 	// If we aren't an admin, and the flag is set (the panic bunker is enabled).
 	if(CONFIG_GET(flag/panic_bunker) && !holder && !GLOB.deadmins[ckey])
 		// The amount of hours needed to bypass the panic bunker.
@@ -919,11 +972,11 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if (interviewee)
 		return
 	if(CONFIG_GET(flag/see_own_notes))
-		add_verb(src, /client/proc/self_notes)
+		ASSIGN_GAME_VERB(src, /client, self_notes)
 	if(CONFIG_GET(flag/use_exp_tracking))
-		add_verb(src, /client/proc/self_playtime)
+		ASSIGN_GAME_VERB(src, /client, self_playtime)
 	if(!CONFIG_GET(flag/forbid_preferences_export))
-		add_verb(src, /client/proc/export_preferences)
+		ASSIGN_GAME_VERB(src, /client, export_preferences)
 
 
 //checks if a client is afk
@@ -981,6 +1034,11 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if(NAMEOF(src, view))
 			view_size.setDefault(var_value)
 			return TRUE
+		// BANDASTATION EDIT START: Restricted donator level editing
+		if(NAMEOF(src, donator_level))
+			if(!usr?.client?.holder || get_player_admin_flags(usr.client) != R_EVERYTHING)
+				return FALSE
+		// BANDASTATION EDIT END: Restricted donator level editing
 	. = ..()
 
 /client/proc/rescale_view(change, min, max)
@@ -991,7 +1049,12 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return
 	var/atom/old_eye = eye
 	eye = new_eye
+
+	// Draws to the default map
+	eye_parallax = create_parallax("")
+	eye_parallax.set_perspective(eye)
 	SEND_SIGNAL(src, COMSIG_CLIENT_SET_EYE, old_eye, new_eye)
+
 /**
  * Updates the keybinds for special keys
  *
@@ -1018,9 +1081,15 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 				if("South")
 					movement_keys[key] = SOUTH
 				if(ADMIN_CHANNEL)
-					if(holder)
+					if(check_rights_for(src, R_ADMIN))
 						var/asay = tgui_say_create_open_command(ADMIN_CHANNEL)
 						winset(src, "default-[REF(key)]", "parent=default;name=[key];command=[asay]")
+					else
+						winset(src, "default-[REF(key)]", "parent=default;name=[key];command=")
+				if(MENTOR_CHANNEL)
+					if(check_rights_for(src, R_MENTOR))
+						var/msay = tgui_say_create_open_command(MENTOR_CHANNEL)
+						winset(src, "default-[REF(key)]", "parent=default;name=[key];command=[msay]")
 					else
 						winset(src, "default-[REF(key)]", "parent=default;name=[key];command=")
 	calculate_move_dir()
@@ -1050,16 +1119,39 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	var/list/actualview = getviewsize(view)
 	void.UpdateGreed(actualview[1],actualview[2])
 
+/client/proc/apply_parallax()
+	if(length(parallax_instances))
+		screen |= parallax_instances
+
+/// Gets a parallax holder if one exists on the specified map
+/client/proc/get_parallax(map)
+	for(var/atom/movable/screen/parallax_home/instance as anything in parallax_instances)
+		if(instance.submap == map)
+			return instance
+
+/// Creates a new parallax holder if one does not already exist on the passed in map
+/client/proc/create_parallax(map)
+	var/atom/movable/screen/parallax_home/existing = get_parallax(map)
+	if(existing)
+		return existing
+	return new /atom/movable/screen/parallax_home(null, null, src, map)
+
+/// Deletes the parallax holder for the passed in map
+/client/proc/delete_parallax(map)
+	var/atom/movable/screen/parallax_home/existing = get_parallax(map)
+	if(existing)
+		qdel(existing)
+
 /client/proc/AnnouncePR(announcement)
 	if(get_chat_toggles(src) & CHAT_PULLR)
 		to_chat(src, announcement)
 
 ///Redirect proc that makes it easier to call the unlock achievement proc. Achievement type is the typepath to the award, user is the mob getting the award, and value is an optional variable used for leaderboard value increments
-/client/proc/give_award(achievement_type, mob/user, value = 1)
-	return persistent_client.achievements.unlock(achievement_type, user, value)
+/client/proc/give_award(achievement_type, mob/user, value = 1, ...)
+	return persistent_client.achievements.unlock(arglist(args))
 
 ///Redirect proc that makes it easier to get the status of an achievement. Achievement type is the typepath to the award.
-/client/proc/get_award_status(achievement_type, mob/user, value = 1)
+/client/proc/get_award_status(achievement_type)
 	return persistent_client.achievements.get_achievement_status(achievement_type)
 
 ///Gives someone hearted status for OOC, from behavior commendations
@@ -1094,38 +1186,27 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		verblist[++verblist.len] = list(verb_to_init.category, verb_to_init.name)
 	src.stat_panel.send_message("init_verbs", list(panel_tabs = panel_tabs, verblist = verblist))
 
+	var/list/panel_verbs = list()
+	for(var/procpath/verb_to_init as anything in verbstoprocess)
+		if(!verb_to_init || verb_to_init.hidden)
+			continue
+		var/datum/verb_metadata/meta = SSverbs.verbs_by_verb_path[verb_to_init]
+		if(!meta && !SSadmin_verbs.admin_verbs_by_verb_path[verb_to_init])
+			continue
+		if(meta?.src_based)
+			continue
+		panel_verbs += list(SSverbs.serialize_verb(verb_to_init))
+	tgui_panel?.window?.send_message("verbs/init", list("verbs" = panel_verbs))
+
 /client/proc/check_panel_loaded()
 	if(stat_panel.is_ready())
 		return
 	to_chat(src, span_userdanger("Statpanel failed to load, click <a href='byond://?src=[REF(src)];reload_statbrowser=1'>here</a> to reload the panel "))
 
-/**
- * Initializes dropdown menus on client
- */
-/client/proc/initialize_menus()
-	var/list/topmenus = GLOB.menulist[/datum/verbs/menu]
-	for (var/thing in topmenus)
-		var/datum/verbs/menu/topmenu = thing
-		var/topmenuname = "[topmenu]"
-		if (topmenuname == "[topmenu.type]")
-			var/list/tree = splittext(topmenuname, "/")
-			topmenuname = tree[tree.len]
-		winset(src, "[topmenu.type]", "parent=menu;name=[url_encode(topmenuname)]")
-		var/list/entries = topmenu.Generate_list(src)
-		for (var/child in entries)
-			winset(src, "[child]", "[entries[child]]")
-			if (!ispath(child, /datum/verbs/menu))
-				var/procpath/verbpath = child
-				if (verbpath.name[1] != "@")
-					new child(src)
-
-	// Place Help back at the end.
-	winset(src, "help-menu", "index=1000")
-
 /client/proc/open_filter_editor(atom/in_atom)
 	if(holder)
-		holder.filteriffic = new /datum/filter_editor(in_atom)
-		holder.filteriffic.ui_interact(mob)
+		holder.filterrific = new /datum/filter_editor(in_atom)
+		holder.filterrific.ui_interact(mob)
 
 ///opens the particle editor UI for the in_atom object for this client
 /client/proc/open_particle_editor(atom/movable/in_atom)
@@ -1135,13 +1216,13 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 /client/proc/set_right_click_menu_mode(shift_only)
 	if(shift_only)
-		winset(src, "mapwindow.map", "right-click=true")
-		winset(src, "ShiftUp", "is-disabled=false")
-		winset(src, "Shift", "is-disabled=false")
+		winset(src, SKIN_MAPWINDOW_MAP, "right-click=true")
+		winset(src, SKIN_DEFAULT_SHIFTUP, "is-disabled=false")
+		winset(src, SKIN_DEFAULT_SHIFT, "is-disabled=false")
 	else
-		winset(src, "mapwindow.map", "right-click=false")
-		winset(src, "default.Shift", "is-disabled=true")
-		winset(src, "default.ShiftUp", "is-disabled=true")
+		winset(src, SKIN_MAPWINDOW_MAP, "right-click=false")
+		winset(src, SKIN_DEFAULT_SHIFT, "is-disabled=true")
+		winset(src, SKIN_DEFAULT_SHIFTUP, "is-disabled=true")
 
 /client/proc/update_ambience_pref(value)
 	if(value)
@@ -1194,43 +1275,20 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	var/mob/dead/observer/observer = mob
 	observer.ManualFollow(target)
 
-/client/verb/stop_client_sounds()
-	set name = "Stop Sounds"
-	set category = "OOC"
-	set desc = "Stop Current Sounds"
+GAME_VERB_DESC(/client, stop_client_sounds, "Stop Sounds", "Stop Current Sounds", "OOC")
 	SEND_SOUND(usr, sound(null))
 	tgui_panel?.stop_music()
 	SSblackbox.record_feedback("nested tally", "preferences_verb", 1, list("Stop Self Sounds"))
 
-/client/verb/toggle_fullscreen()
-	set name = "Toggle Fullscreen"
-	set category = "OOC"
+GAME_VERB(/client, toggle_fullscreen, "Toggle Fullscreen", "OOC")
 
 	var/is_on = prefs.read_preference(/datum/preference/toggle/fullscreen_mode)
 	prefs.write_preference(GLOB.preference_entries[/datum/preference/toggle/fullscreen_mode], !is_on)
 	set_fullscreen()
 
-/client/proc/set_fullscreen(logging_in = FALSE)
-	var/fullscreen = prefs?.read_preference(/datum/preference/toggle/fullscreen_mode)
-	//no need to set every login to not fullscreen, they already aren't.
-	//we also dont need to call attempt_auto_fit_viewport, Login does that for us.
-	if(logging_in)
-		if(fullscreen)
-			winset(src, "mainwindow", "menu=;is-fullscreen=[fullscreen ? "true" : "false"]")
-		return
-	winset(src, "mainwindow", "menu=;is-fullscreen=[fullscreen ? "true" : "false"]")
+/client/proc/set_fullscreen()
+	winset(src, SKIN_MAINWINDOW, "is-fullscreen=[prefs?.read_preference(/datum/preference/toggle/fullscreen_mode) ? "true" : "false"]")
 	attempt_auto_fit_viewport()
-
-/client/verb/toggle_status_bar()
-	set name = "Toggle Status Bar"
-	set category = "OOC"
-
-	show_status_bar = !show_status_bar
-
-	if (show_status_bar)
-		winset(src, "mapwindow.status_bar", "is-visible=true")
-	else
-		winset(src, "mapwindow.status_bar", "is-visible=false")
 
 /// Clears the client's screen, aside from ones that opt out
 /client/proc/clear_screen()

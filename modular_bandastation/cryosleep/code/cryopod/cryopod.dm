@@ -1,14 +1,3 @@
-GLOBAL_LIST_EMPTY(objectives)
-
-/datum/objective/New()
-	. = ..()
-	GLOB.objectives += src
-
-//Apparently objectives can be qdel'd. Learn a new thing every day
-/datum/objective/Destroy()
-	GLOB.objectives -= src
-	return ..()
-
 // Cryopods themselves.
 /obj/machinery/cryopod
 	name = "cryogenic freezer"
@@ -189,46 +178,8 @@ GLOBAL_LIST_EMPTY(objectives)
 
 	var/mob/living/mob_occupant = occupant
 	// Update any existing objectives involving this mob.
-	for(var/datum/objective/objective as anything in GLOB.objectives)
-		// We don't want revs to get objectives that aren't for heads of staff. Letting
-		// them win or lose based on cryo is silly so we remove the objective.
-		if(istype(objective,/datum/objective/mutiny) && objective.target == mob_occupant.mind)
-			objective.team.objectives -= objective
-			qdel(objective)
-			for(var/datum/mind/mind in objective.team.members)
-				to_chat(mind.current, "<BR>[span_userdanger("Ваша цель вне зоны досягаемости. Цель удалена!")]")
-				mind.announce_objectives()
-			return
-
-		if(istype(objective.target) && objective.target == mob_occupant.mind)
-			var/old_target = objective.target
-			objective.target = null
-			objective.find_target()
-			if(!objective.target && objective.owner)
-				to_chat(objective.owner.current, "<BR>[span_userdanger("Ваша цель вне зоны досягаемости. Цель удалена!")]")
-				for(var/datum/antagonist/antag in objective.owner.antag_datums)
-					antag.objectives -= objective
-			if (!objective.team)
-				objective.update_explanation_text()
-				objective.owner.announce_objectives()
-				to_chat(objective.owner.current, "<BR>[span_userdanger("Вы чувствуете, что ваша цель вне зоны досягаемости. Время плана [pick("Б","В","Г","Д","Ж","З")]. Цели обновлены!")]")
-			else
-				var/list/objectives_to_update
-				for(var/datum/mind/objective_owner in objective.get_owners())
-					to_chat(objective_owner.current, "<BR>[span_userdanger("Вы чувствуете, что ваша цель вне зоны досягаемости. Время плана [pick("Б","В","Г","Д","Ж","З")]. Цели обновлены!")]")
-					for(var/datum/objective/update_target_objective in objective_owner.get_all_objectives())
-						LAZYADD(objectives_to_update, update_target_objective)
-				objectives_to_update += objective.team.objectives
-
-				for(var/datum/objective/update_objective in objectives_to_update)
-					if(update_objective.target != old_target || !istype(update_objective,objective.type))
-						continue
-					update_objective.target = objective.target
-					update_objective.update_explanation_text()
-					to_chat(objective.owner.current, "<BR>[span_userdanger("Вы чувствуете, что ваша цель вне зоны досягаемости. Время плана [pick("Б","В","Г","Д","Ж","З")]. Цели обновлены!")]")
-					update_objective.owner.announce_objectives()
-
-			qdel(objective)
+	if(mob_occupant.mind)
+		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_MIND_ENTERED_CRYO, mob_occupant.mind)
 
 /// This function can not be undone; do not call this unless you are sure.
 /// Handles despawning the player.
@@ -272,12 +223,13 @@ GLOBAL_LIST_EMPTY(objectives)
 /obj/machinery/cryopod/proc/handle_occupant_items()
 	var/obj/machinery/computer/cryopod/control_computer = get_linked_control_computer()
 	var/mob/mob_occupant = occupant
+
+	if(!mob_occupant || issilicon(mob_occupant))
+		return
+
 	var/atom/drop_location = drop_location()
 	for(var/obj/item/item_to_store in mob_occupant)
 		if(HAS_TRAIT(item_to_store, TRAIT_NODROP))
-			continue
-
-		if(issilicon(mob_occupant) && istype(item_to_store, /obj/item/mmi))
 			continue
 
 		if(!control_computer)
@@ -290,6 +242,12 @@ GLOBAL_LIST_EMPTY(objectives)
 				message_app.invisible = TRUE
 
 		control_computer.store_item(mob_occupant, item_to_store)
+
+	if(control_computer)
+		var/obj/item/disk/nuclear/disk = locate(/obj/item/disk/nuclear) in control_computer.get_all_contents()
+		if(disk)
+			var/list/possible_turfs = get_adjacent_open_turfs(control_computer)
+			disk.forceMove(length(possible_turfs) ? pick(possible_turfs) : drop_location())
 
 /// Handles putting mob inside the cryopod by user
 /obj/machinery/cryopod/proc/put_mob_inside(mob/target, mob/user)

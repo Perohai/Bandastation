@@ -1,3 +1,5 @@
+#define INSTRUMENT_STANDART_BPM 120
+
 /datum/song/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if (!ui)
@@ -6,6 +8,11 @@
 
 /datum/song/ui_host(mob/user)
 	return parent
+
+/datum/song/ui_state(mob/user)
+	if(ispAI(user))
+		return GLOB.always_state
+	return ..()
 
 /datum/song/ui_data(mob/user)
 	var/list/data = ..()
@@ -31,7 +38,7 @@
 	data["sustain_indefinitely"] = full_sustain_held_note
 	data["playing"] = playing
 	data["repeat"] = repeat
-	data["bpm"] = round(60 SECONDS / tempo)
+	data["bpm"] = bpm // BANDASTATION EDIT - BPM unlock
 	data["lines"] = list()
 	var/linecount
 	for(var/line in lines)
@@ -54,8 +61,12 @@
 	data["max_volume"] = max_volume
 	data["note_shift_min"] = note_shift_min
 	data["note_shift_max"] = note_shift_max
-	data["max_line_chars"] = MUSIC_MAXLINECHARS
-	data["max_lines"] = MUSIC_MAXLINES
+	data["max_line_chars"] = SSinstruments.musician_maxlinechars
+	data["max_lines"] = SSinstruments.musician_maxlines
+	// BANDASTATION ADDITION START - BPM unlock
+	data["min_bpm"] = min_bpm
+	data["max_bpm"] = get_max_bpm()
+	// BANDASTATION ADDITION END - BPM unlock
 	return data
 
 /datum/song/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
@@ -88,42 +99,61 @@
 			return TRUE
 		if("tempo")
 			var/move_direction = params["tempo_change"]
-			var/tempo_diff
+			// BANDASTATION EDIT START - BPM unlock
+			// var/tempo_diff
+			// if(move_direction == "increase_speed")
+			// 	tempo_diff = world.tick_lag
+			// else
+			// 	tempo_diff = -world.tick_lag
+			// tempo = sanitize_tempo(tempo + tempo_diff)
+			// return TRUE
+			// вместо ±tick_lag — ±BPM
+			var/step = clamp(round(text2num(params["bpm_step"]) || 1), 1, 100)
 			if(move_direction == "increase_speed")
-				tempo_diff = world.tick_lag
+				set_bpm(bpm + step)
 			else
-				tempo_diff = -world.tick_lag
-			tempo = sanitize_tempo(tempo + tempo_diff)
+				set_bpm(bpm - step)
 			return TRUE
+
+		if("set_bpm")
+			var/new_bpm = text2num(params["amount"])
+			if(!isnum(new_bpm) || new_bpm <= 0)
+				return FALSE
+			set_bpm(new_bpm)
+			return TRUE
+			// BANDASTATION EDIT END - BPM unlock
 
 		//SONG MAKING
 		if("import_song")
 			var/song_text = ""
 			do
-				song_text = tgui_input_text(user, "Please paste the entire song, formatted:", name, max_length = (MUSIC_MAXLINES * MUSIC_MAXLINECHARS), multiline = TRUE)
+				song_text = tgui_input_text(user, "Please paste the entire song, formatted:", name, max_length = (SSinstruments.musician_maxlines * SSinstruments.musician_maxlinechars), multiline = TRUE)
 				if(!in_range(parent, user))
 					return
 
-				if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
+				if(length_char(song_text) >= SSinstruments.musician_maxlines * SSinstruments.musician_maxlinechars)
 					var/should_continue = tgui_alert(user, "Your message is too long! Would you like to continue editing it?", "Warning", list("Yes", "No"))
 					if(should_continue != "Yes")
 						break
-			while(length_char(song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
+			while(length_char(song_text) > SSinstruments.musician_maxlines * SSinstruments.musician_maxlinechars)
 			ParseSong(user, song_text)
 			return TRUE
 		if("start_new_song")
 			name = ""
 			lines = new()
-			tempo = sanitize_tempo(5) // default 120 BPM
+			// BANDASTATION EDIT START - BPM unlock
+			//tempo = sanitize_tempo(5) // default 120 BPM
+			set_bpm(INSTRUMENT_STANDART_BPM)
+			// BANDASTATION EDIT END - BPM unlock
 			return TRUE
 		if("add_new_line")
-			var/newline = tgui_input_text(user, "Enter your line", parent.name, max_length = MUSIC_MAXLINECHARS)
+			var/newline = tgui_input_text(user, "Enter your line", parent.name, max_length = SSinstruments.musician_maxlinechars)
 			if(!newline || !in_range(parent, user))
 				return
-			if(lines.len > MUSIC_MAXLINES)
+			if(lines.len > SSinstruments.musician_maxlines)
 				return
-			if(length(newline) > MUSIC_MAXLINECHARS)
-				newline = copytext(newline, 1, MUSIC_MAXLINECHARS)
+			if(length(newline) > SSinstruments.musician_maxlinechars)
+				newline = copytext(newline, 1, SSinstruments.musician_maxlinechars)
 			lines.Add(newline)
 		if("delete_line")
 			var/line_to_delete = params["line_deleted"]
@@ -135,7 +165,7 @@
 			var/line_to_edit = params["line_editing"]
 			if(line_to_edit > lines.len || line_to_edit < 1)
 				return FALSE
-			var/new_line_text = tgui_input_text(user, "Enter your line ", parent.name, lines[line_to_edit], max_length = MUSIC_MAXLINECHARS)
+			var/new_line_text = tgui_input_text(user, "Enter your line ", parent.name, lines[line_to_edit], max_length = SSinstruments.musician_maxlinechars)
 			if(isnull(new_line_text) || !in_range(parent, user))
 				return FALSE
 			lines[line_to_edit] = new_line_text
@@ -186,7 +216,21 @@
 					set_linear_falloff_duration(sustain_amount)
 				if(SUSTAIN_EXPONENTIAL)
 					set_exponential_drop_rate(sustain_amount)
+		if("set_bpm_slider")
+			var/new_bpm = text2num(params["amount"])
+			if(!isnum(new_bpm) || new_bpm <= 0)
+				return FALSE
+			set_bpm(clamp(new_bpm, min_bpm, get_max_bpm()))
+			return TRUE
 
+		if("tempo_big_step")
+			var/move_direction = params["tempo_change"]
+			var/step = 10
+			if(move_direction == "increase_speed")
+				set_bpm(bpm + step)
+			else
+				set_bpm(bpm - step)
+			return TRUE
 /**
  * Parses a song the user has input into lines and stores them.
  */
@@ -196,21 +240,31 @@
 	lines = islist(new_song) ? new_song : splittext(new_song, "\n")
 	if(lines.len)
 		var/bpm_string = "BPM: "
-		if(findtext(lines[1], bpm_string, 1, length(bpm_string) + 1))
-			var/divisor = text2num(copytext(lines[1], length(bpm_string) + 1)) || 120 // default
-			tempo = sanitize_tempo(BPM_TO_TEMPO_SETTING(divisor))
+		// BANDASTATION EDIT START - BPM unlock
+		// if(findtext(lines[1], bpm_string, 1, length(bpm_string) + 1))
+		// 	var/divisor = text2num(copytext(lines[1], length(bpm_string) + 1)) || 120 // default
+		// 	tempo = sanitize_tempo(BPM_TO_TEMPO_SETTING(divisor))
+		// 	lines.Cut(1, 2)
+		// else
+		// 	tempo = sanitize_tempo(5) // default 120 BPM
+		if(copytext(lines[1], 1, length(bpm_string) + 1) == bpm_string)
+			var/val = text2num(copytext(lines[1], length(bpm_string) + 1)) || INSTRUMENT_STANDART_BPM
+			set_bpm(val)
 			lines.Cut(1, 2)
 		else
-			tempo = sanitize_tempo(5) // default 120 BPM
-		if(lines.len > MUSIC_MAXLINES)
+			set_bpm(INSTRUMENT_STANDART_BPM)
+		// BANDASTATION EDIT END - BPM unlock
+		if(lines.len > SSinstruments.musician_maxlines)
 			if(user)
 				to_chat(user, "Too many lines!")
-			lines.Cut(MUSIC_MAXLINES + 1)
+			lines.Cut(SSinstruments.musician_maxlines + 1)
 		var/linenum = 1
 		for(var/l in lines)
-			if(length_char(l) > MUSIC_MAXLINECHARS)
+			if(length_char(l) > SSinstruments.musician_maxlinechars)
 				if(user)
 					to_chat(user, "Line [linenum] too long!")
 				lines.Remove(l)
 			else
 				linenum++
+
+#undef INSTRUMENT_STANDART_BPM

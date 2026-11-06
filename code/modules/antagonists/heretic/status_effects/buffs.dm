@@ -24,14 +24,15 @@
 	owner.alpha = initial(owner.alpha)
 	owner.pass_flags &= ~(PASSCLOSEDTURF | PASSGLASS | PASSGRILLE | PASSMACHINE | PASSSTRUCTURE | PASSTABLE | PASSMOB | PASSDOORS | PASSVEHICLE)
 	owner.forceMove(location)
+	owner.apply_status_effect(/datum/status_effect/crucible_soul_cooldown)
 	location = null
 
-/datum/status_effect/crucible_soul/get_examine_text()
+/datum/status_effect/crucible_soul/get_examine_text(mob/examiner)
 	return span_notice("Кажется не совсем собой.")
 
 /datum/action/cancel_crucible_soul
-	name = "Recall"
-	desc = "Use to end the blessing early"
+	name = "Отзыв"
+	desc = "Используйте для досрочного завершения благословения."
 	button_icon = 'icons/obj/antags/eldritch.dmi'
 	button_icon_state = "crucible_soul"
 
@@ -43,6 +44,14 @@
 	target = active_effect
 	qdel(target)
 
+/datum/status_effect/crucible_soul_cooldown
+	id = "Crucible Soul Cooldown"
+	status_type = STATUS_EFFECT_UNIQUE
+	duration = 2 MINUTES
+	alert_type = /atom/movable/screen/alert/status_effect/crucible_soul/cooldown
+	show_duration = TRUE
+	remove_on_fullheal = TRUE
+
 // DUSK AND DAWN
 /datum/status_effect/duskndawn
 	id = "Blessing of Dusk and Dawn"
@@ -53,12 +62,10 @@
 
 /datum/status_effect/duskndawn/on_apply()
 	ADD_TRAIT(owner, TRAIT_XRAY_VISION, TRAIT_STATUS_EFFECT(id))
-	owner.update_sight()
 	return TRUE
 
 /datum/status_effect/duskndawn/on_remove()
 	REMOVE_TRAIT(owner, TRAIT_XRAY_VISION, TRAIT_STATUS_EFFECT(id))
-	owner.update_sight()
 
 // WOUNDED SOLDIER
 /datum/status_effect/marshal
@@ -78,12 +85,12 @@
 	if(!iscarbon(owner))
 		return
 	var/mob/living/carbon/drinker = owner
-	for(var/obj/item/bodypart/potentially_wounded as anything in drinker.bodyparts)
+	for(var/obj/item/bodypart/potentially_wounded as anything in drinker.get_bodyparts())
 		for(var/datum/wound/found_wound as anything in potentially_wounded.wounds)
 			found_wound.remove_wound()
 	if(length(drinker.get_missing_limbs()))
 		drinker.regenerate_limbs()
-		to_chat(drinker, span_hypnophrase("The mansus has given you new limbs."))
+		to_chat(drinker, span_hypnophrase("Мансус даровал вам новые конечности."))
 	playsound(drinker, 'sound/effects/chemistry/ahaha.ogg', 50, TRUE, -1, extrarange = SILENCED_SOUND_EXTRARANGE, frequency = 0.5)
 
 /datum/status_effect/marshal/tick(seconds_between_ticks)
@@ -91,9 +98,9 @@
 		return
 	var/mob/living/carbon/carbie = owner
 
-	carbie.adjustBruteLoss(-0.5 * seconds_between_ticks, updating_health = FALSE)
-	carbie.adjustFireLoss(-0.5 * seconds_between_ticks, updating_health = FALSE)
-	for(var/BP in carbie.bodyparts)
+	carbie.adjust_brute_loss(-0.5 * seconds_between_ticks, updating_health = FALSE)
+	carbie.adjust_fire_loss(-0.5 * seconds_between_ticks, updating_health = FALSE)
+	for(var/BP in carbie.get_bodyparts())
 		var/obj/item/bodypart/part = BP
 		for(var/W in part.wounds)
 			var/datum/wound/wound = W
@@ -107,17 +114,21 @@
 				if(WOUND_SEVERITY_CRITICAL)
 					heal_amt = 6
 			var/datum/wound_pregen_data/pregen_data = GLOB.all_wound_pregen_data[wound.type]
-			if (pregen_data.wounding_types_valid(list(WOUND_BURN)))
-				carbie.adjustFireLoss(-heal_amt)
+			if (pregen_data.wounding_types_valid(WOUND_BURN))
+				carbie.adjust_fire_loss(-heal_amt)
 			else
-				carbie.adjustBruteLoss(-heal_amt)
-				carbie.blood_volume += carbie.blood_volume >= BLOOD_VOLUME_NORMAL ? 0 : heal_amt*3
+				carbie.adjust_brute_loss(-heal_amt)
+				carbie.adjust_blood_volume(heal_amt * 3, maximum = BLOOD_VOLUME_NORMAL)
 
 
 /atom/movable/screen/alert/status_effect/crucible_soul
 	name = "Blessing of Crucible Soul"
 	desc = "Вы прошли сквозь реальность. Вы на полпути к конечному пункту назначения..."
 	icon_state = "crucible"
+
+/atom/movable/screen/alert/status_effect/crucible_soul/cooldown
+	desc = "Вы недавно прошли сквозь реальность. Вам нужно подождать, прежде чем сможете сделать это ещё раз."
+	icon_state = "crucible_cooldown"
 
 /atom/movable/screen/alert/status_effect/duskndawn
 	name = "Blessing of Dusk and Dawn"
@@ -216,6 +227,7 @@
 		return
 
 	SEND_SIGNAL(src, COMSIG_BLADE_BARRIER_TRIGGERED)
+	SEND_SIGNAL(source, COMSIG_MOB_BLADE_BARRIER_TRIGGERED, src)
 	ADD_TRAIT(source, TRAIT_BEING_BLADE_SHIELDED, TRAIT_STATUS_EFFECT(id))
 	addtimer(TRAIT_CALLBACK_REMOVE(source, TRAIT_BEING_BLADE_SHIELDED, TRAIT_STATUS_EFFECT(id)), 0.1 SECONDS)
 
@@ -285,7 +297,6 @@
 /datum/status_effect/caretaker_refuge/on_apply()
 	animate(owner, alpha = 45, time = 0.5 SECONDS)
 	owner.set_density(FALSE)
-	RegisterSignal(owner, SIGNAL_REMOVETRAIT(TRAIT_ALLOW_HERETIC_CASTING), PROC_REF(on_focus_lost))
 	RegisterSignal(owner, COMSIG_MOB_BEFORE_SPELL_CAST, PROC_REF(prevent_spell_usage))
 	RegisterSignal(owner, COMSIG_ATOM_HOLYATTACK, PROC_REF(nullrod_handler))
 	RegisterSignal(owner, COMSIG_CARBON_CUFF_ATTEMPTED, PROC_REF(prevent_cuff))
@@ -297,7 +308,6 @@
 	owner.remove_traits(caretaking_traits, TRAIT_STATUS_EFFECT(id))
 	owner.alpha = initial(owner.alpha)
 	owner.density = initial(owner.density)
-	UnregisterSignal(owner, SIGNAL_REMOVETRAIT(TRAIT_ALLOW_HERETIC_CASTING))
 	UnregisterSignal(owner, COMSIG_MOB_BEFORE_SPELL_CAST)
 	UnregisterSignal(owner, COMSIG_ATOM_HOLYATTACK)
 	UnregisterSignal(owner, COMSIG_CARBON_CUFF_ATTEMPTED)
@@ -307,7 +317,7 @@
 		span_notice("Вы выходите из убежища."),
 	)
 
-/datum/status_effect/caretaker_refuge/get_examine_text()
+/datum/status_effect/caretaker_refuge/get_examine_text(mob/examiner)
 	return span_warning("[owner.ru_p_they(TRUE)] окутывается нечистой дымкой!")
 
 /datum/status_effect/caretaker_refuge/proc/nullrod_handler(datum/source, obj/item/weapon)
@@ -316,14 +326,9 @@
 	owner.visible_message(span_warning("[capitalize(weapon.declent_ru(NOMINATIVE))] рассеивает дымку вокруг [owner.declent_ru(GENITIVE)]!"))
 	owner.remove_status_effect(type)
 
-/datum/status_effect/caretaker_refuge/proc/on_focus_lost()
-	SIGNAL_HANDLER
-	to_chat(owner, span_danger("Без фокусировки, ваше убежище ослабевает и рассеивается!"))
-	qdel(src)
-
 /datum/status_effect/caretaker_refuge/proc/no_strip(atom/source, mob/user, obj/item/equipping)
 	SIGNAL_HANDLER
-	to_chat(user, span_warning("You fail to put anything on [source] as they are incorporeal!"))
+	to_chat(user, span_warning("Вам не удаётся ничего надеть на [source.declent_ru(ACCUSATIVE)], так как [source.declent_ru(NOMINATIVE)] не имеет тела!"))
 	return COMPONENT_CANT_STRIP
 
 /datum/status_effect/caretaker_refuge/proc/prevent_spell_usage(datum/source, datum/spell)
@@ -345,13 +350,34 @@
 	alert_type = /atom/movable/screen/alert/status_effect/moon_grasp_hide
 
 /datum/status_effect/moon_grasp_hide/on_apply()
-	owner.add_traits(list(TRAIT_UNKNOWN, TRAIT_SILENT_FOOTSTEPS), TRAIT_STATUS_EFFECT(id))
+	owner.add_traits(list(TRAIT_UNKNOWN_APPEARANCE, TRAIT_UNKNOWN_VOICE, TRAIT_SILENT_FOOTSTEPS), TRAIT_STATUS_EFFECT(id))
 	return TRUE
 
 /datum/status_effect/moon_grasp_hide/on_remove()
-	owner.remove_traits(list(TRAIT_UNKNOWN, TRAIT_SILENT_FOOTSTEPS), TRAIT_STATUS_EFFECT(id))
+	owner.remove_traits(list(TRAIT_UNKNOWN_APPEARANCE, TRAIT_UNKNOWN_VOICE, TRAIT_SILENT_FOOTSTEPS), TRAIT_STATUS_EFFECT(id))
 
 /atom/movable/screen/alert/status_effect/moon_grasp_hide
 	name = "Blessing of The Moon"
 	desc = "Луна затуманивает их зрение, как Солнце всегда затуманивало твое."
 	icon_state = "moon_hide"
+
+// Last Resort
+/datum/status_effect/heretic_lastresort
+	id = "heretic_lastresort"
+	alert_type = /atom/movable/screen/alert/status_effect/heretic_lastresort
+	duration = 12 SECONDS
+	status_type = STATUS_EFFECT_REPLACE
+	tick_interval = STATUS_EFFECT_NO_TICK
+
+/atom/movable/screen/alert/status_effect/heretic_lastresort
+	name = "Последняя надежда"
+	desc = "Ваша голова кружится, а сердце бьётся так быстро, как только может!"
+	icon_state = "lastresort"
+
+/datum/status_effect/heretic_lastresort/on_apply()
+	ADD_TRAIT(owner, TRAIT_IGNORESLOWDOWN, TRAIT_STATUS_EFFECT(id))
+	to_chat(owner, span_userdanger("Вы не сдадитесь так просто!"))
+	return TRUE
+
+/datum/status_effect/heretic_lastresort/on_remove()
+	REMOVE_TRAIT(owner, TRAIT_IGNORESLOWDOWN, TRAIT_STATUS_EFFECT(id))

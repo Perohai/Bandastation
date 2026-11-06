@@ -14,6 +14,12 @@
 /proc/log_ooc(text, list/data)
 	logger.Log(LOG_CATEGORY_GAME_OOC, text, data)
 
+/// BANDASTATION ADDITION START - LOOC
+/// Logging for messages sent in LOOC
+/proc/log_looc(text, list/data)
+	logger.Log(LOG_CATEGORY_GAME_LOOC, text, data)
+/// BANDASTATION ADDITION END - LOOC
+
 /// Logging for prayed messages
 /proc/log_prayer(text, list/data)
 	logger.Log(LOG_CATEGORY_GAME_PRAYER, text, data)
@@ -32,3 +38,7 @@
 
 /proc/log_ghost_poll(text, list/data)
 	logger.Log(LOG_CATEGORY_GAME_GHOST_POLLS, text, data)
+
+/// Logging for drawing on minimap
+/proc/log_minimap_drawing(text, list/data)
+	logger.Log(LOG_CATEGORY_GAME_MINIMAP_DRAWING, text, data)

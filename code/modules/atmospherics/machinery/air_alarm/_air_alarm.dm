@@ -8,7 +8,7 @@
 	idle_power_usage = BASE_MACHINE_IDLE_CONSUMPTION * 0.05
 	active_power_usage = BASE_MACHINE_ACTIVE_CONSUMPTION * 0.02
 	power_channel = AREA_USAGE_ENVIRON
-	req_access = list(ACCESS_ENGINEERING)
+	req_access = list(ACCESS_ATMOS_EQUIP)
 	max_integrity = 250
 	integrity_failure = 0.33
 	armor_type = /datum/armor/machinery_airalarm
@@ -90,31 +90,30 @@ GLOBAL_LIST_EMPTY_TYPED(air_alarms, /obj/machinery/airalarm)
 /obj/machinery/airalarm/get_save_vars()
 	return ..() - NAMEOF(src, name)
 
-/obj/machinery/airalarm/Initialize(mapload, ndir, nbuild)
+/obj/machinery/airalarm/Initialize(mapload)
 	. = ..()
 	set_wires(new /datum/wires/airalarm(src))
-	if(ndir)
-		setDir(ndir)
 
-	if(nbuild)
+	if(!mapload)
 		buildstage = AIR_ALARM_BUILD_NO_CIRCUIT
 		set_panel_open(TRUE)
 
 	if(name == initial(name))
-		var/area/current_area = get_area(src)
-		name = "[declent_ru(NOMINATIVE)] [current_area.declent_ru(GENITIVE)]"
+		update_zone_name() // BANDASTATION ADDITION
+		/*var/area/current_area = get_area(src) // BANDASTATION REMOVAL
+		name = "[declent_ru(NOMINATIVE)] [current_area.declent_ru(GENITIVE)]"*/
 
 	tlv_collection = list()
 	tlv_collection["pressure"] = new /datum/tlv/pressure
 	tlv_collection["temperature"] = new /datum/tlv/temperature
 
 	var/list/cached_gas_info = GLOB.meta_gas_info
-	for(var/datum/gas/gas_path as anything in cached_gas_info)
+	for(var/datum/gas/gas_path as anything in cached_gas_info[META_GAS_ID])
 		if(ispath(gas_path, /datum/gas/oxygen))
 			tlv_collection[gas_path] = new /datum/tlv/oxygen
 		else if(ispath(gas_path, /datum/gas/carbon_dioxide))
 			tlv_collection[gas_path] = new /datum/tlv/carbon_dioxide
-		else if(cached_gas_info[gas_path][META_GAS_DANGER])
+		else if(cached_gas_info[META_GAS_DANGER][gas_path])
 			tlv_collection[gas_path] = new /datum/tlv/dangerous
 		else
 			tlv_collection[gas_path] = new /datum/tlv/no_checks
@@ -124,15 +123,18 @@ GLOBAL_LIST_EMPTY_TYPED(air_alarms, /obj/machinery/airalarm)
 	select_mode(src, /datum/air_alarm_mode/filtering, should_apply = FALSE)
 
 	AddElement(/datum/element/connect_loc, atmos_connections)
-	AddComponent(/datum/component/usb_port, list(
-		/obj/item/circuit_component/air_alarm_general,
-		/obj/item/circuit_component/air_alarm,
-		/obj/item/circuit_component/air_alarm_scrubbers,
-		/obj/item/circuit_component/air_alarm_vents
-	))
+	AddComponent(/datum/component/usb_port, \
+		typecacheof(list(
+			/obj/item/circuit_component/air_alarm_general,
+			/obj/item/circuit_component/air_alarm,
+			/obj/item/circuit_component/air_alarm_scrubbers,
+			/obj/item/circuit_component/air_alarm_vents
+		), only_root_path = TRUE) \
+	)
 
 	GLOB.air_alarms += src
-	find_and_hang_on_wall()
+	if(mapload)
+		find_and_mount_on_atom()
 	register_context()
 	check_enviroment()
 
@@ -178,12 +180,14 @@ GLOBAL_LIST_EMPTY_TYPED(air_alarms, /obj/machinery/airalarm)
 	. = ..()
 
 	my_area = connected_sensor ? get_area(connected_sensor) : area_to_register
+	update_zone_name() // BANDASTATION ADDITION: Airalarm duplicating name fix
 	update_appearance()
 
 /obj/machinery/airalarm/update_name(updates)
 	. = ..()
-	var/area/current_area = get_area(src)
-	name = "[declent_ru(NOMINATIVE)] [current_area.declent_ru(GENITIVE)]"
+	/*var/area/current_area = get_area(src) BANDASTATION REMOVAL
+	name = "[declent_ru(NOMINATIVE)] [current_area.declent_ru(GENITIVE)]"*/
+	update_zone_name() // BANDASTATION ADDITION
 
 /obj/machinery/airalarm/on_exit_area(datum/source, area/area_to_unregister)
 	//we cannot unregister from an area we never registered to in the first place
@@ -283,11 +287,10 @@ GLOBAL_LIST_EMPTY_TYPED(air_alarms, /obj/machinery/airalarm)
 		"danger" = tlv_collection["temperature"].check_value(temp),
 	))
 	if(total_moles)
-		for(var/gas_path in environment.gases)
-			var/moles = environment.gases[gas_path][MOLES]
+		for(var/gas_path, moles in environment.moles)
 			var/portion = moles / total_moles
 			data["envData"] += list(list(
-				"name" = GLOB.meta_gas_info[gas_path][META_GAS_NAME],
+				"name" = GLOB.meta_gas_info[META_GAS_NAME][gas_path],
 				"value" = "[round(moles, 0.01)] moles / [round(100 * portion, 0.01)] % / [round(portion * pressure, 0.01)] kPa",
 				"danger" = tlv_collection[gas_path].check_value(portion * pressure),
 			))
@@ -303,7 +306,7 @@ GLOBAL_LIST_EMPTY_TYPED(air_alarms, /obj/machinery/airalarm)
 			singular_tlv["name"] = "Temperature"
 			singular_tlv["unit"] = "K"
 		else
-			singular_tlv["name"] = GLOB.meta_gas_info[threshold][META_GAS_NAME]
+			singular_tlv["name"] = GLOB.meta_gas_info[META_GAS_NAME][threshold]
 			singular_tlv["unit"] = "kPa"
 		singular_tlv["id"] = threshold
 		singular_tlv["warning_min"] = tlv.warning_min
@@ -333,9 +336,9 @@ GLOBAL_LIST_EMPTY_TYPED(air_alarms, /obj/machinery/airalarm)
 		data["scrubbers"] = list()
 		for(var/obj/machinery/atmospherics/components/unary/vent_scrubber/scrubber as anything in my_area.air_scrubbers)
 			var/list/filter_types = list()
-			for (var/path in GLOB.meta_gas_info)
-				var/list/gas = GLOB.meta_gas_info[path]
-				filter_types += list(list("gas_id" = gas[META_GAS_ID], "gas_name" = gas[META_GAS_NAME], "enabled" = (path in scrubber.filter_types)))
+			var/cached_gas_info = GLOB.meta_gas_info
+			for (var/path in cached_gas_info[META_GAS_ID])
+				filter_types += list(list("gas_id" = cached_gas_info[META_GAS_ID][path], "gas_name" = cached_gas_info[META_GAS_NAME][path], "enabled" = (path in scrubber.filter_types)))
 			data["scrubbers"] += list(list(
 				"refID" = REF(scrubber),
 				"long_name" = sanitize(scrubber.name),
@@ -593,8 +596,8 @@ GLOBAL_LIST_EMPTY_TYPED(air_alarms, /obj/machinery/airalarm)
 	danger_level = max(danger_level, tlv_collection["temperature"].check_value(temp))
 	if(total_moles)
 		var/list/cached_gas_info = GLOB.meta_gas_info
-		for(var/datum/gas/gas_path as anything in cached_gas_info)
-			var/moles = environment.gases[gas_path] ? environment.gases[gas_path][MOLES] : 0
+		for(var/datum/gas/gas_path as anything in cached_gas_info[META_GAS_ID])
+			var/moles = environment.moles[gas_path] || 0
 			danger_level = max(danger_level, tlv_collection[gas_path].check_value(pressure * moles / total_moles))
 
 	if(danger_level)
@@ -711,12 +714,16 @@ MAPPING_DIRECTIONAL_HELPERS(/obj/machinery/airalarm, 27)
 	tlv_collection["temperature"] = new /datum/tlv/no_checks
 	tlv_collection["pressure"] = new /datum/tlv/no_checks
 
-	for(var/gas_path in GLOB.meta_gas_info)
+	for(var/gas_path in GLOB.meta_gas_info[META_GAS_ID])
 		tlv_collection[gas_path] = new /datum/tlv/no_checks
 
 ///Used for air alarm link helper, which connects air alarm to a sensor with corresponding chamber_id
 /obj/machinery/airalarm/proc/setup_chamber_link()
-	var/obj/machinery/air_sensor/sensor = GLOB.objects_by_id_tag[GLOB.map_loaded_sensors[air_sensor_chamber_id]]
+	var/obj/machinery/air_sensor/sensor = null
+	for(var/obj/machinery/air_sensor/target as anything in SSmachines.get_machines_by_type_and_subtypes(/obj/machinery/air_sensor))
+		if(target.z == z && target.chamber_id == air_sensor_chamber_id)
+			sensor = target
+			break
 	if(isnull(sensor))
 		log_mapping("[src] at [AREACOORD(src)] tried to connect to a sensor, but no sensor with chamber_id:[air_sensor_chamber_id] found!")
 		return
@@ -759,5 +766,15 @@ MAPPING_DIRECTIONAL_HELPERS(/obj/machinery/airalarm, 27)
 
 	update_appearance()
 	update_name()
+
+// BANDASTATION ADDITION: Airalarm duplicating name fix
+/obj/machinery/airalarm/proc/update_zone_name()
+	var/base_name = initial(name) // air alarm
+	var/area/current_area = get_area(src)
+	if(!current_area)
+		name = base_name
+		return
+	name = "[base_name] [current_area.declent_ru(GENITIVE)]"
+// BANDASTATION ADDITION: End
 
 #undef AIRALARM_WARNING_COOLDOWN

@@ -3,6 +3,8 @@ GLOBAL_LIST_EMPTY(lobby_station_traits)
 
 ///Base class of station traits. These are used to influence rounds in one way or the other by influencing the levers of the station.
 /datum/station_trait
+	/// Trait should not be instantiated in a round if its type matches this type
+	abstract_type = /datum/station_trait
 	///Name of the trait
 	var/name = "unnamed station trait"
 	///The type of this trait. Used to classify how this trait influences the station
@@ -33,8 +35,8 @@ GLOBAL_LIST_EMPTY(lobby_station_traits)
 	var/list/lobby_buttons = list()
 	/// The ID that we look for in dynamic.json. Not synced with 'name' because I can already see this go wrong
 	var/dynamic_threat_id
-	/// Trait should not be instantiated in a round if its type matches this type
-	var/abstract_type = /datum/station_trait
+	// BANDASTATION ADDITION: Public traits in titles screen
+	var/public_in_lobby = FALSE
 
 /datum/station_trait/New()
 	. = ..()
@@ -73,14 +75,6 @@ GLOBAL_LIST_EMPTY(lobby_station_traits)
 
 	qdel(src)
 
-/// Called by decals if they can be colored, to see if we got some cool colors for them. Only takes the first station trait
-/proc/request_station_colors(atom/thing_to_color, pattern)
-	for(var/datum/station_trait/trait in SSstation.station_traits)
-		var/decal_color = trait.get_decal_color(thing_to_color, pattern || PATTERN_DEFAULT)
-		if(decal_color)
-			return decal_color
-	return null
-
 /// Return a color for the decals, if any
 /datum/station_trait/proc/get_decal_color(thing_to_color, pattern)
 	return
@@ -100,15 +94,14 @@ GLOBAL_LIST_EMPTY(lobby_station_traits)
 	RegisterSignal(lobby_button, COMSIG_QDELETING, PROC_REF(on_lobby_button_destroyed))
 	lobby_button.update_appearance(UPDATE_ICON)
 
-/// Called when our lobby button is clicked on
-/datum/station_trait/proc/on_lobby_button_click(atom/movable/screen/lobby/button/sign_up/lobby_button, location, control, params, mob/dead/new_player/user)
-	SIGNAL_HANDLER
+/// Called when a player clicks this trait's lobby button.
+/// Return a string to show as feedback in the lobby UI.
+/datum/station_trait/proc/on_lobby_button_click(mob/dead/new_player/player)
 	return
 
-/// Called when our lobby button tries to update its appearance
-/datum/station_trait/proc/on_lobby_button_update_icon(atom/movable/screen/lobby/button/sign_up/lobby_button, updates)
-	SIGNAL_HANDLER
-	return
+/// Returns the tooltip text for this trait's lobby button
+/datum/station_trait/proc/get_lobby_description()
+	return report_message
 
 /// Don't hold references to deleted buttons
 /datum/station_trait/proc/on_lobby_button_destroyed(atom/movable/screen/lobby/button/sign_up/lobby_button)

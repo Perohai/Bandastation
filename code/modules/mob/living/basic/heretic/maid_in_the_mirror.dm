@@ -1,8 +1,8 @@
 /// Scout and assassin who can appear and disappear from glass surfaces. Damaged by being examined.
 /mob/living/basic/heretic_summon/maid_in_the_mirror
-	name = "\improper Maid in the Mirror"
+	name = "Maid in the Mirror"
 	real_name = "Maid in the Mirror"
-	desc = "A floating and flowing wisp of chilled air. Glancing at it causes it to shimmer slightly."
+	desc = "Парящий и струящийся поток холодного воздуха. При взгляде на него он слегка мерцает."
 	icon = 'icons/mob/simple/mob.dmi'
 	icon_state = "stand"
 	icon_living = "stand" // Placeholder sprite... still
@@ -15,13 +15,18 @@
 	melee_damage_lower = 12
 	melee_damage_upper = 16
 	sight = SEE_MOBS | SEE_OBJS | SEE_TURFS
-	death_message = "shatters and vanishes, releasing a gust of cold air."
+	death_message = "разлетается вдребезги и исчезает, выпуская порыв холодного воздуха."
 	/// Whether we take damage when someone looks at us
 	var/harmed_by_examine = TRUE
 	/// How often being examined by a specific mob can hurt us
 	var/recent_examine_damage_cooldown = 10 SECONDS
 	/// A list of REFs to people who recently examined us
 	var/list/recent_examiner_refs = list()
+	/// The 1920s English/Welsh name appended to the end of the maid's title.
+	var/antiquated_name
+	/// A large list of names. One is randomly chosen upon mirror maid creation and removed
+	/// to prevent duplicates. If somehow emptied, the list is restored to its original state.
+	var/static/list/antiquated_names = GLOB.mirror_maid_names.Copy()
 
 /mob/living/basic/heretic_summon/maid_in_the_mirror/Initialize(mapload)
 	. = ..()
@@ -33,6 +38,14 @@
 	)
 	AddElement(/datum/element/death_drops, loot)
 	GRANT_ACTION(/datum/action/cooldown/spell/jaunt/mirror_walk)
+	ADD_TRAIT(src, TRAIT_UNHITTABLE_BY_LASERS, INNATE_TRAIT)
+
+	if(!length(antiquated_names))
+		antiquated_names = GLOB.mirror_maid_names.Copy()
+
+	antiquated_name = pick_n_take(antiquated_names)
+	name = "Mirror Maid [antiquated_name]"
+	real_name = name
 
 /mob/living/basic/heretic_summon/maid_in_the_mirror/death(gibbed)
 	var/turf/death_turf = get_turf(src)
@@ -50,14 +63,14 @@
 		return
 
 	// If we have health, we take some damage
-	if(health > (maxHealth * 0.125))
+	if(health > (maxHealth * 0.02))
 		visible_message(
-				span_warning("[src] seems to fade in and out slightly."),
-				span_userdanger("[user]'s gaze pierces your every being!"),
+				span_warning("Кажется, что [src.declent_ru(NOMINATIVE)] то появляется, то исчезает."),
+				span_userdanger("Взгляд [user.declent_ru(GENITIVE)] пронизывает само ваше существование!"),
 		)
 
 		recent_examiner_refs += user_ref
-		apply_damage(maxHealth * 0.1) // We take 10% of our health as damage upon being examined
+		apply_damage(maxHealth * 0.02) // We take 2% of our health as damage upon being examined
 		playsound(src, 'sound/effects/ghost2.ogg', 40, TRUE)
 		addtimer(CALLBACK(src, PROC_REF(clear_recent_examiner), user_ref), recent_examine_damage_cooldown, TIMER_DELETE_ME)
 		animate(src, alpha = 120, time = 0.5 SECONDS, easing = ELASTIC_EASING, loop = 2, flags = ANIMATION_PARALLEL)
@@ -66,8 +79,8 @@
 	// If we're examined on low enough health we die straight up
 	else
 		visible_message(
-				span_danger("[src] vanishes from existence!"),
-				span_userdanger("[user]'s gaze shatters your form, destroying you!"),
+				span_danger("[capitalize(src.declent_ru(NOMINATIVE))] уходит в небытие!"),
+				span_userdanger("Взгляд [user.declent_ru(GENITIVE)] разрушает вашу оболочку, уничтожая вас!"),
 		)
 
 		death()
@@ -78,3 +91,10 @@
 
 	recent_examiner_refs -= mob_ref
 	heal_overall_damage(5)
+
+/mob/living/basic/heretic_summon/maid_in_the_mirror/melee_attack(atom/target, list/modifiers, ignore_cooldown)
+	. = ..()
+	if(!. || !isliving(target))
+		return
+	var/mob/living/living_target = target
+	living_target.apply_status_effect(/datum/status_effect/void_chill, 1)

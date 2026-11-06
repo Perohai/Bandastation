@@ -45,8 +45,16 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	//Quirk list
 	var/list/all_quirks = list()
 
-	//Job preferences 2.0 - indexed by job title , no key or value implies never
+	/**
+	 * List of job titles to their priority level, JP_LOW, JP_MEDIUM, JP_HIGH
+	 * If a job is absent from the list, it is considered to be "JP_NEVER"
+	 */
 	var/list/job_preferences = list()
+	/**
+	 * Lazylist of job titles to character slot numbers
+	 * When rolling for a job, if that job is present in this list, we load that slot instead of the active slot
+	 */
+	var/list/job_assigned_profiles
 
 	/// The current window, PREFERENCE_TAB_* in [`code/__DEFINES/preferences.dm`]
 	var/current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
@@ -85,8 +93,12 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// Used to avoid expensive READ_FILE every time a preference is retrieved.
 	var/value_cache = list()
 
-	/// If set to TRUE, will update character_profiles on the next ui_data tick.
+	/// If set to TRUE, will update cached_character_profiles on the next ui_data tick.
 	var/tainted_character_profiles = FALSE
+	/// The character profiles, saved so we can cheaply recompute them in ui_data only when necessary, without having to use expensive update_static_data calls.
+	var/list/cached_character_profiles
+
+	var/list/custom_emote_panel = list() // BANDASTATION ADD - Emote Panel
 
 /datum/preferences/Destroy(force)
 	QDEL_NULL(character_preview_view)
@@ -101,8 +113,13 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		middleware += new middleware_type(src)
 
 	if(IS_CLIENT_OR_MOCK(parent))
-		load_and_save = !is_guest_key(parent.key)
-		load_path(parent.ckey)
+		if(is_guest_key(parent.key))
+			if(parent.is_localhost())
+				path = DEV_PREFS_PATH // guest + locallost = dev instance, load dev preferences if possible
+			else
+				load_and_save = FALSE // guest + not localhost = guest on live, don't save anything
+		else
+			load_path(parent.ckey) // not guest = load their actual savefile
 		if(load_and_save && !fexists(path))
 			try_savefile_type_migration()
 
@@ -141,6 +158,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
+		tainted_character_profiles = TRUE
 		character_preview_view = create_character_preview_view(user)
 		ui = new(user, src, "PreferencesMenu")
 		ui.set_autoupdate(FALSE)
@@ -158,9 +176,11 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 /datum/preferences/ui_data(mob/user)
 	var/list/data = list()
 
-	if (tainted_character_profiles)
-		data["character_profiles"] = create_character_profiles()
+	if (tainted_character_profiles || isnull(cached_character_profiles))
+		cached_character_profiles = create_character_profiles()
 		tainted_character_profiles = FALSE
+
+	data["character_profiles"] = cached_character_profiles
 
 	data["character_preferences"] = compile_character_preferences(user)
 
@@ -173,8 +193,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 /datum/preferences/ui_static_data(mob/user)
 	var/list/data = list()
-
-	data["character_profiles"] = create_character_profiles()
 
 	data["character_preview_view"] = character_preview_view.assigned_map
 	data["overflow_role"] = SSjob.get_job_type(SSjob.overflow_role).title
@@ -209,6 +227,9 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 			save_character()
 			// SAFETY: `switch_to_slot` performs sanitization on the slot number
 			switch_to_slot(params["slot"])
+
+			parent.tgui_panel?.window.send_message("emotes/setList", custom_emote_panel) // BANDASTATION ADD - Emote Panel
+
 			return TRUE
 		if ("remove_current_slot")
 			remove_current_slot()
@@ -250,12 +271,12 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 			var/default_value = read_preference(requested_preference.type)
 
 			// Yielding
-			var/new_color = input(
+			var/new_color = tgui_color_picker(
 				usr,
 				"Select new color",
 				null,
 				default_value || COLOR_WHITE,
-			) as color | null
+			)
 
 			if (!new_color)
 				return FALSE
@@ -286,6 +307,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	save_character()
 	save_preferences()
 	QDEL_NULL(character_preview_view)
+	cached_character_profiles = null
 
 /datum/preferences/Topic(href, list/href_list)
 	. = ..()
@@ -299,7 +321,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		return TRUE
 
 /datum/preferences/proc/create_character_preview_view(mob/user)
-	character_preview_view = new(null, src)
+	character_preview_view = new(null, null, src)
 	character_preview_view.generate_view("character_preview_[REF(character_preview_view)]")
 	character_preview_view.update_body()
 
@@ -352,7 +374,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// Whether we show current job clothes or nude/loadout only
 	var/show_job_clothes = TRUE
 
-/atom/movable/screen/map_view/char_preview/Initialize(mapload, datum/preferences/preferences)
+/atom/movable/screen/map_view/char_preview/Initialize(mapload, datum/hud/hud_owner, datum/preferences/preferences)
 	. = ..()
 	src.preferences = preferences
 
@@ -405,15 +427,15 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		var/datum/job/overflow_role = SSjob.overflow_role
 		var/overflow_role_title = initial(overflow_role.title)
 
-		for(var/other_job in job_preferences)
-			if(job_preferences[other_job] == JP_HIGH)
+		for(var/other_job, other_level in job_preferences)
+			if(other_level == JP_HIGH)
 				// Overflow role needs to go to NEVER, not medium!
 				if(other_job == overflow_role_title)
-					job_preferences[other_job] = null
+					job_preferences -= other_job
 				else
 					job_preferences[other_job] = JP_MEDIUM
 
-	if(level == null)
+	if(isnull(level))
 		job_preferences -= job.title
 	else
 		job_preferences[job.title] = level
@@ -421,7 +443,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	return TRUE
 
 /datum/preferences/proc/GetQuirkBalance()
-	var/bal = 0
+	var/bal = SSquirks.default_quirk_points
 	for(var/V in all_quirks)
 		var/datum/quirk/T = SSquirks.quirks[V]
 		bal -= initial(T.value)
@@ -446,7 +468,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	if(LAZYLEN(quirks_removed))
 		LAZYADD(feedback, "The following quirks are incompatible with your species:")
 		LAZYADD(feedback, quirks_removed)
-	if(!CONFIG_GET(flag/disable_quirk_points) && GetQuirkBalance() < 0)
+	if(SSquirks.points_enabled && GetQuirkBalance() < 0)
 		LAZYADD(feedback, "Your quirks have been reset.")
 		all_quirks = list()
 	if(LAZYLEN(feedback))
@@ -503,19 +525,31 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	return preferences.chat_toggles
 
 /// Sanitizes the preferences, applies the randomization prefs, and then applies the preference to the human mob.
-/datum/preferences/proc/safe_transfer_prefs_to(mob/living/carbon/human/character, icon_updates = TRUE, is_antag = FALSE)
+/datum/preferences/proc/safe_transfer_prefs_to(mob/living/carbon/human/character, icon_updates = TRUE, is_antag = FALSE, list/do_not_apply) // BANDASTATION MOD - Do not apply body mods on roles
 	apply_character_randomization_prefs(is_antag)
-	apply_prefs_to(character, icon_updates)
+	if(is_antag) // BANDASTATION MOD - Do not apply body mods on roles
+		do_not_apply = do_not_apply ? (do_not_apply | list(/datum/preference/body_modifications)) : list(/datum/preference/body_modifications)
+	apply_prefs_to(character, icon_updates, do_not_apply) // BANDASTATION MOD - Do not apply body mods on roles
 
-/// Applies the given preferences to a human mob.
-/datum/preferences/proc/apply_prefs_to(mob/living/carbon/human/character, icon_updates = TRUE)
+/**
+ * Applies the given preferences to a human mob.
+ *
+ * Arguments:
+ * * character - The human mob to apply the preferences to
+ * * icon_updates - Whether to update the mob's icons after applying preferences.
+ * Is often skipped to save processing when an update will happen later anyway.
+ * * do_not_apply - A list of preference types to skip when applying preferences.
+ */
+/datum/preferences/proc/apply_prefs_to(mob/living/carbon/human/character, icon_updates = TRUE, list/do_not_apply)
 	character.dna.features = list()
 
 	for (var/datum/preference/preference as anything in get_preferences_in_priority_order())
 		if (preference.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
+		if (preference.type in do_not_apply)
+			continue
 
-		preference.apply_to_human(character, read_preference(preference.type))
+		preference.apply_to_human(character, read_preference(preference.type), src)
 
 	character.dna.real_name = character.real_name
 
@@ -523,6 +557,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		character.icon_render_keys = list()
 		character.update_body(is_creating = TRUE)
 
+	src.parent.validate_job_restrictions() // BANDASTATION ADDITION: Job restrictions
 	SEND_SIGNAL(character, COMSIG_HUMAN_PREFS_APPLIED)
 
 /// Returns whether the parent mob should have the random hardcore settings enabled. Assumes it has a mind.

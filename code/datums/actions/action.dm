@@ -134,14 +134,14 @@
 	viewers = list()
 	UnregisterSignal(remove_from, COMSIG_MOB_KEYDOWN)
 
-	if(isnull(owner))
+	if(isnull(remove_from))
 		return
-	SEND_SIGNAL(src, COMSIG_ACTION_REMOVED, owner)
-	SEND_SIGNAL(owner, COMSIG_MOB_REMOVED_ACTION, src)
-	UnregisterSignal(owner, COMSIG_QDELETING)
+	SEND_SIGNAL(src, COMSIG_ACTION_REMOVED, remove_from)
+	SEND_SIGNAL(remove_from, COMSIG_MOB_REMOVED_ACTION, src)
+	UnregisterSignal(remove_from, COMSIG_QDELETING)
 
 	// Clean up our check_flag signals
-	UnregisterSignal(owner, list(
+	UnregisterSignal(remove_from, list(
 		COMSIG_LIVING_SET_BODY_POSITION,
 		COMSIG_MOB_STATCHANGE,
 		COMSIG_MOVABLE_MOVED,
@@ -155,7 +155,7 @@
 		SIGNAL_REMOVETRAIT(TRAIT_MAGICALLY_PHASED),
 	))
 
-	if(target == owner)
+	if(target == remove_from)
 		RegisterSignal(target, COMSIG_QDELETING, PROC_REF(clear_ref))
 	if (owner == remove_from)
 		owner = null
@@ -163,6 +163,7 @@
 /// Actually triggers the effects of the action.
 /// Called when the on-screen button is clicked, for example.
 /datum/action/proc/Trigger(mob/clicker, trigger_flags)
+	SHOULD_CALL_PARENT(TRUE)
 	if(!(trigger_flags & TRIGGER_FORCE_AVAILABLE) && !IsAvailable(feedback = TRUE))
 		return FALSE
 	if(SEND_SIGNAL(src, COMSIG_ACTION_TRIGGER, src) & COMPONENT_ACTION_BLOCK_TRIGGER)
@@ -178,35 +179,40 @@
 		return FALSE
 	if(action_disabled)
 		return FALSE
+	if((check_flags & AB_CHECK_CONSCIOUS) && IS_UNCONSCIOUS_OR_CRIT(owner))
+		if (feedback)
+			if(owner.stat == DEAD)
+				owner.balloon_alert(owner, "мёртв!")
+			else if(IS_UNCONSCIOUS(owner))
+				owner.balloon_alert(owner, "без сознания!")
+			else
+				owner.balloon_alert(owner, "в критическом состоянии")
+		return FALSE
 	if((check_flags & AB_CHECK_HANDS_BLOCKED) && HAS_TRAIT(owner, TRAIT_HANDS_BLOCKED))
 		if (feedback)
-			owner.balloon_alert(owner, "hands blocked!")
+			owner.balloon_alert(owner, "руки заняты!")
 		return FALSE
 	if((check_flags & AB_CHECK_IMMOBILE) && HAS_TRAIT(owner, TRAIT_IMMOBILIZED))
 		if (feedback)
-			owner.balloon_alert(owner, "can't move!")
+			owner.balloon_alert(owner, "не могу двигаться!")
 		return FALSE
 	if((check_flags & AB_CHECK_INCAPACITATED) && HAS_TRAIT(owner, TRAIT_INCAPACITATED))
 		if (feedback)
-			owner.balloon_alert(owner, "incapacitated!")
+			owner.balloon_alert(owner, "недееспособен!")
 		return FALSE
 	if((check_flags & AB_CHECK_LYING) && isliving(owner))
 		var/mob/living/action_owner = owner
 		if(action_owner.body_position == LYING_DOWN)
 			if (feedback)
-				owner.balloon_alert(owner, "must stand up!")
+				owner.balloon_alert(owner, "нужно встать!")
 			return FALSE
-	if((check_flags & AB_CHECK_CONSCIOUS) && owner.stat != CONSCIOUS)
-		if (feedback)
-			owner.balloon_alert(owner, "unconscious!")
-		return FALSE
 	if((check_flags & AB_CHECK_PHASED) && HAS_TRAIT(owner, TRAIT_MAGICALLY_PHASED))
 		if (feedback)
-			owner.balloon_alert(owner, "incorporeal!")
+			owner.balloon_alert(owner, "бесплотен!")
 		return FALSE
 	if((check_flags & AB_CHECK_OPEN_TURF) && !isopenturf(owner.loc))
 		if (feedback)
-			owner.balloon_alert(owner, "not enough space!")
+			owner.balloon_alert(owner, "недостаточно места!")
 		return FALSE
 	return TRUE
 
@@ -258,6 +264,8 @@
 	button.name = name
 	if(desc)
 		button.desc = desc
+	for(var/datum/hud/hud as anything in viewers)
+		button.update_tooltip(hud.mymob)
 
 /**
  * Creates the background underlay for the button
@@ -335,6 +343,7 @@
 		current_button.color = rgb(255,255,255,255)
 	else
 		current_button.color = transparent_when_unavailable ? rgb(128,0,0,128) : rgb(128,0,0)
+	SEND_SIGNAL(src, COMSIG_ACTION_STATUS_UPDATE, current_button, force)
 
 /// Gives our action to the passed viewer.
 /// Puts our action in their actions list and shows them the button.
@@ -352,7 +361,7 @@
 	if(!our_hud || viewers[our_hud]) // There's no point in this if you have no hud in the first place
 		return
 
-	var/atom/movable/screen/movable/action_button/button = create_button()
+	var/atom/movable/screen/movable/action_button/button = create_button(viewer)
 	SetId(button, viewer)
 
 	button.our_hud = our_hud
@@ -372,8 +381,8 @@
 		qdel(button)
 
 /// Creates an action button movable for the passed mob, and returns it.
-/datum/action/proc/create_button()
-	var/atom/movable/screen/movable/action_button/button = new()
+/datum/action/proc/create_button(mob/viewer)
+	var/atom/movable/screen/movable/action_button/button = viewer.hud_used.add_screen_object(/atom/movable/screen/movable/action_button)
 	button.linked_action = src
 	button.allow_observer_click = allow_observer_click
 	build_button_icon(button, ALL, TRUE)
@@ -386,7 +395,7 @@
 		if(action == src) // This could be us, which is dumb
 			continue
 		var/atom/movable/screen/movable/action_button/button = action.viewers[owner.hud_used]
-		if(action.name == name && button.id)
+		if(action.name == name && button?.id)
 			bitfield |= button.id
 
 	bitfield = ~bitfield // Flip our possible ids, so we can check if we've found a unique one
@@ -439,7 +448,7 @@
 		full_key = null
 		update_button_status(current_button)
 		return
-	full_key = tgui_input_keycombo(user, "Please bind a key for this action.")
+	full_key = tgui_input_keycombo(user, "Пожалуйста, привяжите клавишу для этого действия.")
 	update_button_status(current_button)
 
 /datum/action/proc/keydown(mob/source, key, client/client, full_key)
@@ -452,3 +461,8 @@
 		else
 			source.next_click = world.time + CLICK_CD_ACTIVATE_ABILITY
 	INVOKE_ASYNC(src, PROC_REF(Trigger))
+
+/// Used for setting the keybind via external sources.
+/datum/action/proc/set_key(new_full_key)
+	full_key = new_full_key
+	build_all_button_icons(UPDATE_BUTTON_STATUS)

@@ -96,6 +96,8 @@
 	unregister()
 	destination = null
 	previous = null
+	for(var/obj/machinery/power/shuttle_engine/engine as anything in engine_list)
+		engine.unsync_ship()
 	if(!QDELETED(assigned_transit))
 		qdel(assigned_transit, force = TRUE)
 		assigned_transit = null
@@ -501,17 +503,9 @@
 /obj/docking_port/mobile/proc/parallax_slowdown()
 	for(var/place in shuttle_areas)
 		var/area/shuttle/shuttle_area = place
-		shuttle_area.parallax_movedir = FALSE
-	if(assigned_transit?.assigned_area)
-		assigned_transit.assigned_area.parallax_movedir = FALSE
-	var/list/L0 = return_ordered_turfs(x, y, z, dir)
-	for (var/thing in L0)
-		var/turf/T = thing
-		if(!T || !istype(T.loc, area_type))
-			continue
-		for (var/atom/movable/movable as anything in T)
-			if (movable.client_mobs_in_contents)
-				movable.update_parallax_contents()
+		shuttle_area.set_parallax_movedir(NONE)
+
+	assigned_transit?.assigned_area?.set_parallax_movedir(NONE)
 
 /obj/docking_port/mobile/proc/check_transit_zone()
 	if(assigned_transit)

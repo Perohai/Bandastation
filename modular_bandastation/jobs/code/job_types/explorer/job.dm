@@ -1,6 +1,5 @@
 /datum/job/explorer
 	title = JOB_EXPLORER
-	department_head = list(JOB_QUARTERMASTER)
 	supervisors = JOB_QUARTERMASTER
 	description = "Исследователь космоса и Врат"
 	display_order = JOB_DISPLAY_ORDER_EXPLORER
@@ -10,13 +9,14 @@
 	outfit = /datum/outfit/job/explorer
 	faction = FACTION_STATION
 	total_positions = 4
-	spawn_positions = 0
+	spawn_positions = 3
 	minimal_player_age = 18
 	exp_requirements = 180
 	exp_required_type = EXP_TYPE_CREW
 	exp_required_type_department = EXP_TYPE_SUPPLY
 	exp_granted_type = EXP_TYPE_CREW
 	config_tag = "EXPLORER"
+	tgui_icon = FA_ICON_BINOCULARS
 
 	plasmaman_outfit = /datum/outfit/plasmaman/explorer
 

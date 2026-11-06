@@ -8,7 +8,6 @@ export enum MODE {
 export enum TABS {
   category,
   material,
-  foodtype,
 }
 
 export type AtomData = {
@@ -17,7 +16,7 @@ export type AtomData = {
   icon: string;
 };
 
-type Material = {
+export type Material = {
   atom_id: string;
   occurences: number;
 };
@@ -25,9 +24,7 @@ type Material = {
 export type Recipe = {
   category: string;
   chem_catalysts: Record<number, number>;
-  complexity: number;
   desc: string;
-  foodtypes: string[];
   has_food_effect: BooleanLike;
   id: number;
   is_reaction: BooleanLike;
@@ -41,6 +38,12 @@ export type Recipe = {
   structures: string[];
   tool_behaviors: string[];
   tool_paths: string[];
+  // only used for food recipes
+  foodtypes?: string[];
+  complexity?: number;
+  cuisine_category?: string;
+  dish_category?: string;
+  meal_category?: string;
 };
 
 export type Diet = {

@@ -7,12 +7,15 @@
 	icon = 'icons/obj/art/musician.dmi'
 	lefthand_file = 'icons/mob/inhands/equipment/instruments_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/instruments_righthand.dmi'
+	abstract_type = /obj/item/instrument
 	/// Our song datum.
 	var/datum/song/handheld/song
 	/// Our allowed list of instrument ids. This is nulled on initialize.
 	var/list/allowed_instrument_ids
 	/// How far away our song datum can be heard.
 	var/instrument_range = 15
+	/// Can we play this instrument when it's equipped?
+	var/playable_while_worn = FALSE
 
 /obj/item/instrument/Initialize(mapload)
 	. = ..()
@@ -28,6 +31,8 @@
 		return FALSE
 	var/mob/user = music_player
 	if(user.incapacitated)
+		return FALSE
+	if(!playable_while_worn && (user.get_slot_by_item(src) & slot_flags)) //can't play while wearing the instrument
 		return FALSE
 	if(!Adjacent(user))
 		return FALSE
@@ -47,6 +52,7 @@
 	inhand_icon_state = "violin"
 	hitsound = SFX_SWING_HIT
 	allowed_instrument_ids = "violin"
+	custom_materials = list(/datum/material/wood = SHEET_MATERIAL_AMOUNT * 4, /datum/material/iron = SHEET_MATERIAL_AMOUNT)
 
 /obj/item/instrument/violin/golden
 	name = "golden violin"
@@ -54,6 +60,7 @@
 	icon_state = "golden_violin"
 	inhand_icon_state = "golden_violin"
 	resistance_flags = LAVA_PROOF | FIRE_PROOF | ACID_PROOF
+	custom_materials = list(/datum/material/gold = SHEET_MATERIAL_AMOUNT * 4, /datum/material/iron = SHEET_MATERIAL_AMOUNT)
 
 /obj/item/instrument/banjo
 	name = "banjo"
@@ -80,6 +87,8 @@
 	desc = "Makes all your shredding needs possible."
 	icon_state = "eguitar"
 	inhand_icon_state = "eguitar"
+	worn_icon = 'icons/mob/clothing/back.dmi'
+	slot_flags = ITEM_SLOT_BACK
 	force = 12
 	attack_verb_continuous = list("plays metal on", "shreds", "crashes", "smashes")
 	attack_verb_simple = list("play metal on", "shred", "crash", "smash")
@@ -199,6 +208,7 @@
 	allowed_instrument_ids = list("crharmony", "harmonica")
 	inhand_icon_state = "harmonica"
 	slot_flags = ITEM_SLOT_MASK
+	playable_while_worn = TRUE
 	force = 5
 	w_class = WEIGHT_CLASS_SMALL
 	actions_types = list(/datum/action/item_action/instrument)

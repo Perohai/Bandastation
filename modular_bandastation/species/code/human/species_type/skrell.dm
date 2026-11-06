@@ -19,9 +19,11 @@
 	mutantliver = /obj/item/organ/liver/skrell
 	mutantstomach = /obj/item/organ/stomach/skrell
 	mutant_organs = list(
-		/obj/item/organ/head_tentacle = /datum/sprite_accessory/skrell_head_tentacle/short::name
+		/obj/item/organ/head_tentacle = /datum/sprite_accessory/skrell_head_tentacle/short::name,
+		/obj/item/organ/cloth_wrap = /datum/sprite_accessory/skrell_cloth_wrap/short::name,
+		/obj/item/organ/tentacle_ornament = /datum/sprite_accessory/skrell_tentacle_ornament/none::name,
 	)
-	exotic_bloodtype = BLOOD_TYPE_SKRELL
+	exotic_bloodtype = /datum/blood_type/skrell
 
 	bodypart_overrides = list(
 		BODY_ZONE_HEAD = /obj/item/bodypart/head/skrell,
@@ -35,8 +37,23 @@
 
 /datum/species/skrell/prepare_human_for_preview(mob/living/carbon/human/human)
 	human.dna.features[FEATURE_MUTANT_COLOR] = COLOR_TRUE_BLUE
-	human.dna.features[FEATURE_SKRELL_HEAD_TENTACLE] = /datum/sprite_accessory/skrell_head_tentacle/short::name
+	human.dna.features[FEATURE_SKRELL_HEAD_TENTACLE] = /datum/sprite_accessory/skrell_head_tentacle/long::name
+/// When creating a picture for the preferences UI, organs are created first, and only then dna.features are given
+	for(var/obj/item/organ/O in human.organs)
+		if(istype(O, /obj/item/organ/head_tentacle) || istype(O, /obj/item/organ/tentacle_ornament) || istype(O, /obj/item/organ/cloth_wrap))
+			qdel(O)
+	var/obj/item/organ/head_tentacle/T = new()
+	T.Insert(human, special = TRUE)
+
 	human.update_body(is_creating = TRUE)
+
+/datum/species/skrell/randomize_features()
+	var/list/features = ..()
+	features[FEATURE_SKRELL_CLOTH_WRAP_TOGGLE] = prob(50) ? pick(SSaccessories.feature_list[FEATURE_SKRELL_CLOTH_WRAP_TOGGLE]) : SPRITE_ACCESSORY_NONE
+
+	var/cloth_color = "#[random_color()]"
+	features[FEATURE_SKRELL_CLOTH_WRAP_COLOR] = cloth_color
+	return features
 
 /datum/species/skrell/create_pref_unique_perks()
 	var/list/to_add = list()
@@ -78,7 +95,7 @@
 		"Скреллианская Империя – надгосударственный союз скреллианских городов-государств, \
 			княжеств и небольших королевств. Империя всю свою историю является децентрализованным образованием \
 			со сложной феодальной иерархической структурой, \
-		 	объединяющей несколько тысяч территориально-государственных образований, \
+			объединяющей несколько тысяч территориально-государственных образований, \
 			но, несмотря на это, Империи удается проводить более-менее схожую политику во всех своих уголках. \
 			Официальной политической идеологией Империи и опорой её общественного строя является Вечный мир.",
 
@@ -128,90 +145,3 @@
 			но в истории были и случаи открытых карательных экспедиций, собранных с ОСС по всей Империи для \
 			недопущения образования центров объединения и, как следствие, общественного прогресса."
 	)
-
-/datum/species/skrell/get_scream_sound(mob/living/carbon/human/human)
-	if(human.physique == MALE)
-		return pick(
-			'sound/mobs/humanoids/human/scream/malescream_1.ogg',
-			'sound/mobs/humanoids/human/scream/malescream_2.ogg',
-			'sound/mobs/humanoids/human/scream/malescream_3.ogg',
-			'sound/mobs/humanoids/human/scream/malescream_4.ogg',
-			'sound/mobs/humanoids/human/scream/malescream_5.ogg',
-			'sound/mobs/humanoids/human/scream/malescream_6.ogg',
-		)
-
-	return pick(
-		'sound/mobs/humanoids/human/scream/femalescream_1.ogg',
-		'sound/mobs/humanoids/human/scream/femalescream_2.ogg',
-		'sound/mobs/humanoids/human/scream/femalescream_3.ogg',
-		'sound/mobs/humanoids/human/scream/femalescream_4.ogg',
-		'sound/mobs/humanoids/human/scream/femalescream_5.ogg',
-	)
-
-/datum/species/skrell/get_cry_sound(mob/living/carbon/human/human)
-	if(human.physique == FEMALE)
-		return pick(
-			'sound/mobs/humanoids/human/cry/female_cry1.ogg',
-			'sound/mobs/humanoids/human/cry/female_cry2.ogg',
-		)
-	return pick(
-		'sound/mobs/humanoids/human/cry/male_cry1.ogg',
-		'sound/mobs/humanoids/human/cry/male_cry2.ogg',
-		'sound/mobs/humanoids/human/cry/male_cry3.ogg',
-	)
-
-/datum/species/skrell/get_sigh_sound(mob/living/carbon/human/human)
-	if(human.physique == FEMALE)
-		return SFX_FEMALE_SIGH
-	return SFX_MALE_SIGH
-
-/datum/species/skrell/get_sniff_sound(mob/living/carbon/human/human)
-	if(human.physique == FEMALE)
-		return 'sound/mobs/humanoids/human/sniff/female_sniff.ogg'
-	return 'sound/mobs/humanoids/human/sniff/male_sniff.ogg'
-
-/datum/species/skrell/get_cough_sound(mob/living/carbon/human/tajaran)
-	if(tajaran.physique == FEMALE)
-		return pick(
-			'sound/mobs/humanoids/human/cough/female_cough1.ogg',
-			'sound/mobs/humanoids/human/cough/female_cough2.ogg',
-			'sound/mobs/humanoids/human/cough/female_cough3.ogg',
-			'sound/mobs/humanoids/human/cough/female_cough4.ogg',
-			'sound/mobs/humanoids/human/cough/female_cough5.ogg',
-			'sound/mobs/humanoids/human/cough/female_cough6.ogg',
-		)
-	return pick(
-		'sound/mobs/humanoids/human/cough/male_cough1.ogg',
-		'sound/mobs/humanoids/human/cough/male_cough2.ogg',
-		'sound/mobs/humanoids/human/cough/male_cough3.ogg',
-		'sound/mobs/humanoids/human/cough/male_cough4.ogg',
-		'sound/mobs/humanoids/human/cough/male_cough5.ogg',
-		'sound/mobs/humanoids/human/cough/male_cough6.ogg',
-	)
-
-/datum/species/skrell/get_laugh_sound(mob/living/carbon/human/human)
-	if(human.physique == FEMALE)
-		return pick(
-			'modular_bandastation/emote_panel/audio/skrell/laugh_female_1.ogg',
-			'modular_bandastation/emote_panel/audio/skrell/laugh_female_2.ogg',
-			'modular_bandastation/emote_panel/audio/skrell/laugh_female_3.ogg',
-		)
-
-	return pick(
-		'modular_bandastation/emote_panel/audio/skrell/laugh_male_1.ogg',
-		'modular_bandastation/emote_panel/audio/skrell/laugh_male_2.ogg',
-		'modular_bandastation/emote_panel/audio/skrell/laugh_male_3.ogg',
-	)
-
-/datum/species/skrell/get_sneeze_sound(mob/living/carbon/human/human)
-	if(human.physique == FEMALE)
-		return 'sound/mobs/humanoids/human/sneeze/female_sneeze1.ogg'
-	return 'sound/mobs/humanoids/human/sneeze/male_sneeze1.ogg'
-
-/datum/species/skrell/get_snore_sound(mob/living/carbon/human/human)
-	if(human.physique == FEMALE)
-		return SFX_SNORE_FEMALE
-	return SFX_SNORE_MALE
-
-/datum/species/skrell/get_hiss_sound(mob/living/carbon/human/human)
-	return 'sound/mobs/humanoids/human/hiss/human_hiss.ogg'

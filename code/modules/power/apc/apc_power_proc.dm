@@ -19,10 +19,10 @@
 
 /obj/machinery/power/apc/proc/toggle_nightshift_lights(mob/user)
 	if(low_power_nightshift_lights)
-		balloon_alert(user, "power is too low!")
+		balloon_alert(user, "слишком мало питания!")
 		return
 	if(last_nightshift_switch > world.time - 10 SECONDS) //~10 seconds between each toggle to prevent spamming
-		balloon_alert(user, "night breaker is cycling!")
+		balloon_alert(user, "цикл освещения перезаряжается!")
 		return
 	last_nightshift_switch = world.time
 	set_nightshift(!nightshift_lights)
@@ -45,8 +45,8 @@
 		return
 	operating = !operating
 	if (user)
-		var/enabled_or_disabled = operating ? "enabled" : "disabled"
-		balloon_alert(user, "power [enabled_or_disabled]")
+		var/enabled_or_disabled = operating ? "включёно" : "выключено"
+		balloon_alert(user, "питание [enabled_or_disabled]")
 		user.log_message("turned [enabled_or_disabled] the [src]", LOG_GAME)
 		add_hiddenprint(user)
 	update()
@@ -127,16 +127,15 @@
 		terminal.master = null
 		terminal = null
 
+/**
+ * Temporarily disables all power to the room for a set duration
+ *
+ * Some rooms are immune to this effect due to having important machines
+ *
+ * * duration - the duration of the power failure in seconds (not deciseconds)
+ */
 /obj/machinery/power/apc/proc/energy_fail(duration)
-	for(var/obj/machinery/failing_machine in area.contents)
-		if(failing_machine.critical_machine)
-			return
-
-	for(var/mob/living/silicon/ai as anything in GLOB.ai_list)
-		if(get_area(ai) == area)
-			return
-
-	failure_timer = max(failure_timer, round(duration))
+	failure_timer = max(failure_timer, round(duration, SSMACHINES_DT))
 	update()
 	queue_icon_update()
 
@@ -147,10 +146,9 @@
 	if(nightshift_lights == on)
 		return //no change
 	nightshift_lights = on
-	for (var/list/zlevel_turfs as anything in area.get_zlevel_turf_lists())
-		for(var/turf/area_turf as anything in zlevel_turfs)
-			for(var/obj/machinery/light/night_light in area_turf)
-				if(night_light.nightshift_allowed)
-					night_light.nightshift_enabled = nightshift_lights
-					night_light.update(FALSE)
-				CHECK_TICK
+	for(var/turf/area_turf as anything in area.get_turfs_from_all_zlevels())
+		for(var/obj/machinery/light/night_light in area_turf)
+			if(night_light.nightshift_allowed)
+				night_light.nightshift_enabled = nightshift_lights
+				night_light.update(FALSE)
+			CHECK_TICK

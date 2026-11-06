@@ -21,9 +21,12 @@
 	applies_to = list(
 		/obj/item/bodypart/arm/right,
 		/obj/item/bodypart/arm/left,
-		/obj/item/bodypart/leg/right,
-		/obj/item/bodypart/leg/left,
+		/obj/item/bodypart/leg/right/digitigrade,
+		/obj/item/bodypart/leg/left/digitigrade,
 	)
 
-/datum/bodypart_overlay/simple/body_marking/vulpkanin_limb/get_accessory(name)
-	return SSaccessories.vulpkanin_limb_markings_list[name]
+/datum/bodypart_overlay/simple/body_marking/vulpkanin_limb/can_draw_on_bodypart(obj/item/bodypart/bodypart_owner)
+	. = ..()
+	if(!.)
+		return
+	return CHECK_DIGI_LEGS(bodypart_owner.owner)

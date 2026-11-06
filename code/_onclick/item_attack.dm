@@ -78,7 +78,8 @@
 	// This can mean nothing happened, this can mean the target took damage, etc.
 
 	if(user.client && isitem(target))
-		if(isnull(user.get_inactive_held_item()))
+		var/mob/living/living_user = astype(user)
+		if(isnull(user.get_inactive_held_item() && living_user?.num_hands > 1))
 			SStutorials.suggest_tutorial(user, /datum/tutorial/switch_hands, modifiers)
 		else
 			SStutorials.suggest_tutorial(user, /datum/tutorial/drop, modifiers)
@@ -108,7 +109,8 @@
  * See: [/obj/item/proc/melee_attack_chain]
  */
 /obj/item/proc/pre_attack(atom/target, mob/living/user, list/modifiers, list/attack_modifiers) //do stuff before attackby!
-	if(SEND_SIGNAL(src, COMSIG_ITEM_PRE_ATTACK, target, user, modifiers, attack_modifiers) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	var/signal_result = SEND_SIGNAL(src, COMSIG_ITEM_PRE_ATTACK, target, user, modifiers, attack_modifiers) | SEND_SIGNAL(user, COMSIG_USER_PRE_ITEM_ATTACK, src, target, modifiers, attack_modifiers)
+	if(signal_result & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
 	return FALSE //return TRUE to avoid calling attackby after this proc does stuff
 
@@ -124,7 +126,7 @@
  * See: [/obj/item/proc/melee_attack_chain]
  */
 /obj/item/proc/pre_attack_secondary(atom/target, mob/living/user, list/modifiers, list/attack_modifiers)
-	var/signal_result = SEND_SIGNAL(src, COMSIG_ITEM_PRE_ATTACK_SECONDARY, target, user, modifiers, attack_modifiers)
+	var/signal_result = SEND_SIGNAL(src, COMSIG_ITEM_PRE_ATTACK_SECONDARY, target, user, modifiers, attack_modifiers) | SEND_SIGNAL(user, COMSIG_USER_PRE_ITEM_ATTACK_SECONDARY, src, target, modifiers, attack_modifiers)
 
 	if(signal_result & COMPONENT_SECONDARY_CANCEL_ATTACK_CHAIN)
 		return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
@@ -180,13 +182,18 @@
 	return attacking_item.attack_atom(src, user, modifiers, attack_modifiers)
 
 /mob/living/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
-	for(var/datum/surgery/operation as anything in surgeries)
-		if(IS_IN_INVALID_SURGICAL_POSITION(src, operation))
-			continue
-		if(!(operation.surgery_flags & SURGERY_SELF_OPERABLE) && (user == src) && !HAS_TRAIT(user, TRAIT_SELF_SURGERY))
-			continue
-		if(operation.next_step(user, modifiers))
-			return ITEM_INTERACT_SUCCESS
+	if(user.combat_mode)
+		return NONE
+
+	if(HAS_TRAIT(src, TRAIT_READY_TO_OPERATE))
+		var/surgery_ret = user.perform_surgery(src, tool, LAZYACCESS(modifiers, RIGHT_CLICK))
+		if(surgery_ret)
+			return surgery_ret
+
+	if(src == user)
+		var/manual_cauterization = try_manual_cauterize(tool)
+		if(manual_cauterization & ITEM_INTERACT_ANY_BLOCKER)
+			return manual_cauterization
 
 	return NONE
 
@@ -317,7 +324,7 @@
 		if(body_position == LYING_DOWN)
 			zone_hit_chance += 10
 		targeting = get_random_valid_zone(targeting, zone_hit_chance)
-	var/targeting_human_readable = parse_zone_with_bodypart(targeting, declent = ACCUSATIVE)
+	var/targeting_human_readable = parse_zone_with_bodypart(targeting, declent = ACCUSATIVE, declent = ACCUSATIVE)
 
 	if(!LAZYACCESS(attack_modifiers, SILENCE_DEFAULT_MESSAGES))
 		send_item_attack_message(attacking_item, user, targeting_human_readable, targeting)
@@ -326,27 +333,29 @@
 			def_zone = targeting,
 			attack_flag = MELEE,
 			absorb_text = span_notice("Ваша броня защитила вашу [targeting_human_readable]!"),
-			soften_text = span_warning("Ваша броня смягчила удар, нанесенный в вашу [targeting_human_readable]!"),
+			soften_text = span_warning("Ваша броня смягчила удар, нанесённый в вашу [targeting_human_readable]!"),
 			armour_penetration = attacking_item.armour_penetration,
 			weak_against_armour = attacking_item.weak_against_armour,
 		), ARMOR_MAX_BLOCK)
 
 	var/final_force = CALCULATE_FORCE(attacking_item, attack_modifiers)
-	if(mob_biotypes & MOB_ROBOTIC)
+	if(mob_biotypes & (MOB_ROBOTIC|MOB_MINERAL|MOB_SKELETAL)) // this should probably check hit bodypart for humanoids
 		final_force *= attacking_item.get_demolition_modifier(src)
 
 	var/wounding = attacking_item.wound_bonus
-	if((attacking_item.item_flags & SURGICAL_TOOL) && !user.combat_mode && body_position == LYING_DOWN && (LAZYLEN(surgeries) > 0))
+	if((attacking_item.item_flags & SURGICAL_TOOL) && !user.combat_mode && HAS_TRAIT(user, TRAIT_READY_TO_OPERATE))
 		wounding = CANT_WOUND
 
 	if(user != src)
 		// This doesn't factor in armor, or most damage modifiers (physiology). Your mileage may vary
 		if(check_block(attacking_item, final_force, "[attacking_item.declent_ru(ACCUSATIVE)]", MELEE_ATTACK, attacking_item.armour_penetration, attacking_item.damtype))
+			LAZYSET(attack_modifiers, DAMAGE_DONE, 0)
 			return ATTACK_FAILED
 
 	SEND_SIGNAL(attacking_item, COMSIG_ITEM_ATTACK_ZONE, src, user, targeting)
 
 	if(final_force <= 0)
+		LAZYSET(attack_modifiers, DAMAGE_DONE, 0)
 		return 0
 
 	if(ishuman(src) || client) // istype(src) is kinda bad, but it's to avoid spamming the blackbox
@@ -365,6 +374,7 @@
 		attacking_item = attacking_item,
 	)
 
+	LAZYSET(attack_modifiers, DAMAGE_DONE, damage_done)
 	attack_effects(damage_done, targeting, armor_block, attacking_item, user)
 
 	return damage_done
@@ -402,7 +412,7 @@
 	return TRUE
 
 /mob/living/carbon/attack_effects(damage_done, hit_zone, armor_block, obj/item/attacking_item, mob/living/attacker)
-	var/obj/item/bodypart/hit_bodypart = get_bodypart(hit_zone) || bodyparts[1]
+	var/obj/item/bodypart/hit_bodypart = get_bodypart(hit_zone) || get_bodypart()
 	if(!hit_bodypart.can_bleed())
 		return FALSE
 
@@ -420,8 +430,8 @@
 
 			if(!attacking_item.get_sharpness() && !HAS_TRAIT(src, TRAIT_HEAD_INJURY_BLOCKED) && attacking_item.damtype == BRUTE)
 				if(prob(damage_done))
-					adjustOrganLoss(ORGAN_SLOT_BRAIN, 20)
-					if(stat == CONSCIOUS)
+					adjust_organ_loss(ORGAN_SLOT_BRAIN, 20)
+					if(!IS_UNCONSCIOUS_OR_CRIT(src))
 						visible_message(
 							span_danger("[capitalize(declent_ru(NOMINATIVE))] лишается чувств!"),
 							span_userdanger("Вы лишаетесь чувств!"),
@@ -431,11 +441,11 @@
 					if(prob(10))
 						gain_trauma(/datum/brain_trauma/mild/concussion)
 				else
-					adjustOrganLoss(ORGAN_SLOT_BRAIN, damage_done * 0.2)
+					adjust_organ_loss(ORGAN_SLOT_BRAIN, damage_done * 0.2)
 
 				// rev deconversion through blunt trauma.
 				// this can be signalized to the rev datum
-				if(mind && stat == CONSCIOUS && src != attacker && prob(damage_done + ((100 - health) * 0.5)))
+				if(mind && !IS_UNCONSCIOUS_OR_CRIT(src) && src != attacker && prob(damage_done + ((100 - health) * 0.5)))
 					var/datum/antagonist/rev/rev = mind.has_antag_datum(/datum/antagonist/rev)
 					rev?.remove_revolutionary(attacker)
 
@@ -443,7 +453,7 @@
 			if(.)
 				add_blood_DNA_to_items(get_blood_dna_list(), ITEM_SLOT_ICLOTHING|ITEM_SLOT_OCLOTHING)
 
-			if(stat == CONSCIOUS && !attacking_item.get_sharpness() && !HAS_TRAIT(src, TRAIT_BRAWLING_KNOCKDOWN_BLOCKED) && attacking_item.damtype == BRUTE)
+			if(!IS_UNCONSCIOUS_OR_CRIT(src) && !attacking_item.get_sharpness() && !HAS_TRAIT(src, TRAIT_BRAWLING_KNOCKDOWN_BLOCKED) && attacking_item.damtype == BRUTE)
 				if(prob(damage_done))
 					visible_message(
 						span_danger("[capitalize(declent_ru(NOMINATIVE))] сбивается с ног!"),
@@ -478,6 +488,11 @@
 			return clamp(w_class * 6, 10, 100) // Multiply the item's weight class by 6, then clamp the value between 10 and 100
 
 /mob/living/proc/send_item_attack_message(obj/item/weapon, mob/living/user, hit_area, def_zone)
+	if(SEND_SIGNAL(weapon, COMSIG_SEND_ITEM_ATTACK_MESSAGE_OBJECT, src, user) & SIGNAL_MESSAGE_MODIFIED)
+		return TRUE
+	if(SEND_SIGNAL(src, COMSIG_SEND_ITEM_ATTACK_MESSAGE_CARBON, weapon, user) & SIGNAL_MESSAGE_MODIFIED)
+		return TRUE
+
 	if(!weapon.force && !length(weapon.attack_verb_simple) && !length(weapon.attack_verb_continuous))
 		return
 

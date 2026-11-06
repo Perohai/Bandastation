@@ -11,11 +11,12 @@
 	toxic_foodtypes = SUGAR
 	organ_traits = list(TRAIT_WOUND_LICKER)
 	var/static/list/speech_replacements = list(
-		new /regex("r+", "g") = "rr",
-		new /regex("R+", "g") = "RR",
-		new /regex("р+", "g") = "рр",
-		new /regex("Р+", "g") = "РР",
+		"r" = list("rr", "rrr", "rrrr"),
+		"R" = list("RR", "RRR", "RRRR"),
+		"р" = list("рр", "ррр", "рррр"),
+		"Р" = list("РР", "РРР", "РРРР"),
 	)
+
 
 /obj/item/organ/tongue/tajaran/Initialize(mapload)
 	. = ..()
@@ -30,21 +31,21 @@
 
 /obj/item/organ/tongue/tajaran/on_mob_insert(mob/living/carbon/owner)
 	. = ..()
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_meow)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_mow)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_purr)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_pur)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_purrr)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_hiss_t)
+	add_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_meow)
+	add_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_mow)
+	add_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_purr)
+	add_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_pur)
+	add_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_purrr)
+	add_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_hiss_t)
 
 /obj/item/organ/tongue/tajaran/on_mob_remove(mob/living/carbon/owner)
 	. = ..()
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_meow)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_mow)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_purr)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_pur)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_purrr)
-	add_verb(owner, /mob/living/carbon/human/species/tajaran/proc/emote_hiss_t)
+	remove_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_meow)
+	remove_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_mow)
+	remove_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_purr)
+	remove_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_pur)
+	remove_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_purrr)
+	remove_verb(owner, /mob/living/carbon/human/species/tajaran/verb/emote_hiss_t)
 
 /obj/item/organ/stomach/tajaran
 	hunger_modifier = 1.1

@@ -4,8 +4,7 @@
 		штатно функционирует, следите, чтобы ИИ и киборги не были сбойными, в противном случае \
 		замените их."
 	auto_deadmin_role_flags = DEADMIN_POSITION_HEAD
-	department_head = list(JOB_CAPTAIN)
-	head_announce = list("Science")
+	head_announce = RADIO_CHANNEL_SCIENCE
 	faction = FACTION_STATION
 	total_positions = 1
 	spawn_positions = 1
@@ -13,9 +12,9 @@
 	req_admin_notify = 1
 	minimal_player_age = 7
 	exp_required_type_department = EXP_TYPE_SCIENCE
-	exp_requirements = 180
+	exp_requirements = 1200
 	exp_required_type = EXP_TYPE_CREW
-	exp_granted_type = EXP_TYPE_CREW
+	exp_granted_type = EXP_TYPE_COMMAND
 	config_tag = "RESEARCH_DIRECTOR"
 
 	outfit = /datum/outfit/job/rd
@@ -29,7 +28,7 @@
 	paycheck_department = ACCOUNT_SCI
 
 	mind_traits = list(HEAD_OF_STAFF_MIND_TRAITS)
-	liver_traits = list(TRAIT_ROYAL_METABOLISM, TRAIT_BALLMER_SCIENTIST)
+	liver_traits = list(TRAIT_ROYAL_METABOLISM, TRAIT_SCIENTIST_LIVER)
 
 	display_order = JOB_DISPLAY_ORDER_RESEARCH_DIRECTOR
 	bounty_types = CIV_JOB_SCI
@@ -47,6 +46,7 @@
 	human_authority = JOB_AUTHORITY_HUMANS_ONLY
 
 	voice_of_god_power = 1.4 //Command staff has authority
+	tgui_icon = FA_ICON_USER_GRADUATE
 
 
 /datum/job/research_director/get_captaincy_announcement(mob/living/captain)
@@ -64,7 +64,7 @@
 	backpack_contents = list(
 		/obj/item/melee/baton/telescopic/silver = 1,
 		)
-	belt = /obj/item/modular_computer/pda/heads/rd
+	belt = /obj/item/modular_computer/pda/crew/heads/rd
 	head = /obj/item/clothing/head/beret/science/rd
 	ears = /obj/item/radio/headset/heads/rd
 	shoes = /obj/item/clothing/shoes/jackboots
@@ -79,6 +79,8 @@
 
 	chameleon_extras = /obj/item/stamp/head/rd
 	skillchips = list(/obj/item/skillchip/research_director, /obj/item/skillchip/job/roboticist)
+
+	wintercoat = /obj/item/clothing/suit/hooded/wintercoat/science/rd
 
 /datum/outfit/job/rd/mod
 	name = "Research Director (MODsuit)"

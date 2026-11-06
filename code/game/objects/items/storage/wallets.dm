@@ -12,6 +12,10 @@
 	var/cached_flat_icon
 	var/overlay_icon_state = "wallet_overlay"
 
+/obj/item/storage/wallet/Initialize(mapload)
+	. = ..()
+	AddElement(/datum/element/strip_accessible_storage)
+
 /obj/item/storage/wallet/Exited(atom/movable/gone, direction)
 	. = ..()
 	if(isidcard(gone))
@@ -35,7 +39,7 @@
 			is_magnetic_found = TRUE
 
 		if(!is_magnetic_found)
-			var/card_tally = SSid_access.tally_access(id_card, ACCESS_FLAG_COMMAND)
+			var/card_tally = SSid_access.tally_access(id_card, ACCESS_FLAG_PRV_COMMAND)
 			if(card_tally > winning_tally)
 				winning_tally = card_tally
 				front_id = id_card

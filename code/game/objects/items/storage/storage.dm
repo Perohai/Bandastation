@@ -1,6 +1,7 @@
 /obj/item/storage
 	name = "storage"
 	icon = 'icons/obj/storage/storage.dmi'
+	abstract_type = /obj/item/storage
 	w_class = WEIGHT_CLASS_NORMAL
 	interaction_flags_click = ALLOW_RESTING | FORBID_TELEKINESIS_REACH
 	action_slots = ALL
@@ -13,13 +14,9 @@
 
 /obj/item/storage/Initialize(mapload)
 	. = ..()
-
 	create_storage(storage_type = storage_type)
-
+	ADD_TRAIT(src, TRAIT_BLOCKS_OVERLAY_LIGHT, INNATE_TRAIT)
 	PopulateContents()
-
-	for (var/obj/item/item in src)
-		item.item_flags |= IN_STORAGE
 
 /obj/item/storage/create_storage(
 	max_slots,

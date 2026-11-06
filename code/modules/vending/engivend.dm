@@ -17,13 +17,15 @@
 		/obj/item/electronics/airalarm = 10,
 		/obj/item/electronics/firealarm = 10,
 		/obj/item/electronics/firelock = 10,
-		/obj/item/stack/sticky_tape/duct = 10,
+		/obj/item/stack/medical/wrap/sticky_tape/duct = 10,
 	)
 	contraband = list(
 		/obj/item/stock_parts/power_store/cell/potato = 3,
 	)
 	premium = list(
 		/obj/item/storage/belt/utility = 3,
+		/obj/item/storage/bag/material_pouch = 3, //BANDASTATION ADD - engivend expansion
+		/obj/item/construction/rld = 2,	//BANDASTATION ADD - engivend expansion
 		/obj/item/construction/rcd/loaded = 2,
 		/obj/item/storage/box/smart_metal_foam = 1,
 	)
@@ -32,7 +34,6 @@
 	extra_price = PAYCHECK_COMMAND * 1.5
 	payment_department = ACCOUNT_ENG
 	light_mask = "engivend-light-mask"
-	allow_custom = TRUE
 
 /obj/item/vending_refill/engivend
 	machine_name = "Engi-Vend"

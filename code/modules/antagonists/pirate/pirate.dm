@@ -6,7 +6,9 @@
 	show_in_antagpanel = FALSE
 	show_to_ghosts = TRUE
 	suicide_cry = "FOR ME MATEYS!!"
+	stinger_sound = 'sound/music/antag/pirate/pirate_start.ogg'
 	hijack_speed = 2 // That is without doubt the worst pirate I have ever seen.
+	desensitized_modifier = DESENSITIZED_THRESHOLD
 	var/datum/team/pirate/crew
 
 /datum/antagonist/pirate/greet()
@@ -48,8 +50,7 @@
 
 /datum/antagonist/pirate/remove_innate_effects(mob/living/mob_override)
 	var/mob/living/owner_mob = mob_override || owner.current
-	if (owner_mob)
-		owner_mob.remove_language(/datum/language/piratespeak, source = LANGUAGE_PIRATE)
+	owner_mob.remove_language(/datum/language/piratespeak, source = LANGUAGE_PIRATE)
 
 /datum/team/pirate
 	name = "\improper Pirate crew"
@@ -115,7 +116,7 @@
 	parts += "Loot stolen: "
 	var/datum/objective/loot/L = locate() in objectives
 	parts += L.loot_listing()
-	parts += "Total loot value : [L.get_loot_value()]/[L.target_value] credits"
+	parts += "Total loot value : [L.get_loot_value()]/[L.target_value] [MONEY_NAME]"
 
 	if(L.check_completion() && !all_dead)
 		parts += "<span class='greentext big'>The pirate crew was successful!</span>"

@@ -162,7 +162,7 @@
 		if(WOUND_SEVERITY_CRITICAL)
 			msg = span_smallnoticeital("<b>[msg]</b>")
 		if(WOUND_SEVERITY_LOSS)
-			msg = "[victim.p_Their()] [limb.plaintext_zone] [description]." // different format
+			msg = "[victim.p_Their()] [limb.ru_plaintext_zone[PREPOSITIONAL]] [description]." // different format
 			msg = span_notice("<i><b>[msg]</b></i>")
 	return "\t[msg]"
 
@@ -178,7 +178,7 @@
 
 	var/mob/living/carbon/human/human_victim = victim
 	if(istype(limb, /obj/item/bodypart/head))
-		if((human_victim.wear_mask && (human_victim.wear_mask.flags_inv & HIDEFACE)) || (human_victim.head && (human_victim.head.flags_inv & HIDEFACE)))
+		if(human_victim.obscured_slots & HIDEFACE)
 			return FALSE
 	else if(limb.scars_covered_by_clothes)
 		var/num_covers = LAZYLEN(human_victim.get_clothing_on_part(limb))

@@ -7,9 +7,9 @@
 /// How much the damage and wound bonus mod is multiplied when you're on stage 1
 #define GUNPOINT_MULT_STAGE_1 1.25
 /// As above, for stage 2
-#define GUNPOINT_MULT_STAGE_2 2
+#define GUNPOINT_MULT_STAGE_2 1.75 // BANDASTATION EDIT - reduce damage multiplier from 2 to 1.75 due to increased aim distance
 /// As above, for stage 3
-#define GUNPOINT_MULT_STAGE_3 2.5
+#define GUNPOINT_MULT_STAGE_3 2.25 // BANDASTATION EDIT - reduce damage multiplier from 2.5 to 2.25 due to increased aim distance
 
 
 /datum/component/gunpoint
@@ -68,7 +68,7 @@
 	target.add_mood_event("gunpoint", /datum/mood_event/gunpoint)
 
 	if(istype(weapon, /obj/item/gun/ballistic/rocketlauncher) && weapon.chambered)
-		if(target.stat == CONSCIOUS && IS_NUKE_OP(shooter) && !IS_NUKE_OP(target) && (locate(/obj/item/disk/nuclear) in target.get_contents()) && shooter.client)
+		if(!IS_UNCONSCIOUS_OR_CRIT(target) && IS_NUKE_OP(shooter) && !IS_NUKE_OP(target) && (locate(/obj/item/disk/nuclear) in target.get_contents()) && shooter.client)
 			shooter.client.give_award(/datum/award/achievement/misc/rocket_holdup, shooter)
 
 	addtimer(CALLBACK(src, PROC_REF(update_stage), 2), GUNPOINT_DELAY_STAGE_2)

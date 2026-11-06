@@ -50,14 +50,19 @@
 		var/mob/living/carbon/human/human_user = user
 		human_user.AdjustParalyzed(5 SECONDS)
 		return TRUE
+	if(SEND_SIGNAL(user, COMSIG_HERETIC_BLADE_PREATTACK, target, src) & COMPONENT_CANCEL_ATTACK_CHAIN)
+		return TRUE
 
 	return .
 
 /obj/item/melee/sickly_blade/attack_self(mob/user)
+	var/datum/antagonist/heretic/heretic_datum = GET_HERETIC(user)
+	if(heretic_datum?.unlimited_blades)
+		return
 	if(HAS_TRAIT(user, TRAIT_ELDRITCH_ARENA_PARTICIPANT))
-		user.balloon_alert(user, "can't escape!")
+		user.balloon_alert(user, "невозможно сбежать!")
 		if(escape_attempts > 2)
-			to_chat(user, span_hypnophrase(span_big("Cowardly sheep will be slaughtered!")))
+			to_chat(user, span_hypnophrase(span_big("Трусливые овцы будут зарезаны!")))
 			playsound(src, SFX_SHATTER, 70, TRUE)
 			var/obj/item/bodypart/to_remove = user.get_active_hand()
 			to_remove.dismember()
@@ -68,7 +73,7 @@
 		escape_timer = addtimer(CALLBACK(src, PROC_REF(reset_attempts)), 2 SECONDS, TIMER_STOPPABLE)
 		return
 	if(HAS_TRAIT(user, TRAIT_NO_TELEPORT))
-		user.balloon_alert(user, "can't break!")
+		user.balloon_alert(user, "невозможно сломать!")
 		return
 	seek_safety(user)
 
@@ -78,7 +83,7 @@
 
 /// Attempts to teleport the passed mob to somewhere safe on the station, if they can use the blade.
 /obj/item/melee/sickly_blade/proc/seek_safety(mob/user)
-	var/turf/safe_turf = find_safe_turf(zlevels = z, extended_safety_checks = TRUE)
+	var/turf/safe_turf = find_safe_turf(z, extended_safety_checks = TRUE)
 	if(check_usability(user))
 		if(do_teleport(user, safe_turf, channel = TELEPORT_CHANNEL_MAGIC))
 			to_chat(user, span_warning("Когда вы разбиваете [declent_ru(ACCUSATIVE)], вы чувствуете, как порыв энергии проходит через ваше тело. [after_use_message]"))
@@ -136,7 +141,7 @@
 
 	AddComponent(
 		/datum/component/bloody_spreader,\
-		blood_dna = list("Alien DNA" = get_blood_type(BLOOD_TYPE_XENO)),\
+		blood_dna = list("Alien DNA" = get_blood_type(/datum/blood_type/xeno)),\
 	)
 
 // Path of Void's blade
@@ -163,23 +168,20 @@
 
 /obj/item/melee/sickly_blade/dark/afterattack(atom/target, mob/user, list/modifiers, list/attack_modifiers)
 	. = ..()
-	if(!infused || target == user || !isliving(target))
+	if(!infused || target == user || !isliving(target) || QDELETED(target))
 		return
-	var/datum/antagonist/heretic/heretic_datum = IS_HERETIC(user)
+	var/datum/antagonist/heretic/heretic_datum = GET_HERETIC(user)
 	var/mob/living/living_target = target
 	if(!heretic_datum)
 		return
 
-	//Apply our heretic mark
-	var/datum/heretic_knowledge/mark/blade_mark/mark_to_apply = heretic_datum.get_knowledge(/datum/heretic_knowledge/mark/blade_mark)
+	// Apply our heretic mark
+	var/datum/heretic_knowledge/limited_amount/starting/base_blade/mark_to_apply = heretic_datum.get_knowledge(/datum/heretic_knowledge/limited_amount/starting/base_blade)
 	if(!mark_to_apply)
 		return
 	mark_to_apply.create_mark(user, living_target)
-
-	//Remove the infusion from any blades we own (and update their sprite)
-	for(var/obj/item/melee/sickly_blade/dark/to_infuse in user.get_all_contents_type(/obj/item/melee/sickly_blade/dark))
-		to_infuse.infused = FALSE
-		to_infuse.update_appearance(UPDATE_ICON)
+	infused = FALSE
+	update_appearance(UPDATE_ICON)
 	user.update_held_items()
 
 	if(!check_behind(user, living_target))
@@ -239,8 +241,8 @@
 // It is also given to the heretic themself if they sacrifice a cultist.
 /obj/item/melee/sickly_blade/cursed
 	name = "\improper cursed blade"
-	desc = "A dark blade, cursed to bleed forever. In constant struggle between the eldritch and the dark, it is forced to accept any wielder as its master. \
-		Its eye's cornea drips blood endlessly into the ground, yet its piercing gaze remains on you."
+	desc = "Тёмный клинок, проклятый пускать кровь вечность. В постоянной борьбе между потусторонним и тьмой, он вынужден признавать своим хозяином любого, кто им владеет. \
+		С роговицы его глаза на землю бесконечно капает кровь, но его пронзительный взгляд остается прикованным к вам."
 	force = 25
 	throwforce = 15
 	block_chance = 35
@@ -253,10 +255,10 @@
 /obj/item/melee/sickly_blade/cursed/Initialize(mapload)
 	. = ..()
 
-	var/examine_text = {"Allows the scribing of blood runes of the cult of Nar'Sie.
-	The combination of eldritch power and Nar'Sie's might allows for vastly increased rune drawing speed,
-	alongside the vicious strength of the blade being more powerful than usual.\n
-	<b>It can also be shattered in-hand by cultists (via right-click), teleporting them to relative safety.<b>"}
+	var/examine_text = {"«Позволяет начертать кровавые руны культа Нар'Си».
+	Сочетание потусторонней силы и могущества Нар'Си значительно увеличивает скорость начертания рун,
+	а жестокая мощь клинка делает его удары сильнее обычного.\n
+	<b>Культисты могут разбить его прямо в руке (ПКМ), мгновенно переместившись в относительно безопасное место.<b>"}
 
 	AddComponent(/datum/component/cult_ritual_item, span_cult(examine_text), turfs_that_boost_us = /turf) // Always fast to draw!
 
@@ -272,22 +274,22 @@
 	if(IS_HERETIC_OR_MONSTER(user) || IS_CULTIST(user))
 		return TRUE
 	if(prob(15))
-		to_chat(user, span_cult_large(pick("\"An untouched mind? Amusing.\"", "\" I suppose it isn't worth the effort to stop you.\"", "\"Go ahead. I don't care.\"", "\"You'll be mine soon enough.\"")))
+		to_chat(user, span_cult_large(pick("\"Нетронутый разум? Забавно.\"", "\" Я думаю, что не стоит прилагать усилий, чтобы остановить тебя.\"", "\"Продолжай. Мне всё равно.\"", "\"Скоро, ты будешь принадлежать мне.\"")))
 		user.apply_damage(5, BURN, user.get_active_hand())
 		playsound(src, SFX_SEAR, 25, TRUE)
-		to_chat(user, span_danger("Your hand sizzles.")) // Nar nar might not care but their essence still doesn't like you
+		to_chat(user, span_danger("Ваша рука обжигается.")) // Nar nar might not care but their essence still doesn't like you
 	else if(prob(15))
 		to_chat(user, span_big(span_hypnophrase("LW'NAFH'NAHOR UH'ENAH'YMG EPGOKA AH NAFL MGEMPGAH'EHYE")))
-		to_chat(user, span_danger("Horrible, unintelligible utterances flood your mind!"))
-		user.adjustOrganLoss(ORGAN_SLOT_BRAIN, 15) // This can kill you if you ignore it
+		to_chat(user, span_danger("Ужасные, неразборчивые выкрики переполняют ваш разум!"))
+		user.adjust_organ_loss(ORGAN_SLOT_BRAIN, 15) // This can kill you if you ignore it
 	return TRUE
 
 /obj/item/melee/sickly_blade/cursed/equipped(mob/user, slot)
 	. = ..()
 	if(IS_HERETIC_OR_MONSTER(user))
-		after_use_message = "The Mansus hears your call..."
+		after_use_message = "Мансус услышал твой зов..."
 	else if(IS_CULTIST(user))
-		after_use_message = "Nar'Sie hears your call..."
+		after_use_message = "Нар'Си услышал твой зов..."
 	else
 		after_use_message = null
 
@@ -303,6 +305,11 @@
 		heretic_datum.try_draw_rune(user, target, drawing_time = 14 SECONDS) // Faster than pen, slower than cicatrix
 		return ITEM_INTERACT_BLOCKING
 	return NONE
+
+/obj/item/melee/sickly_blade/cursed/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK, damage_type = BRUTE)
+	if(attack_type == OVERWHELMING_ATTACK)
+		return FALSE
+	return ..()
 
 // Weaker blade variant given to people so they can participate in the heretic arena spell
 /obj/item/melee/sickly_blade/training

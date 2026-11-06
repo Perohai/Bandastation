@@ -31,6 +31,7 @@ em						{font-style: normal;	font-weight: bold;}
 .adminooc				{color: #700038;	font-weight: bold;}
 
 .adminsay				{color:	#FF4500;	font-weight: bold;}
+.mentorsay				{color:	#055dff;	font-weight: bold;}
 .admin					{color: #386aff;	font-weight: bold;}
 
 .name					{					font-weight: bold;}
@@ -79,6 +80,7 @@ h1.alert, h2.alert		{color: #000000;}
 .hear					{color: #000099;	font-style: italic;}
 .adminnotice			{color: #0000ff;}
 .adminhelp				{color: #ff0000;	font-weight: bold;}
+.mentorhelp				{color: #0077bb;	font-weight: bold;}
 .unconscious			{color: #0000ff;	font-weight: bold;}
 .suicide				{color: #ff5050;	font-style: italic;}
 .green					{color: #03ff39;}
@@ -136,21 +138,9 @@ h1.alert, h2.alert		{color: #000000;}
 .clown					{color: #FF69Bf;	font-size: 3;	font-family: "Comic Sans MS", cursive, sans-serif;	font-weight: bold;}
 .singing				{font-family: "Trebuchet MS", cursive, sans-serif; font-style: italic;}
 .his_grace				{color: #15D512;	font-family: "Courier New", cursive, sans-serif;	font-style: italic;}
-.hypnophrase			{color: #3bb5d3;	font-weight: bold;	animation: hypnocolor 1500ms infinite; animation-direction: alternate;}
-	@keyframes hypnocolor {
-		0%		{color: #0d0d0d;}
-		25%		{color: #410194;}
-		50%		{color: #7f17d8;}
-		75%		{color: #410194;}
-		100%	{color: #3bb5d3;}
-}
+.hypnophrase			{color: #3bb5d3;	font-weight: bold;}
 
-.phobia			{color: #dd0000;	font-weight: bold;	animation: phobia 750ms infinite;}
-	@keyframes phobia {
-		0%		{color: #0d0d0d;}
-		50%		{color: #dd0000;}
-		100%	{color: #0d0d0d;}
-}
+.phobia			{color: #dd0000;	font-weight: bold;}
 
 .icon					{height: 1em;	width: auto;}
 
@@ -159,10 +149,13 @@ h1.alert, h2.alert		{color: #000000;}
 .abductor				{color: #800080;	font-style: italic;}
 .mind_control			{color: #A00D6F;	font-size: 3;	font-weight: bold;	font-style: italic;}
 .slime					{color: #00CED1;}
-.drone					{color: #848482;}
+.drone					{color: #ffff00;	background-color: #7c2395;	font-style: italic;}
 .monkey					{color: #975032;}
 .swarmer				{color: #2C75FF;}
 .resonate				{color: #298F85;}
+.policy					{color: #9730db;	font-style: italic;		text-align: center;		font-size: 2;}
 
 .upside_down			{display: inline; -moz-transform: scale(-1, -1); -webkit-transform: scale(-1, -1); -o-transform: scale(-1, -1); -ms-transform: scale(-1, -1); transform: scale(-1, -1);}
+.mansus 				{color: #0b8000;}
+.cyan					{color: #bde0dc;}
 </style>"}

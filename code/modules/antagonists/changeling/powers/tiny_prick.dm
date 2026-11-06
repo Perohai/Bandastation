@@ -1,8 +1,11 @@
 /datum/action/changeling/sting//parent path, not meant for users afaik
 	name = "Tiny Prick"
 	desc = "Stabby stabby"
+	category = "stings"
+	button_icon_state = "sting_null" //This must be equal to the icon state for `/atom/movable/screen/ling/sting`
 
 /datum/action/changeling/sting/Trigger(mob/clicker, trigger_flags)
+	SHOULD_CALL_PARENT(FALSE) //We are snowflaked from parent
 	var/mob/user = owner
 	if(!user || !user.mind)
 		return
@@ -20,16 +23,20 @@
 	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
 	changeling.chosen_sting = src
 
-	changeling.lingstingdisplay.icon_state = button_icon_state
-	changeling.lingstingdisplay.SetInvisibility(0, id=type)
+	var/atom/movable/screen/ling/sting/sting = user.hud_used?.screen_objects[HUD_CHANGELING_STING]
+	if (sting)
+		sting.icon_state = button_icon_state
+		sting.SetInvisibility(0, id=type)
 
 /datum/action/changeling/sting/proc/unset_sting(mob/user)
 	to_chat(user, span_warning("Мы убираем свое жало, пока что мы не можем никого ужалить."))
 	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
 	changeling.chosen_sting = null
 
-	changeling.lingstingdisplay.icon_state = null
-	changeling.lingstingdisplay.RemoveInvisibility(type)
+	var/atom/movable/screen/ling/sting/sting = user.hud_used?.screen_objects[HUD_CHANGELING_STING]
+	if (sting)
+		sting.icon_state = null
+		sting.RemoveInvisibility(type)
 
 /mob/living/carbon/proc/unset_sting()
 	if(mind)
@@ -70,7 +77,7 @@
 		Для сложных гуманоидов трансформация происходит на время, но ее таймер приостанавливается, пока жертва мертва или находится в стазисе. \
 		У более простых гуманоидов, таких как обезьяны, трансформация происходит навсегда. \
 		Не предупреждает других. Мутации не передаются."
-	button_icon_state = "sting_transform"
+	button_icon_state = "transformation_sting"
 	chemical_cost = 33 // Low enough that you can sting only two people in quick succession
 	dna_cost = 2
 	/// A reference to our active profile, which we grab DNA from
@@ -117,7 +124,7 @@
 		|| !target.has_dna() \
 		|| HAS_TRAIT(target, TRAIT_HUSK) \
 		|| HAS_TRAIT(target, TRAIT_BADDNA) \
-		|| (HAS_TRAIT(target, TRAIT_NO_DNA_COPY) && !ismonkey(target))) // sure, go ahead, make a monk-clone
+		|| (HAS_TRAIT(target, TRAIT_NO_DNA_COPY) && !HAS_TRAIT(target, TRAIT_LESSER_HUMANOID))) // sure, go ahead, make a monk-clone
 		user.balloon_alert(user, "несовместимое ДНК!")
 		return FALSE
 	if(target.has_status_effect(/datum/status_effect/temporary_transformation/trans_sting))
@@ -128,7 +135,7 @@
 /datum/action/changeling/sting/transformation/sting_action(mob/living/user, mob/living/target)
 	var/final_duration = sting_duration
 	var/final_message = span_notice("Мы трансформируем [target.declent_ru(ACCUSATIVE)] в [selected_dna.dna.real_name].")
-	if(ismonkey(target))
+	if(HAS_TRAIT(target, TRAIT_LESSER_HUMANOID))
 		final_duration = INFINITY
 		final_message = span_warning("Наши гены вопят, когда мы трансформируем [target.declent_ru(ACCUSATIVE)] из низшей формы в [selected_dna.dna.real_name] навсегда!")
 
@@ -143,7 +150,7 @@
 	name = "False Armblade Sting"
 	desc = "Мы бесшумно жалим человека, впрыскивая ретровирус, который мутирует его руку, временно превращая ее в армблейд. Стоит 20 химикатов."
 	helptext = "Жертва формирует армблейд, подобно тому, как это делает генокрад, только этот клинок тупой и бесполезный."
-	button_icon_state = "sting_armblade"
+	button_icon_state = "false_armblade_sting"
 	chemical_cost = 20
 	dna_cost = 1
 
@@ -171,7 +178,7 @@
 
 	..()
 	log_combat(user, target, "stung", object = "false armblade sting")
-	if(ismonkey(target))
+	if(HAS_TRAIT(target, TRAIT_LESSER_HUMANOID))
 		to_chat(user, span_notice("Наши гены вопят, когда мы жалим [target.name]!"))
 
 	var/obj/item/melee/arm_blade/false/blade = new(target,1)
@@ -194,7 +201,7 @@
 	name = "Extract DNA Sting"
 	desc = "Мы незаметно жалим цель и извлекаем ее ДНК. Стоит 25 химикатов."
 	helptext = "Даст вам ДНК вашей цели, позволяя трансформироваться в нее. Это сделает невозможным полное поглощение их тела в дальнейшем."
-	button_icon_state = "sting_extract"
+	button_icon_state = "extract_dna_sting"
 	chemical_cost = 25
 	dna_cost = 0
 
@@ -215,7 +222,7 @@
 	name = "Mute Sting"
 	desc = "Мы беззвучно жалим человека, полностью заставляя его замолчать на короткое время. Стоит 20 химикатов."
 	helptext = "Не предупреждает жертву о том, что ее ужалили, пока она не попытается заговорить и не сможет."
-	button_icon_state = "sting_mute"
+	button_icon_state = "mute_sting"
 	chemical_cost = 20
 	dna_cost = 2
 
@@ -229,7 +236,7 @@
 	name = "Blind Sting"
 	desc = "Мы временно ослепляем нашу жертву. Стоит 25 химикатов."
 	helptext = "Это жало полностью ослепляет цель на короткое время и оставляет ее с затуманенным зрением на долгое время. Не действует, если у цели роботизированные глаза или глаза отсутствуют."
-	button_icon_state = "sting_blind"
+	button_icon_state = "blind_sting"
 	chemical_cost = 25
 	dna_cost = 1
 
@@ -256,7 +263,7 @@
 	desc = "Мы вызываем массовый ужас у нашей жертвы. Стоит 10 химикатов."
 	helptext = "Мы развиваем способность жалить цель мощным галлюциногенным химикатом. \
 			Объект не замечает, что его ужалили, и эффект проявляется через 30-60 секунд."
-	button_icon_state = "sting_lsd"
+	button_icon_state = "hallucination_sting"
 	chemical_cost = 10
 	dna_cost = 1
 
@@ -275,7 +282,7 @@
 	name = "Cryogenic Sting"
 	desc = "Мы беззвучно жалим жертву коктейлем из химикатов, который замораживает ее изнутри. Стоит 15 химикатов."
 	helptext = "Не предупреждает жертву, хотя она, скорее всего, поймет, что внезапно замерзла."
-	button_icon_state = "sting_cryo"
+	button_icon_state = "cryogenic_sting"
 	chemical_cost = 15
 	dna_cost = 2
 

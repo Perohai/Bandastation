@@ -157,7 +157,7 @@ function IDSection(props: IDSectionProps) {
             <LabeledList.Item label="Name">
               {user?.name || 'No Name Detected'}
             </LabeledList.Item>
-            <LabeledList.Item label="Balance">
+            <LabeledList.Item label="Point Balance">
               {user?.cash || 'No Balance Detected'}
             </LabeledList.Item>
           </LabeledList>
@@ -237,12 +237,12 @@ function MaterialSection(props: MaterialSectionProps) {
             onRelease={(amount) => {
               if (material.category === 'material') {
                 act('Release', {
-                  id: material.id,
+                  material_ref: material.id,
                   sheets: amount,
                 });
               } else {
                 act('Smelt', {
-                  id: material.id,
+                  path: material.id,
                   sheets: amount,
                 });
               }

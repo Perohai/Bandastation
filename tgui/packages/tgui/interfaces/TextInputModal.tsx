@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Box, Section, Stack, TextArea } from 'tgui-core/components';
-import { isEscape } from 'tgui-core/keys';
-import { KEY } from 'tgui-core/keys';
+import { isEscape, KEY } from 'tgui-core/keys';
 
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
@@ -51,10 +50,12 @@ export const TextInputModal = (props) => {
   };
 
   const visualMultiline = multiline || input.length >= 30;
+  const messageLines = message.split(/\r?\n/).length;
   // Dynamically changes the window height based on the message.
   const windowHeight =
     135 +
     (message.length > 30 ? Math.ceil(message.length / 4) : 0) +
+    Math.max(0, messageLines - 1) * 12 +
     (visualMultiline ? 75 : 0) +
     (message.length && large_buttons ? 5 : 0);
 
@@ -66,6 +67,11 @@ export const TextInputModal = (props) => {
       act('cancel');
     }
   }
+
+  // This is the length of the input in terms of unicode code points.
+  // Should be equivalent to what length_char would output for the same string in BYOND.
+  const char_length = [...input].length;
+
   return (
     <Window title={title} width={325} height={windowHeight}>
       {timeout && <Loader value={timeout} />}
@@ -73,7 +79,9 @@ export const TextInputModal = (props) => {
         <Section fill>
           <Stack fill vertical>
             <Stack.Item>
-              <Box color="label">{message}</Box>
+              <Box color="label" style={{ whiteSpace: 'pre-wrap' }}>
+                {message}
+              </Box>
             </Stack.Item>
             <Stack.Item grow>
               <TextArea
@@ -84,14 +92,14 @@ export const TextInputModal = (props) => {
                 maxLength={max_length}
                 onEscape={() => act('cancel')}
                 onChange={onType}
-                placeholder="Type something..."
+                placeholder="Напечатайте что-нибудь..."
                 value={input}
               />
             </Stack.Item>
             <Stack.Item>
               <InputButtons
                 input={input}
-                message={`${input.length}/${max_length || '∞'}`}
+                message={`${char_length}/${max_length || '∞'}`}
               />
             </Stack.Item>
           </Stack>

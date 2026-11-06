@@ -12,17 +12,17 @@
 #define VAULT_QUICK "Arm Muscle Stimulus"
 
 /datum/station_goal/dna_vault
-	name = "DNA Vault"
+	name = "ДНК хранилище"
 	var/animal_count
 	var/human_count
 	var/plant_count
 
 /datum/station_goal/dna_vault/New()
 	..()
-	animal_count = rand(10,15) //might be too few given ~15 roundstart stationside ones
+	animal_count = rand(16, 20) //might be too few given ~15 roundstart stationside ones
 	human_count = rand(round(0.75 * SSticker.totalPlayersReady) , SSticker.totalPlayersReady) // 75%+ roundstart population.
 	var/non_standard_plants = non_standard_plants_count()
-	plant_count = rand(round(0.2 * non_standard_plants),round(0.4 * non_standard_plants))
+	plant_count = rand(round(0.15 * non_standard_plants), round(0.3 * non_standard_plants))
 
 /datum/station_goal/dna_vault/proc/non_standard_plants_count()
 	. = 0
@@ -46,10 +46,10 @@
 
 /datum/station_goal/dna_vault/on_report()
 	var/datum/supply_pack/P = SSshuttle.supply_packs[/datum/supply_pack/engineering/dna_vault]
-	P.special_enabled = TRUE
+	P.order_flags |= ORDER_SPECIAL_ENABLED
 
 	P = SSshuttle.supply_packs[/datum/supply_pack/engineering/dna_probes]
-	P.special_enabled = TRUE
+	P.order_flags |= ORDER_SPECIAL_ENABLED
 
 /datum/station_goal/dna_vault/check_completion()
 	if(..())
@@ -61,7 +61,7 @@
 
 /obj/machinery/dna_vault
 	name = "DNA Vault"
-	desc = "Break glass in case of apocalypse."
+	desc = "Разбить стекло в случае апокалипсиса."
 	icon = 'icons/obj/machines/dna_vault.dmi'
 	icon_state = "vault"
 	density = TRUE
@@ -176,6 +176,7 @@
 /obj/machinery/dna_vault/proc/check_goal()
 	if(plant_dna.len >= plants_max && animal_dna.len >= animals_max && human_dna.len >= dna_max)
 		completed = TRUE
+		SSshuttle.shuttle_purchase_requirements_met[SHUTTLE_UNLOCK_ARK] = TRUE
 
 /obj/machinery/dna_vault/proc/upgrade(mob/living/carbon/human/target, upgrade_type)
 	var/datum/weakref/human_weakref = WEAKREF(target)

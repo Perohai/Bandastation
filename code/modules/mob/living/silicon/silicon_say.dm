@@ -24,14 +24,13 @@
 	var/namepart = name
 	// If carbon, use voice to account for voice changers
 	if(iscarbon(src))
-		namepart = GetVoice()
+		namepart = get_voice(add_id_name = TRUE)
 
 	// AI in carbon body should still have its real name
 	var/obj/item/organ/brain/cybernetic/ai/brain = get_organ_slot(ORGAN_SLOT_BRAIN)
 	if(istype(brain))
 		namepart = brain.mainframe.name
 		designation = brain.mainframe.job
-
 	for(var/mob/hearing_mob in GLOB.player_list)
 		if(hearing_mob.binarycheck())
 			if(isAI(hearing_mob))
@@ -55,6 +54,15 @@
 					type = MESSAGE_TYPE_RADIO,
 					avoid_highlighting = (src == hearing_mob)
 				)
+
+			cast_tts(
+				hearing_mob,
+				message,
+				is_local = FALSE,
+				effects = list(/datum/singleton/sound_effect/robot, /datum/singleton/sound_effect/radio),
+				channel_override = CHANNEL_TTS_RADIO,
+				check_deafness = FALSE
+			)
 
 		if(isobserver(hearing_mob))
 			var/following = src
@@ -88,14 +96,16 @@
 /mob/living/silicon/radio(message, list/message_mods = list(), list/spans, language)
 	. = ..()
 	if(.)
+		do_tts_message(message, language, message_mods, list(), list())
 		return
 	if(message_mods[MODE_HEADSET])
 		if(radio)
-			radio.talk_into(src, message, , spans, language, message_mods)
+			radio.talk_into(src, message, null, spans, language, message_mods)
+			do_tts_message(message, language, message_mods, list(), list())
 		return NOPASS
 	else if(message_mods[RADIO_EXTENSION] in GLOB.default_radio_channels)
 		if(radio)
 			radio.talk_into(src, message, message_mods[RADIO_EXTENSION], spans, language, message_mods)
+			do_tts_message(message, language, message_mods, list(), list())
 			return NOPASS
-
 	return FALSE

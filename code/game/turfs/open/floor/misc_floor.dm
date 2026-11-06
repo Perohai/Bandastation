@@ -7,6 +7,7 @@
 	base_icon_state = "bcircuit"
 	light_color = LIGHT_COLOR_BABY_BLUE
 	floor_tile = /obj/item/stack/tile/circuit
+	rust_resistance = RUST_RESISTANCE_REINFORCED
 	/// If we want to ignore our area's power status and just be always off
 	/// Mostly for mappers doing asthetic things, or cases where the floor should be broken
 	var/always_off = FALSE
@@ -74,6 +75,9 @@
 	icon_state = "bcircuitoff"
 	always_off = TRUE
 
+/turf/open/floor/circuit/no_light
+	always_off = TRUE
+
 /turf/open/floor/circuit/airless
 	initial_gas_mix = AIRLESS_ATMOS
 
@@ -119,6 +123,9 @@
 	icon_state = "rcircuitoff"
 	always_off = TRUE
 
+/turf/open/floor/circuit/red/no_power
+	always_off = TRUE
+
 /turf/open/floor/circuit/red/anim
 	icon_state = "rcircuitanim"
 	floor_tile = /obj/item/stack/tile/circuit/red/anim
@@ -128,20 +135,6 @@
 
 /turf/open/floor/circuit/red/telecomms
 	initial_gas_mix = TCOMMS_ATMOS
-
-/turf/open/floor/pod
-	name = "pod floor"
-	icon_state = "podfloor"
-	floor_tile = /obj/item/stack/tile/pod
-
-/turf/open/floor/pod/light
-	icon_state = "podfloor_light"
-	floor_tile = /obj/item/stack/tile/pod/light
-
-/turf/open/floor/pod/dark
-	icon_state = "podfloor_dark"
-	floor_tile = /obj/item/stack/tile/pod/dark
-
 
 /turf/open/floor/noslip
 	name = "high-traction floor"
@@ -160,7 +153,7 @@
 
 /turf/open/floor/noslip/tram/Initialize(mapload)
 	. = ..()
-	var/current_holiday_color = request_station_colors(src, PATTERN_VERTICAL_STRIPE) || request_holiday_colors(src, PATTERN_VERTICAL_STRIPE)
+	var/current_holiday_color = request_decoration_colors(src, PATTERN_VERTICAL_STRIPE)
 	if(current_holiday_color)
 		color = current_holiday_color
 	else
@@ -232,11 +225,36 @@
 /turf/open/floor/plastic/broken_states()
 	return list("plastic-damaged1","plastic-damaged2")
 
+/turf/open/floor/plastic/puzzle
+	name = "plastic puzzle floor"
+	icon_state = "plastic_puzzle"
+	floor_tile = /obj/item/stack/tile/plastic/puzzle
+
+/turf/open/floor/hauntium
+	name = "hauntium floor"
+	icon_state = "hauntium"
+	desc = "Now this is one spooky tile."
+	custom_materials = list(/datum/material/hauntium=SMALL_MATERIAL_AMOUNT*5)
+	floor_tile = /obj/item/stack/tile/hauntium
+
+/turf/open/floor/hauntium/tiled
+	name = "tiled hauntium floor"
+	icon_state = "hauntium_tiled"
+	floor_tile = /obj/item/stack/tile/hauntium/tiled
+
+/turf/open/floor/sandstone
+	name = "sandstone brick floor"
+	desc = "Sandstone tile. Makes you feel quite like a pharoah."
+	icon_state = "sandstone_floor"
+	custom_materials = list(/datum/material/sandstone=SMALL_MATERIAL_AMOUNT*5)
+	floor_tile = /obj/item/stack/tile/mineral/sandstone
+
 /turf/open/floor/eighties
 	name = "retro floor"
 	desc = "This one takes you back."
 	icon_state = "eighties"
 	floor_tile = /obj/item/stack/tile/eighties
+	rust_resistance = RUST_RESISTANCE_BASIC
 
 /turf/open/floor/eighties/broken_states()
 	return list("eighties_damaged")
@@ -289,17 +307,11 @@
 		out of. It only makes sense in the context of space because you're trying to keep a freezing vacuum out. Is anyone following me on this? \
 		The idea of a \"rudimentary\" iron wall makes no sense at all! Is anything i'm even saying here true? Someone's gotta fact check this!"
 	icon_state = "stone_floor"
+	custom_materials = list(/datum/material/rock=SMALL_MATERIAL_AMOUNT*5)
+	floor_tile = /obj/item/stack/tile/mineral/stone
 
 /turf/open/floor/stone/icemoon
 	initial_gas_mix = ICEMOON_DEFAULT_ATMOS
-	name = "stone brick floor"
-	desc = "Odd, really, how it looks exactly like the iron walls yet is stone instead of iron. Now, if that's really more of a complaint about\
-		the ironness of walls or the stoneness of the floors, that's really up to you. But have you really ever seen iron that dull? I mean, it\
-		makes sense for the station to have dull metal walls but we're talking how a rudimentary iron wall would be. Medieval ages didn't even\
-		use iron walls, iron walls are actually not even something that exists because iron is an expensive and not-so-great thing to build walls\
-		out of. It only makes sense in the context of space because you're trying to keep a freezing vacuum out. Is anyone following me on this? \
-		The idea of a \"rudimentary\" iron wall makes no sense at all! Is anything i'm even saying here true? Someone's gotta fact check this!"
-	icon_state = "stone_floor"
 
 /turf/open/floor/vault
 	name = "strange floor"
@@ -343,7 +355,7 @@
 
 /turf/open/floor/material/meat/Initialize(mapload)
 	. = ..()
-	set_custom_materials(list(GET_MATERIAL_REF(/datum/material/meat) = SHEET_MATERIAL_AMOUNT))
+	set_custom_materials(list(SSmaterials.get_material(/datum/material/meat) = SHEET_MATERIAL_AMOUNT))
 
 /turf/open/floor/material/meat/airless
 	initial_gas_mix = AIRLESS_ATMOS

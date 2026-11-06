@@ -99,10 +99,16 @@
 
 	ADD_TRAIT(cast_on, TRAIT_IMMOBILIZED, REF(src))
 
+// BANDASTATION EDIT START: allow custom jaunt exit timing
+	begin_jaunt_exit(cast_on, holder, found_exit) // BANDASTATION EDIT: allow custom jaunt exit timing
+// No empty line here on purpose.
+/// Schedule the exit animation after selecting a safe exit turf and stopping movement.
+/datum/action/cooldown/spell/jaunt/ethereal_jaunt/proc/begin_jaunt_exit(mob/living/cast_on, obj/effect/dummy/phased_mob/spell_jaunt/holder, turf/found_exit)
 	if(2.5 SECONDS - jaunt_in_time <= 0)
 		do_jaunt_in(cast_on, holder, found_exit)
 	else
 		addtimer(CALLBACK(src, PROC_REF(do_jaunt_in), cast_on, holder, found_exit), 2.5 SECONDS - jaunt_in_time)
+// BANDASTATION EDIT END: allow custom jaunt exit timing
 
 /**
  * The wind-up (wind-out?) of exiting the jaunt.
@@ -165,8 +171,7 @@
 
 /// Does some steam effects from the jaunt at passed loc.
 /datum/action/cooldown/spell/jaunt/ethereal_jaunt/proc/do_steam_effects(turf/loc)
-	var/datum/effect_system/steam_spread/steam = new()
-	steam.set_up(10, FALSE, loc)
+	var/datum/effect_system/basic/steam_spread/steam = new(loc, 10, FALSE)
 	steam.start()
 
 
@@ -221,7 +226,8 @@
 	. = ..()
 	if(!.)
 		return
-	if (locate(/obj/effect/blessing) in .)
+	var/atom/new_loc = .
+	if (HAS_TRAIT(new_loc, TRAIT_TURF_BLESSED))
 		to_chat(user, span_warning("Holy energies block your path!"))
 		return null
 

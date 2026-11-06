@@ -1,7 +1,7 @@
 // Shoots out in a wave-like, what rust heretics themselves get
 /datum/action/cooldown/spell/cone/staggered/entropic_plume
-	name = "Entropic Plume"
-	desc = "Извергает дезориентирующую струю, которая заставляет врагов ударять друг друга, \
+	name = "Шлейф энтропии"
+	desc = "Извергает дезориентирующую струю, которая заставляет врагов бить друг друга, \
 		ненадолго ослепляет их (увеличивается с дальностью) и отравляет (уменьшается с дальностью). \
 		Также распространяет ржавчину на пути струи."
 	background_icon_state = "bg_heretic"
@@ -17,7 +17,7 @@
 	invocation_type = INVOCATION_WHISPER
 	spell_requirements = NONE
 
-	cone_levels = 5
+	cone_levels = 6
 	respect_density = TRUE
 
 /datum/action/cooldown/spell/cone/staggered/entropic_plume/cast(atom/cast_on)
@@ -33,9 +33,10 @@
 /datum/action/cooldown/spell/cone/staggered/entropic_plume/do_mob_cone_effect(mob/living/victim, atom/caster, level)
 	if(victim.can_block_magic(antimagic_flags) || IS_HERETIC_OR_MONSTER(victim) || victim == caster)
 		return
-	victim.apply_status_effect(/datum/status_effect/amok)
-	victim.apply_status_effect(/datum/status_effect/cloudstruck, level * 1 SECONDS)
+	victim.apply_status_effect(/datum/status_effect/forced_combat/amok)
+	victim.apply_status_effect(/datum/status_effect/cloudstruck, 5 SECONDS)
 	victim.adjust_disgust(100)
+	to_chat(victim, span_boldwarning("Вы чувствуете, что вас переполняет взявшаяся из ниоткуда ярость!"))
 
 /datum/action/cooldown/spell/cone/staggered/entropic_plume/calculate_cone_shape(current_level)
 	// At the first level (that isn't level 1) we will be small
@@ -68,7 +69,7 @@
 
 // Shoots a straight line of rusty stuff ahead of the caster, what rust monsters get
 /datum/action/cooldown/spell/basic_projectile/rust_wave
-	name = "Patron's Reach"
+	name = "Длань Покровителя"
 	desc = "Направляет энергию в руки, чтобы выпустить волну ржавчины."
 	background_icon_state = "bg_heretic"
 	overlay_icon_state = "bg_heretic_border"
@@ -85,14 +86,14 @@
 	projectile_type = /obj/projectile/magic/aoe/rust_wave
 
 /obj/projectile/magic/aoe/rust_wave
-	name = "Patron's Reach"
+	name = "Длань Покровителя"
 	icon_state = "eldritch_projectile"
 	alpha = 180
 	damage = 30
 	damage_type = TOX
 	hitsound = 'sound/items/weapons/punch3.ogg'
 	trigger_range = 0
-	ignored_factions = list(FACTION_HERETIC)
+	faction = list(FACTION_HERETIC)
 	range = 15
 	speed = 1
 

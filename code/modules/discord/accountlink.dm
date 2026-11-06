@@ -1,8 +1,6 @@
+/* BANDASTATION REMOVAL
 // IF you have linked your account, this will trigger a verify of the user
-/client/verb/verify_in_discord()
-	set category = "OOC"
-	set name = "Verify Discord Account"
-	set desc = "Verify your discord account with your BYOND account"
+GAME_VERB_DESC(/client, verify_in_discord, "Verify Discord Account", "Verify your discord account with your BYOND account", "OOC")
 
 	// Safety checks
 	if(!CONFIG_GET(flag/sql_enabled))
@@ -35,5 +33,5 @@
 	var/datum/browser/window = new /datum/browser(usr, "discordverification", "Discord Verification")
 	window.set_content("<div>[message]</div>")
 	window.open()
-
+*/
 

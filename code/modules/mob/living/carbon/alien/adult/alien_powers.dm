@@ -8,7 +8,6 @@ Doesn't work on other aliens/AI.*/
 
 /datum/action/cooldown/alien
 	name = "Alien Power"
-	panel = "Alien"
 	background_icon_state = "bg_alien"
 	overlay_icon_state = "bg_alien_border"
 	button_icon = 'icons/mob/actions/actions_xeno.dmi'
@@ -17,6 +16,12 @@ Doesn't work on other aliens/AI.*/
 
 	/// How much plasma this action uses.
 	var/plasma_cost = 0
+
+/datum/action/cooldown/alien/New(Target)
+	. = ..()
+	//not free
+	if(plasma_cost != 0)
+		name = "[initial(name)] ([plasma_cost]P)"
 
 /datum/action/cooldown/alien/IsAvailable(feedback = FALSE)
 	. = ..()
@@ -49,13 +54,6 @@ Doesn't work on other aliens/AI.*/
 		unset_click_ability(owner, refund_cooldown = FALSE)
 
 	return TRUE
-
-/datum/action/cooldown/alien/set_statpanel_format()
-	. = ..()
-	if(!islist(.))
-		return
-
-	.[PANEL_DISPLAY_STATUS] = "PLASMA - [plasma_cost]"
 
 /datum/action/cooldown/alien/make_structure
 	/// The type of structure the action makes on use
@@ -143,6 +141,26 @@ Doesn't work on other aliens/AI.*/
 
 	log_directed_talk(owner, chosen_recipient, to_whisper, LOG_SAY, tag = "alien whisper")
 	to_chat(chosen_recipient, "[span_noticealien("You hear a strange, alien voice in your head...")][to_whisper]")
+
+	// BANDASTATION ADDITION START - TTS
+	owner.cast_tts(
+		chosen_recipient,
+		to_whisper,
+		is_local = FALSE,
+		effects = list(/datum/singleton/sound_effect/telepathy),
+		channel_override = CHANNEL_TTS_TELEPATHY,
+		check_deafness = FALSE
+	)
+	owner.cast_tts(
+		owner,
+		to_whisper,
+		is_local = FALSE,
+		effects = list(/datum/singleton/sound_effect/telepathy),
+		channel_override = CHANNEL_TTS_TELEPATHY,
+		check_deafness = FALSE
+	)
+	// BANDASTATION ADDITION END
+
 	to_chat(owner, span_noticealien("You said: \"[to_whisper]\" to [chosen_recipient]"))
 	for(var/mob/dead_mob as anything in GLOB.dead_mob_list)
 		if(!isobserver(dead_mob))
@@ -225,7 +243,7 @@ Doesn't work on other aliens/AI.*/
 	if(get_dist(owner, target) > 1)
 		return FALSE
 	if(ismob(target)) //If it could corrode mobs, it would one-shot them.
-		owner.balloon_alert(owner, "doesn't work on mobs!")
+		owner.balloon_alert(owner, "doesn't work on creatures!")
 		return FALSE
 
 	return ..()
@@ -346,7 +364,6 @@ Doesn't work on other aliens/AI.*/
 
 /datum/action/cooldown/mob_cooldown/sneak/alien
 	name = "Alien Sentinel Sneak"
-	panel = "Alien"
 	desc = "Blend into the shadows to stalk your prey."
 	button_icon = 'icons/mob/actions/actions_xeno.dmi'
 	button_icon_state = "alien_sneak"
@@ -393,12 +410,7 @@ Doesn't work on other aliens/AI.*/
 	var/obj/item/organ/alien/plasmavessel/vessel = get_organ_by_type(/obj/item/organ/alien/plasmavessel)
 	if(!vessel)
 		return FALSE
-	vessel.stored_plasma = max(vessel.stored_plasma + amount,0)
-	vessel.stored_plasma = min(vessel.stored_plasma, vessel.max_plasma) //upper limit of max_plasma, lower limit of 0
+	vessel.adjust_plasma(amount)
 	for(var/datum/action/cooldown/alien/ability in actions)
 		ability.build_all_button_icons()
 	return TRUE
-
-/mob/living/carbon/alien/adjustPlasma(amount)
-	. = ..()
-	updatePlasmaDisplay()

@@ -1,6 +1,8 @@
 GLOBAL_VAR_INIT(nt_fax_department, pick("NT HR Department", "NT Legal Department", "NT Complaint Department", "NT Customer Relations", "Nanotrasen Tech Support", "NT Internal Affairs Dept"))
 GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 
+#define FAX_ID_CENTRAL_COMMAND "central_command"
+
 /obj/machinery/fax
 	name = "Fax Machine"
 	desc = "Bluespace technologies on the application of bureaucracy."
@@ -32,12 +34,15 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 	var/allow_exotic_faxes = FALSE
 	/// This is where the dispatch and reception history for each fax is stored.
 	var/list/fax_history = list()
+	/// Lazy assoc list of (FaxBond ref string = FaxBond weakref) connected to us
+	var/list/fax_listeners
 	/// List of types which should always be allowed to be faxed
 	var/static/list/allowed_types = list(
 		/obj/item/canvas,
 		/obj/item/paper,
 		/obj/item/photo,
 		/obj/item/tcgcard,
+		/obj/item/paperplane,
 	)
 	/// List of types which should be allowed to be faxed if hacked
 	var/static/list/exotic_types = list(
@@ -57,9 +62,11 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 	)
 	/// List with a fake-networks(not a fax actually), for request manager.
 	var/list/special_networks = list(
-		nanotrasen = list(fax_name = "NT HR Department", fax_id = "central_command", color = "teal", emag_needed = FALSE),
+		nanotrasen = list(fax_name = "NT HR Department", fax_id = FAX_ID_CENTRAL_COMMAND, color = "teal", emag_needed = FALSE),
 		syndicate = list(fax_name = "Sabotage Department", fax_id = "syndicate", color = "red", emag_needed = TRUE),
 	)
+	// Regex cleaner
+	var/static/regex/html_cleaner = new("<\[^>\]*>", "g")
 
 /obj/machinery/fax/auto_name
 	name = "Auto-naming Fax Machine"
@@ -69,6 +76,41 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 	name = "[current_area.name]'s Fax Machine"
 	fax_name = "[current_area.name]"
 	return ..()
+
+/obj/machinery/fax/heads
+	abstract_type = /obj/machinery/fax/heads
+
+/obj/machinery/fax/heads/Initialize(mapload)
+	. = ..()
+	REGISTER_REQUIRED_MAP_ITEM(1, 1)
+
+/obj/machinery/fax/heads/captain
+	name = "Captain's Fax Machine"
+	fax_name = "Captain's Office"
+
+/obj/machinery/fax/heads/hop
+	name = "Head of Personnel's Fax Machine"
+	fax_name = "Head of Personnel's Office"
+
+/obj/machinery/fax/heads/hos
+	name = "Head of Security's Fax Machine"
+	fax_name = "Head of Security's Office"
+
+/obj/machinery/fax/heads/cmo
+	name = "Chief Medical Officer's Fax Machine"
+	fax_name = "Chief Medical Officer's Office"
+
+/obj/machinery/fax/heads/rd
+	name = "Research Director's Fax Machine"
+	fax_name = "Research Director's Office"
+
+/obj/machinery/fax/heads/ce
+	name = "Chief Engineer's Fax Machine"
+	fax_name = "Chief Engineer's Office"
+
+/obj/machinery/fax/heads/qm
+	name = "Quartermaster's Fax Machine"
+	fax_name = "Quartermaster's Office"
 
 /obj/machinery/fax/admin/syndicate
 	name = "Syndicate Fax Machine"
@@ -160,10 +202,7 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
  * Open and close the wire panel.
  */
 /obj/machinery/fax/screwdriver_act(mob/living/user, obj/item/screwdriver)
-	. = ..()
-	default_deconstruction_screwdriver(user, icon_state, icon_state, screwdriver)
-	update_appearance()
-	return TRUE
+	return default_deconstruction_screwdriver(user, screwdriver)
 
 /**
  * Using the multi-tool with the panel closed causes the fax network name to be renamed.
@@ -184,20 +223,23 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 		fax_name = new_fax_name
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/fax/attackby(obj/item/item, mob/user, list/modifiers, list/attack_modifiers)
-	if (jammed && clear_jam(item, user))
-		return
-	if (panel_open)
-		if (is_wire_tool(item))
-			wires.interact(user)
-		return
-	if (can_load_item(item))
-		if (!loaded_item_ref?.resolve())
-			loaded_item_ref = WEAKREF(item)
-			item.forceMove(src)
-			update_appearance()
-		return
-	return ..()
+/obj/machinery/fax/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	if(user.combat_mode)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	if(jammed && clear_jam(tool, user))
+		return ITEM_INTERACT_SUCCESS
+	if(panel_open && is_wire_tool(tool))
+		wires.interact(user)
+		return ITEM_INTERACT_SUCCESS
+	if(can_load_item(tool))
+		if(loaded_item_ref?.resolve())
+			balloon_alert(user, "item already loaded!")
+			return ITEM_INTERACT_BLOCKING
+		loaded_item_ref = WEAKREF(tool)
+		tool.forceMove(src)
+		update_appearance()
+		return ITEM_INTERACT_SUCCESS
+	return NONE
 
 /**
  * Attempts to clean out a jammed machine using a passed item.
@@ -318,6 +360,22 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 				to_chat(usr, icon2html(src.icon, usr) + span_warning("Fax cannot send all above paper on this protected network, sorry."))
 				return
 
+			// AI checkup
+			var/cached_name = fax_paper.name
+			var/cached_content = ""
+
+			cached_content = safe_get_paper_text(fax_paper)
+
+			if(!cached_content)
+				cached_content = "(Empty Paper / Unreadable Form)"
+			else
+				// Cleanup
+				cached_content = replacetext(cached_content, "<br>", "\n")
+				cached_content = html_cleaner.Replace(cached_content, " ")
+
+			// AI checkup END
+
+
 			fax_paper.request_state = TRUE
 			fax_paper.loc = null
 
@@ -327,6 +385,14 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 			history_add("Send", params["name"])
 
 			GLOB.requests.fax_request(usr.client, "sent a fax message from [fax_name]/[fax_id] to [params["name"]]", list("paper" = fax_paper, "destination_id" = params["id"], "sender_name" = fax_name))
+
+			// AI send
+			if(params["id"] == FAX_ID_CENTRAL_COMMAND)
+				var/datum/ai_bridge/AI = get_ai_bridge()
+				if(AI)
+					var/real_sender = "[fax_name] ([usr.real_name])"
+					AI.process_incoming_fax(cached_name, cached_content, real_sender, params["id"])
+
 			var/list/admins = get_holders_with_rights(R_ADMIN) /// BANDASTATION EDIT: Proper permissions
 			to_chat(admins, /// BANDASTATION EDIT: Proper permissions
 				span_adminnotice("[icon2html(src.icon, admins)]<b><font color=green>FAX REQUEST: </font>[ADMIN_FULLMONTY(usr)]:</b> [span_linkify("sent a fax message from [fax_name]/[fax_id][ADMIN_FLW(src)] to [html_encode(params["name"])]")] [ADMIN_SHOW_PAPER(fax_paper)] [ADMIN_PRINT_FAX(fax_paper, fax_name, params["id"])]"), /// BANDASTATION EDIT: Proper permissions
@@ -368,7 +434,7 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 /obj/machinery/fax/proc/log_fax(obj/item/sent, destination_id, name)
 	if (istype(sent, /obj/item/paper))
 		var/obj/item/paper/sent_paper = sent
-		log_paper("[usr] has sent a fax with the message \"[sent_paper.get_raw_text()]\" to [name]/[destination_id].")
+		log_paper("[usr] has sent a fax with the message \"[sent_paper.name]\" to [name]/[destination_id].")
 		return
 	log_game("[usr] has faxed [sent] to [name]/[destination_id].]")
 
@@ -412,6 +478,37 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 	say("Received correspondence from [sender_name].")
 	history_add("Receive", sender_name)
 	addtimer(CALLBACK(src, PROC_REF(vend_item), loaded), 1.9 SECONDS)
+	SEND_SIGNAL(src, COMSIG_FAX_MESSAGE_RECEIVED, sender_name)
+	if(LAZYLEN(fax_listeners))
+		alert_listeners(sender_name)
+
+/**
+ * Called when a fax is received, iterates through subscribed Faxbonds and notifies them.
+ * Arguments:
+ * * sender_name - Name of fax sender, used in the PDA message.
+*/
+/obj/machinery/fax/proc/alert_listeners(sender_name)
+	set waitfor = FALSE
+
+	var/list/targets = list()
+	for(var/refstring, weakref in fax_listeners)
+		var/datum/weakref/app_ref = weakref
+		var/datum/computer_file/program/faxbond/app = app_ref?.resolve()
+		if(!app || app.connected_faxes[fax_id]["muted"])
+			continue
+		var/datum/computer_file/program/messenger/messenger = locate() in app.computer.stored_files
+		if(messenger)
+			targets += messenger
+	if(!length(targets))
+		return
+	var/datum/signal/subspace/messaging/tablet_message/signal = new(src, list(
+		"fakename" = "Fax Notificator",
+		"fakejob" = "PDA Program",
+		"message" = "Your fax [fax_name] has received a new message from [sender_name]",
+		"targets" = targets,
+		"automated" = TRUE
+	))
+	signal.send_to_receivers()
 
 /**
  * Procedure for animating an object entering or leaving the fax machine.
@@ -488,7 +585,7 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 	var/list/history_data = list()
 	history_data["history_type"] = history_type
 	history_data["history_fax_name"] = history_fax_name
-	history_data["history_time"] = station_time_timestamp()
+	history_data["history_time"] = round_timestamp()
 	fax_history += list(history_data)
 
 /// Clears the history of fax operations.
@@ -508,21 +605,12 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 			return TRUE
 	return FALSE
 
-/**
- * Attempts to shock the passed user, returns true if they are shocked.
- *
- * Arguments:
- * * user - the user to shock
- * * chance - probability the shock happens
- */
-/obj/machinery/fax/proc/shock(mob/living/user, chance)
-	if(!istype(user) || machine_stat & (BROKEN|NOPOWER))
+/obj/machinery/fax/shock(mob/living/shocking, chance = 100, shock_source, siemens_coeff = 1)
+	if( machine_stat & (BROKEN|NOPOWER))
 		return FALSE
-	if(!prob(chance))
-		return FALSE
-	do_sparks(5, TRUE, src)
-	var/check_range = TRUE
-	return electrocute_mob(user, get_area(src), src, 0.7, check_range)
+	if(isnull(siemens_coeff))
+		siemens_coeff = 0.7
+	return ..()
 
 
 /obj/machinery/fax/add_context(atom/source, list/context, obj/item/held_item, mob/user)
@@ -601,3 +689,36 @@ GLOBAL_VAR_INIT(fax_autoprinting, TRUE) /// BANDASTATION EDIT
 	else
 		return FALSE
 	return TRUE
+
+/proc/get_paper_input_text_recursive(datum/paper_input/I)
+	if(!I)
+		return ""
+
+	var/text = ""
+	if("raw_text" in I.vars)
+		var/txt = I.vars["raw_text"]
+		if(txt)
+			text += txt + "\n"
+
+	if("children" in I.vars)
+		var/list/kids = I.vars["children"]
+		if(length(kids))
+			for(var/datum/paper_input/child in kids)
+				text += get_paper_input_text_recursive(child)
+
+	return text
+
+/proc/safe_get_paper_text(obj/item/paper/P)
+	if(!istype(P) || !("raw_text_inputs" in P.vars))
+		return ""
+
+	var/list/inputs = P.vars["raw_text_inputs"]
+	if(!length(inputs)) return ""
+
+	var/full_text = ""
+	for(var/datum/paper_input/I in inputs)
+		full_text += get_paper_input_text_recursive(I)
+
+	return full_text
+
+#undef FAX_ID_CENTRAL_COMMAND

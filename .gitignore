@@ -2,6 +2,8 @@
 
 # Local overrides--you can use this to change the config for your dev environment (like setting up SQL) without worrying about committing it
 /config/dev_overrides.txt
+/config/dev_preferences.json
+/config/dev_preferences.json.updatebac
 
 #Ignore everything in datafolder and subdirectories
 /data/**/*
@@ -254,3 +256,6 @@ define_sanity_output.txt
 # Running OpenDream locally
 tgstation.json
 rust_g64.dll
+
+# BANDASTATION MOD: ru_names.toml generated at compile time
+/modular_bandastation/translations/public/ru_names.toml

@@ -11,7 +11,7 @@
 	shoes = /obj/item/clothing/shoes/pirate/armored
 
 /datum/outfit/pirate/post_equip(mob/living/carbon/human/equipped)
-	equipped.faction |= FACTION_PIRATE
+	equipped.add_faction(FACTION_PIRATE)
 
 	var/obj/item/radio/outfit_radio = equipped.ears
 	if(outfit_radio)
@@ -25,10 +25,9 @@
 		outfit_id.update_icon()
 
 	var/obj/item/clothing/under/pirate_uniform = equipped.w_uniform
-	if(pirate_uniform)
-		pirate_uniform.has_sensor = NO_SENSORS
-		pirate_uniform.sensor_mode = SENSOR_OFF
-		equipped.update_suit_sensors()
+	if(istype(pirate_uniform))
+		pirate_uniform.set_has_sensor(NO_SENSORS)
+		pirate_uniform.set_sensor_mode(SENSOR_OFF)
 
 /datum/outfit/pirate/captain
 	name = "Space Pirate Captain"
@@ -59,7 +58,17 @@
 
 /datum/outfit/pirate/space/captain/cardboard
 	name = "Space Pirate Captain (EVA)"
-	l_hand = /obj/item/nullrod/claymore/saber/pirate
+	l_hand = /obj/item/fake_e_cutlass
+
+/obj/item/fake_e_cutlass
+	name = "fake energy cutlass"
+	desc = "Damn, son, where'd you find this? (Tell a coder if you do)"
+	icon = 'icons/obj/weapons/transforming_energy.dmi'
+	icon_state = "e_cutlass_on"
+	inhand_icon_state = "e_cutlass_on"
+	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
+	item_flags = ABSTRACT
 
 /datum/outfit/pirate/silverscale
 	name = "Silver Scale Member"
@@ -137,7 +146,7 @@
 	suit = null
 	ears = /obj/item/radio/headset/syndicate/alt/leader
 	head = null
-	belt = /obj/item/storage/belt/holster/detective/full/ert
+	accessory = /obj/item/clothing/accessory/holster/detective/veteran_advisor //BANDASTATION EDIT: Accessory holsters
 
 /datum/outfit/pirate/lustrous
 	name = "Lustrous Scintillant"
@@ -192,3 +201,36 @@
 
 
 	skillchips = list(/obj/item/skillchip/big_pointer) //they don't have an id, so this is needed
+
+/datum/outfit/pirate/siren
+	name = "Siren Shimai"
+
+	uniform = /obj/item/clothing/under/color/jumpskirt/random
+	head = null
+	neck = /obj/item/clothing/neck/necklace/pearl/abyss
+	back = /obj/item/instrument/eguitar
+	glasses = null
+	suit = /obj/item/clothing/suit/jacket/leather/armored
+	gloves = /obj/item/clothing/gloves/fingerless
+	shoes = null
+	ears = /obj/item/radio/headset/syndicate/alt
+	id = null
+
+	skillchips = list(/obj/item/skillchip/musical)
+
+/datum/outfit/pirate/siren/pre_equip(mob/living/carbon/human/pre_equipped, visuals_only)
+	. = ..()
+	if(rand(0,5) == 1)
+		head = /obj/item/clothing/head/soft/black
+	belt = pick(subtypesof(/obj/item/flashlight/glowstick))
+
+/datum/outfit/pirate/siren/post_equip(mob/living/carbon/human/equipped)
+	. = ..()
+	var/obj/item/clothing/head/soft/cap = equipped.get_item_by_slot(ITEM_SLOT_HEAD)
+	if(cap && rand(0,1) == 1)
+		cap.flip(equipped)
+	var/obj/item/clothing/under/uniform = equipped.get_item_by_slot(ITEM_SLOT_ICLOTHING)
+	if(uniform && !istype(uniform, /obj/item/clothing/under/color/jumpskirt/rainbow))//kek...
+		uniform.rolldown(equipped)
+	equipped.update_lips("lipstick_lower", COLOR_BLACK)
+	equipped.adjust_wet_stacks(-3)

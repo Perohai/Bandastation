@@ -1,16 +1,16 @@
 /// Remain in someones view without breaking line of sight
 /datum/action/cooldown/spell/pointed/unsettle
 	name = "Unsettle"
-	desc = "Stare directly into someone who doesn't see you. Remain in their view for a bit to stun them for 2 seconds and announce your presence to them. "
-	button_icon_state = "terrify"
+	desc = "Смотрите прямо в глаза тому, кто вас не видит. Задержитесь на некоторое время в поле его зрения, чтобы оглушить его на 2 секунды и сообщить о своем присутствии."
+	button_icon = 'icons/mob/actions/actions_voidwalker.dmi'
+	button_icon_state = "unsettle"
 	background_icon_state = "bg_void"
 	overlay_icon_state = null
-	panel = null
 	spell_requirements = NONE
 	cooldown_time = 12 SECONDS
 	cast_range = 9
-	active_msg = "You prepare to stare down a target..."
-	deactive_msg = "You refocus your eyes..."
+	active_msg = "Вы готовитесь пристально смотреть на цель..."
+	deactive_msg = "Вы перефокусируете свой взгляд..."
 
 	/// how long we need to stare at someone to unsettle them (woooooh)
 	var/stare_time = 6 SECONDS
@@ -25,11 +25,11 @@
 	. = ..()
 
 	if(!isliving(cast_on))
-		cast_on.balloon_alert(owner, "cannot be targeted!")
+		cast_on.balloon_alert(owner, "не может быть выбран целью!")
 		return FALSE
 
 	if(!check_if_staring(cast_on))
-		owner.balloon_alert(owner, "cannot see you!")
+		owner.balloon_alert(owner, "не может вас видеть!")
 		return FALSE
 
 	return .
@@ -39,7 +39,7 @@
 
 	RegisterSignals(owner, list(COMSIG_LIVING_UNARMED_ATTACK, COMSIG_LIVING_ATTACK_ATOM), PROC_REF(is_combatting))
 
-	if(do_after(owner, stare_time, cast_on, IGNORE_TARGET_LOC_CHANGE | IGNORE_USER_LOC_CHANGE, extra_checks = CALLBACK(src, PROC_REF(check_if_staring), cast_on), hidden = TRUE))
+	if(do_after(owner, stare_time, cast_on, IGNORE_TARGET_LOC_CHANGE | IGNORE_USER_LOC_CHANGE, extra_checks = CALLBACK(src, PROC_REF(check_if_staring), cast_on), cog_icon = null))
 		spookify(cast_on)
 
 	else
@@ -51,16 +51,16 @@
 	SIGNAL_HANDLER
 
 	if(target.is_blind() || !(owner in view(target, world.view)))
-		owner.balloon_alert(owner, "line of sight broken!")
+		owner.balloon_alert(owner, "нарушена видимость!")
 		return FALSE
 	if(in_combat)
-		owner.balloon_alert(owner, "interrupted by combat!")
+		owner.balloon_alert(owner, "прервано боем!")
 		in_combat = FALSE
 	return TRUE
 
 /datum/action/cooldown/spell/pointed/unsettle/proc/spookify(mob/living/carbon/human/target)
 	target.Paralyze(stun_time)
-	target.adjustStaminaLoss(stamina_damage)
+	target.adjust_stamina_loss(stamina_damage)
 	target.apply_status_effect(/datum/status_effect/speech/slurring/generic)
 	target.emote("scream")
 
@@ -80,8 +80,7 @@
 	name = "Cosmic Transmit"
 	background_icon_state = "bg_void"
 	button_icon = 'icons/mob/actions/actions_voidwalker.dmi'
-	button_icon_state = "voidwalker_telepathy"
-	panel = null
+	button_icon_state = "telepathy"
 	overlay_icon_state = null
 
 /datum/action/cooldown/spell/list_target/telepathy/voidwalker/sunwalker
@@ -112,7 +111,9 @@
 
 /datum/action/cooldown/mob_cooldown/charge/voidwalker
 	name = "Cosmic Dash"
-	button_icon_state = "void_dash"
+	background_icon_state = "bg_void"
+	button_icon = 'icons/mob/actions/actions_voidwalker.dmi'
+	button_icon_state = "dash"
 	charge_past = 0
 	charge_damage = 20
 	cooldown_time = 8 SECONDS
@@ -133,5 +134,5 @@
 	if(istype(get_turf(target), valid_target_turf))
 		return ..()
 
-	owner.balloon_alert(owner, "must target [initial(valid_target_turf.name)]!")
+	owner.balloon_alert(owner, "должен быть целью [initial(valid_target_turf.name)]!")
 	return FALSE

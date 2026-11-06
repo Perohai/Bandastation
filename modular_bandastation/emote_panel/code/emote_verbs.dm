@@ -1,529 +1,318 @@
 /// Sound Emotes ///
-/mob/living/carbon/human/verb/emote_laugh()
-	set name = "▷ " + EMOTE_CARBON_LAUGH + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_laugh, "▷ Смеяться", "Эмоции")
 	emote("laugh", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_cry()
-	set name = "▷ " + EMOTE_HUMAN_CRY + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_cry, "▷ Плакать", "Эмоции")
 	emote("cry", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_giggle()
-	set name = "▷ " + EMOTE_CARBON_GIGGLE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_giggle, "▷ Хихикать", "Эмоции")
 	emote("giggle", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_cough()
-	set name = "▷ " + EMOTE_CARBON_COUGH + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_cough, "▷ Кашлять", "Эмоции")
 	emote("cough", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_scream()
-	set name = "▷ " + EMOTE_HUMAN_SCREAM + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_scream, "▷ Кричать", "Эмоции")
 	emote("scream", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_choke()
-	set name = "▷ " + EMOTE_CHOKE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_choke, "▷ Подавиться", "Эмоции")
 	emote("choke", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_moan()
-	set name = "▷ " + EMOTE_CARBON_MOAN + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_moan, "▷ Стонать", "Эмоции")
 	emote("moan", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_deathgasp()
-	set name = "▷ " + EMOTE_DEATHGASP + " "
-	set category = "Эмоции"
-	emote("deathgasp", intentional = TRUE)
-
-/mob/living/carbon/human/verb/emote_gasp_shock()
-	set name = "▷ " + EMOTE_HUMAN_SHOCK_GASP + " "
-	set category = "Эмоции"
-	emote("gaspshock", intentional = TRUE)
-
-/mob/living/carbon/human/verb/emote_gasp()
-	set name = "▷ " + EMOTE_HUMAN_GASP + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_gasp, "▷ Задыхаться", "Эмоции")
 	emote("gasp", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_hiss()
-	set name = "▷ " + EMOTE_HUMAN_HISS + " "
-	set category = "Эмоции"
-	emote("hiss", intentional = TRUE)
-
-/mob/living/carbon/human/verb/emote_sigh()
-	set name = "▷ " + EMOTE_SIGH + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_sigh, "▷ Вздыхать", "Эмоции")
 	emote("sigh", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_sneeze()
-	set name = "▷ " + EMOTE_HUMAN_SNEEZE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_sneeze, "▷ Чихнуть", "Эмоции")
 	emote("sneeze", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_sniff()
-	set name = "▷ " + EMOTE_HUMAN_SNIFF + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_sniff, "▷ Шмыгать носом", "Эмоции")
 	emote("sniff", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_snore()
-	set name = "▷ " + EMOTE_SNORE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_snore, "▷ Храпеть", "Эмоции")
 	emote("snore", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_whistle()
-	set name = "▷ " + EMOTE_HUMAN_WHISTLE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_whistle, "▷ Свистеть", "Эмоции")
 	emote("whistle", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_yawn()
-	set name = "▷ " + EMOTE_CARBON_YAWN + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_yawn, "▷ Зевать", "Эмоции")
 	emote("yawn", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_salute()
-	set name = "▷ " + EMOTE_HUMAN_SALUTE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_salute, "▷ Салютовать", "Эмоции")
 	emote("salute", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_snap()
-	set name = "▷ " + EMOTE_HUMAN_SNAP + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_snap, "▷ Щёлкнуть пальцами", "Эмоции")
 	emote("snap", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_crack()
-	set name = "▷ " + EMOTE_HUMAN_CRACK + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_crack, "▷ Хрустеть пальцами", "Эмоции")
 	emote("crack", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_clap()
-	set name = "▷ " + EMOTE_HUMAN_CLAP + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_clap, "▷ Хлопать", "Эмоции")
 	emote("clap", intentional = TRUE)
 
-/mob/living/carbon/human/species/vulpkanin/proc/emote_howl()
-	set name = "▷ " + EMOTE_HUMAN_HOWL + " "
-	set category = "Эмоции"
-	emote("howl", intentional = TRUE)
-
-/mob/living/carbon/human/species/vulpkanin/proc/emote_growl()
-	set name = "▷ " + EMOTE_HUMAN_GROWL + " "
-	set category = "Эмоции"
-	emote("growl", intentional = TRUE)
-
-/mob/living/carbon/human/species/vulpkanin/proc/emote_purr()
-	set name = "▷ " + EMOTE_HUMAN_RUMBLE + " "
-	set category = "Эмоции"
-	emote("purr", intentional = TRUE)
-
-/mob/living/carbon/human/species/vulpkanin/proc/emote_bark()
-	set name = "▷ " + EMOTE_HUMAN_BARK + " "
-	set category = "Эмоции"
-	emote("bark", intentional = TRUE)
-
-/mob/living/carbon/human/species/vulpkanin/proc/emote_wbark()
-	set name = "▷ " + EMOTE_HUMAN_WBARK + " "
-	set category = "Эмоции"
-	emote("wbark", intentional = TRUE)
+GAME_VERB(/mob/living/carbon/human, emote_cane_tap, "▷ Стучать тростью", "Эмоции")
+	emote("cane_tap", intentional = TRUE)
 
 /// Action Emotes ///
-/mob/living/carbon/human/verb/emote_collapse()
-	set name = "○ " + EMOTE_COLLAPSE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_collapse, "○ Рухнуть", "Эмоции")
 	emote("collapse", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_jump()
-	set name = "○ " + EMOTE_JUMP + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_jump, "○ Прыгнуть", "Эмоции")
 	emote("jump", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_faint()
-	set name = "○ " + EMOTE_CARBON_FAINT + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_faint, "○ Потерять сознание", "Эмоции")
 	emote("faint", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_handshake()
-	set name = "○ " + EMOTE_HUMAN_HANDSHAKE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_handshake, "○ Пожать руку", "Эмоции")
 	emote("handshake", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_flip()
-	set name = "○ " + EMOTE_FLIP + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_flip, "○ Сделать кувырок", "Эмоции")
 	emote("flip", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_spin()
-	set name = "○ " + EMOTE_SPIN + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_spin, "○ Покрутиться", "Эмоции")
 	emote("spin", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_circle()
-	set name = "○ " + EMOTE_CARBON_CIRCLE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_circle, "○ Сделать кольцо из пальцев", "Эмоции")
 	emote("circle", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_glasses()
-	set name = "○ " + EMOTE_HUMAN_GLASSES + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_glasses, "○ Приподнять очки", "Эмоции")
 	emote("glasses", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_hand()
-	set name = "○ " + EMOTE_CARBON_HAND + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_hand, "○ Приготовить руку", "Эмоции")
 	emote("hand", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_kiss()
-	set name = "○ " + EMOTE_CARBON_KISS + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_kiss, "○ Поцеловать", "Эмоции")
 	emote("kiss", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_noogie()
-	set name = "○ " + EMOTE_CARBON_NOOGIE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_noogie, "○ Дать леща", "Эмоции")
 	emote("noogie", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_shoesteal()
-	set name = "○ " + EMOTE_CARBON_SHOESTEAL + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_shoesteal, "○ Украсть обувь", "Эмоции")
 	emote("shoesteal", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_surrender()
-	set name = "○ " + EMOTE_SURRENDER + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_surrender, "○ Сдаться", "Эмоции")
 	emote("surrender", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_sway()
-	set name = "○ " + EMOTE_SWAY + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_sway, "○ Качаться на месте", "Эмоции")
 	emote("sway", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_swear()
-	set name = "◦ " + EMOTE_SWEAR + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_swear, "◦ Ругнуться", "Эмоции")
 	emote("swear", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_taunt()
-	set name = "○ " + EMOTE_TAUNT + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_taunt, "○ Дразнить", "Эмоции")
 	emote("taunt", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_wing()
-	set name = "○ " + EMOTE_HUMAN_WING + " "
-	set category = "Эмоции"
-	emote("wing", intentional = TRUE)
-
-/mob/living/carbon/human/verb/emote_dance()
-	set name = "○ " + EMOTE_DANCE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_dance, "○ Танцевать", "Эмоции")
 	emote("dance", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_slap()
-	set name = "○ " + EMOTE_HUMAN_SLAP + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_slap, "○ Дать пощёчину", "Эмоции")
 	emote("slap", intentional = TRUE)
 
 /// ME Emotes ///
-/mob/living/carbon/human/verb/emote_scratch()
-	set name = "◦ " + EMOTE_HUMAN_SCRATCH + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_scratch, "◦ Почесаться", "Эмоции")
 	emote("scratch", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_blush()
-	set name = "◦ " + EMOTE_BLUSH + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_blush, "◦ Краснеть", "Эмоции")
 	emote("blush", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_blink()
-	set name = "◦ " + EMOTE_CARBON_BLINK + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_blink, "◦ Моргать", "Эмоции")
 	emote("blink", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_blink_r()
-	set name = "◦ " + EMOTE_CARBON_BLINKR + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_blink_r, "◦ Моргать быстро", "Эмоции")
 	emote("blink_r", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_bow()
-	set name = "◦ " + EMOTE_BOW + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_bow, "◦ Поклониться", "Эмоции")
 	emote("bow", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_chuckle()
-	set name = "◦ " + EMOTE_CARBON_CHUCKLE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_chuckle, "◦ Усмехнуться", "Эмоции")
 	emote("chuckle", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_clear_throat()
-	set name = "◦ " + EMOTE_HUMAN_CLEAR_THROAT + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_clear_throat, "◦ Прочистить горло", "Эмоции")
 	emote("clear", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_cross()
-	set name = "◦ " + EMOTE_CROSS + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_cross, "◦ Скрестить руки", "Эмоции")
 	emote("cross", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_dap()
-	set name = "◦ " + EMOTE_HUMAN_DAP + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_dap, "◦ Особое рукопожатие", "Эмоции")
 	emote("dap", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_sing_tune()
-	set name = "◦ " + EMOTE_SING_TUNE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_sing_tune, "◦ Подпевать", "Эмоции")
 	emote("tunesing", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_sit()
-	set name = "◦ " + EMOTE_SIT + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_sit, "◦ Сесть", "Эмоции")
 	emote("sit", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_drool()
-	set name = "◦ " + EMOTE_DROOL + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_drool, "◦ Пускать слюни", "Эмоции")
 	emote("drool", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_exhale()
-	set name = "◦ " + EMOTE_CARBON_EXHALE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_exhale, "◦ Выдохнуть", "Эмоции")
 	emote("exhale", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_gag()
-	set name = "◦ " + EMOTE_GAG + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_gag, "◦ Потужиться", "Эмоции")
 	emote("gag", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_grimace()
-	set name = "◦ " + EMOTE_GRIMACE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_grimace, "◦ Скорчить рожицу", "Эмоции")
 	emote("grimace", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_frown()
-	set name = "◦ " + EMOTE_FROWN + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_frown, "◦ Смотреть в недоумении", "Эмоции")
 	emote("frown", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_glare()
-	set name = "◦ " + EMOTE_GLARE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_glare, "◦ Сверлить взглядом", "Эмоции")
 	emote("glare", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_groan()
-	set name = "◦ " + EMOTE_GROAN + " "
-	set category = "Эмоции"
-	emote("groan", intentional = TRUE)
-
-/mob/living/carbon/human/verb/emote_grin()
-	set name = "◦ " + EMOTE_GRIN + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_grin, "◦ Ухмыльнуться", "Эмоции")
 	emote("grin", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_shake()
-	set name = "◦ " + EMOTE_HUMAN_SHAKE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_shake, "◦ Мотать головой", "Эмоции")
 	emote("shake", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_tilt()
-	set name = "◦ " + EMOTE_TILT + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_tilt, "◦ Наклонить голову", "Эмоции")
 	emote("tilt", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_smile()
-	set name = "◦ " + EMOTE_SMILE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_smile, "◦ Улыбнуться", "Эмоции")
 	emote("smile", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_smug()
-	set name = "◦ " + EMOTE_SMUG + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_smug, "◦ Самодовольно улыбнуться", "Эмоции")
 	emote("smug", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_grumble()
-	set name = "◦ " + EMOTE_HUMAN_GRUMBLE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_grumble, "◦ Ворчать", "Эмоции")
 	emote("grumble", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_shrug()
-	set name = "◦ " + EMOTE_HUMAN_SHRUG + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_shrug, "◦ Пожать плечами", "Эмоции")
 	emote("shrug", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_stare()
-	set name = "◦ " + EMOTE_STARE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_stare, "◦ Пялиться", "Эмоции")
 	emote("stare", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_sulk()
-	set name = "◦ " + EMOTE_SULK + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_sulk, "◦ Обидеться", "Эмоции")
 	emote("sulk", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_tremble()
-	set name = "◦ " + EMOTE_TREMBLE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_tremble, "◦ Дрожать в ужасе", "Эмоции")
 	emote("tremble", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_twitch()
-	set name = "◦ " + EMOTE_TWITCH + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_twitch, "◦ Сильно дёргаться", "Эмоции")
 	emote("twitch", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_twitch_s()
-	set name = "◦ " + EMOTE_TWITCHS + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_twitch_s, "◦ Дёргаться", "Эмоции")
 	emote("twitch_s", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_eyebrow()
-	set name = "◦ " + EMOTE_HUMAN_EYEBROW + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_eyebrow, "◦ Приподнять бровь", "Эмоции")
 	emote("eyebrow", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_gurgle()
-	set name = "◦ " + EMOTE_CARBON_GURGLE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_gurgle, "◦ Побулькать", "Эмоции")
 	emote("gurgle", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_hug()
-	set name = "◦ " + EMOTE_HUMAN_HUG + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_hug, "◦ Обнимать", "Эмоции")
 	emote("hug", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_inhale()
-	set name = "◦ " + EMOTE_CARBON_INHALE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_inhale, "◦ Вдохнуть", "Эмоции")
 	emote("inhale", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_airguitar()
-	set name = "◦ " + EMOTE_HUMAN_AIRGUITAR + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_airguitar, "◦ Воображаемая гитара", "Эмоции")
 	emote("airguitar", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_burp()
-	set name = "◦ " + EMOTE_BURP + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_burp, "◦ Рыгнуть", "Эмоции")
 	emote("burp", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_mumble()
-	set name = "◦ " + EMOTE_HUMAN_MUMBLE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_mumble, "◦ Бормотать", "Эмоции")
 	emote("mumble", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_raise()
-	set name = "◦ " + EMOTE_HUMAN_RAISE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_raise, "◦ Поднять руку", "Эмоции")
 	emote("raise", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_pale()
-	set name = "◦ " + EMOTE_HUMAN_PALE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_pale, "◦ Бледнеть", "Эмоции")
 	emote("pale", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_pout()
-	set name = "◦ " + EMOTE_POUT + " "
-	set category = "Эмоции"
-	emote ("pout", intentional = TRUE)
+GAME_VERB(/mob/living/carbon/human, emote_pout, "◦ Надуть губы", "Эмоции")
+	emote("pout", intentional = TRUE)
 
-/mob/living/carbon/human/proc/emote_flap()
-	set name = "◦ " + EMOTE_HUMAN_FLAP + " "
-	set category = "Эмоции"
+GAME_VERB_PROC(/mob/living/carbon/human, emote_flap, "◦ Махать крыльями", "Эмоции")
 	emote("flap", intentional = TRUE)
 
-/mob/living/carbon/human/proc/emote_aflap()
-	set name = "◦ " + EMOTE_HUMAN_AFLAP + " "
-	set category = "Эмоции"
+GAME_VERB_PROC(/mob/living/carbon/human, emote_aflap, "◦ Махать крыльями агрессивно", "Эмоции")
 	emote("aflap", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_scowl()
-	set name = "◦ " + EMOTE_CARBON_SCOWL + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_scowl, "◦ Хмуриться", "Эмоции")
 	emote("scowl", intentional = TRUE)
 
-/mob/living/carbon/human/proc/emote_wag()
-	set name = "◦ " + EMOTE_HUMAN_WAG + " "
-	set category = "Эмоции"
+GAME_VERB_PROC(/mob/living/carbon/human, emote_wag, "◦ Махать хвостом", "Эмоции")
 	emote("wag", intentional = TRUE)
 
 /// Racial Emotes ///
-/mob/living/carbon/human/proc/emote_ping()
-	set name = "< " + EMOTE_SILICON_PING + " >"
-	set category = "Эмоции"
+GAME_VERB_PROC(/mob/living/carbon/human, emote_ping, "< Звенеть >", "Эмоции")
 	emote("ping", intentional = TRUE)
 
-/mob/living/carbon/human/proc/emote_beep()
-	set name = "< " + EMOTE_SILICON_BEEP + " >"
-	set category = "Эмоции"
+GAME_VERB_PROC(/mob/living/carbon/human, emote_beep, "< Бипнуть >", "Эмоции")
 	emote("beep", intentional = TRUE)
 
-/mob/living/carbon/human/proc/emote_buzz()
-	set name = "< " + EMOTE_SILICON_BUZZ + " >"
-	set category = "Эмоции"
+GAME_VERB_PROC(/mob/living/carbon/human, emote_buzz, "< Жужжать >", "Эмоции")
 	emote("buzz", intentional = TRUE)
 
-/mob/living/carbon/human/proc/emote_buzz2()
-	set name = "< " + EMOTE_SILICON_BUZZ2 + " >"
-	set category = "Эмоции"
+GAME_VERB_PROC(/mob/living/carbon/human, emote_buzz2, "< Жужжать раздражённо >", "Эмоции")
 	emote("buzz2", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_wave()
-	set name = "◦ " + EMOTE_CARBON_WAVE + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_wave, "◦ Махать", "Эмоции")
 	emote("wave", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_whimper()
-	set name = "◦ " + EMOTE_WHIMPER + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_whimper, "◦ Хныкать", "Эмоции")
 	emote("whimper", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_look()
-	set name = "◦ " + EMOTE_LOOK + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_look, "◦ Посмотреть", "Эмоции")
 	emote("look", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_nod()
-	set name = "◦ " + EMOTE_HUMAN_NOD + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_nod, "◦ Кивнуть", "Эмоции")
 	emote("nod", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_wink()
-	set name = "◦ " + EMOTE_HUMAN_WINK + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_wink, "◦ Подмигнуть", "Эмоции")
 	emote("wink", intentional = TRUE)
 
-/mob/living/carbon/human/verb/emote_shiver()
-	set name = "◦ " + EMOTE_SHIVER + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human, emote_shiver, "◦ Дрожать", "Эмоции")
 	emote("shiver", intentional = TRUE)
 
+GAME_VERB(/mob/living/carbon/human, emote_evil_laugh, "▷ Смеяться злорадно", "Эмоции")
+	emote("laughevil", intentional = TRUE)
+
 // MARK: Tajaran emotes
-/mob/living/carbon/human/species/tajaran/proc/emote_meow()
-	set name = "▷ " + EMOTE_HUMAN_MEOW + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human/species/tajaran, emote_meow, "▷ Мяукнуть", "Эмоции")
 	emote("meow_t", intentional = TRUE)
 
-/mob/living/carbon/human/species/tajaran/proc/emote_mow()
-	set name = "▷ " + EMOTE_HUMAN_MOW + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human/species/tajaran, emote_mow, "▷ Мяукнуть раздражённо", "Эмоции")
 	emote("mow", intentional = TRUE)
 
-/mob/living/carbon/human/species/tajaran/proc/emote_purr()
-	set name = "▷ " + EMOTE_HUMAN_PURR + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human/species/tajaran, emote_purr, "▷ Мурчать", "Эмоции")
 	emote("purr_t", intentional = TRUE)
 
-/mob/living/carbon/human/species/tajaran/proc/emote_pur()
-	set name = "▷ " + EMOTE_HUMAN_PUR + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human/species/tajaran, emote_pur, "▷ Мурчать кратко", "Эмоции")
 	emote("pur", intentional = TRUE)
 
-/mob/living/carbon/human/species/tajaran/proc/emote_purrr()
-	set name = "▷ " + EMOTE_HUMAN_PURRR + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human/species/tajaran, emote_purrr, "▷ Мурчать дольше", "Эмоции")
 	emote("purrr", intentional = TRUE)
 
-/mob/living/carbon/human/species/tajaran/proc/emote_hiss_t()
-	set name = "▷ " + EMOTE_HUMAN_HISST + " "
-	set category = "Эмоции"
+GAME_VERB(/mob/living/carbon/human/species/tajaran, emote_hiss, "▷ Шипеть", "Эмоции")
+	emote("hiss", intentional = TRUE)
+
+GAME_VERB(/mob/living/carbon/human/species/tajaran, emote_hiss_t, "▷ Шипеть", "Эмоции")
 	emote("hiss_t", intentional = TRUE)
+
+// MARK: Vulpkanin emotes
+GAME_VERB_PROC(/mob/living/carbon/human/species/vulpkanin, emote_howl, "▷ Выть", "Эмоции")
+	emote("howl", intentional = TRUE)
+
+GAME_VERB_PROC(/mob/living/carbon/human/species/vulpkanin, emote_growl, "▷ Рычать", "Эмоции")
+	emote("growl", intentional = TRUE)
+
+GAME_VERB_PROC(/mob/living/carbon/human/species/vulpkanin, emote_purr, "▷ Урчать", "Эмоции")
+	emote("purr", intentional = TRUE)
+
+GAME_VERB_PROC(/mob/living/carbon/human/species/vulpkanin, emote_bark, "▷ Гавкнуть", "Эмоции")
+	emote("bark", intentional = TRUE)
+
+GAME_VERB_PROC(/mob/living/carbon/human/species/vulpkanin, emote_wbark, "▷ Дважды гавкнуть", "Эмоции")
+	emote("wbark", intentional = TRUE)
+
+// MARK: Moth emotes
+GAME_VERB(/mob/living/carbon/human/species/moth, emote_wing, "○ Расправить крылья", "Эмоции")
+	emote("wing", intentional = TRUE)

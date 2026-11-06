@@ -1,6 +1,6 @@
 /obj/structure/window/fulltile/voidwalker
 	name = "void-smeared window"
-	desc = "This window darkens the view of the other side, to the point that nothing but the glow of the stars can be made out. Nothing reflects in the pane."
+	desc = "Это окно затемняет вид на другую сторону настолько сильно, что видны лишь отблески звёзд. В стекле ничего не отражается."
 	max_integrity = 75 //Doesn't have the damage deflection of a reinforced window
 	/// Particle effect for making the window look spooky.
 	var/obj/effect/abstract/particle_holder/spooky_particles
@@ -26,7 +26,7 @@
 	velocity = list(0, 0.2, 0)
 	position = generator(GEN_BOX, list(-8,-16,0), list(8,16,0), NORMAL_RAND)
 	drift = generator(GEN_BOX, list(-8,-16,0), list(8,16,0), NORMAL_RAND)
-	spin = generator(GEN_NUM, list(-5,5), NORMAL_RAND)
+	spin = generator(GEN_NUM, -5, 5, NORMAL_RAND)
 	friction = 0.5
 	gravity = list(0, 0)
 	grow = 0.05

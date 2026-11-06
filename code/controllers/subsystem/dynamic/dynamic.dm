@@ -1,6 +1,6 @@
 SUBSYSTEM_DEF(dynamic)
 	name = "Dynamic"
-	flags = SS_NO_INIT
+	ss_flags = SS_NO_INIT
 	wait = 5 MINUTES
 
 	// These vars just exist for admins interfacing with dynamic
@@ -60,7 +60,7 @@ SUBSYSTEM_DEF(dynamic)
 	var/antag_events_enabled = TRUE
 
 /datum/controller/subsystem/dynamic/fire(resumed)
-	if(!COOLDOWN_FINISHED(src, midround_cooldown) || EMERGENCY_PAST_POINT_OF_NO_RETURN)
+	if(!COOLDOWN_FINISHED(src, midround_cooldown) || !EMERGENCY_IDLE_OR_RECALLED)
 		return
 
 	if(COOLDOWN_FINISHED(src, light_ruleset_start))
@@ -140,7 +140,8 @@ SUBSYSTEM_DEF(dynamic)
 	// put rulesets in the queue (if admins didn't)
 	// this will even handle the case in which the tier wants 0 roundstart rulesets
 	if(!length(queued_rulesets))
-		queued_rulesets += pick_roundstart_rulesets(antag_candidates)
+		for(var/ruleset in pick_roundstart_rulesets(antag_candidates))
+			queue_ruleset(ruleset)
 	// we got what we needed, reset so we can do real job selection later
 	// reset only happens AFTER roundstart selection so we can verify stuff like "can we get 3 heads of staff for revs?"
 	SSjob.reset_occupations()
@@ -149,8 +150,8 @@ SUBSYSTEM_DEF(dynamic)
 	for(var/datum/dynamic_ruleset/roundstart/ruleset in queued_rulesets)
 		// NOTE: !! THIS CAN SLEEP !!
 		if(!ruleset.prepare_execution( num_real_players, antag_candidates ))
-			log_dynamic("Roundstart: Selected ruleset [ruleset.config_tag], but preparation failed!")
-			queued_rulesets -= ruleset
+			log_dynamic("Roundstart: Selected ruleset [ruleset.config_tag], but preparation failed! [ruleset.log_data]")
+			unqueue_ruleset(ruleset)
 			qdel(ruleset)
 			continue
 
@@ -278,8 +279,9 @@ SUBSYSTEM_DEF(dynamic)
 		if(picked_ruleset.solo)
 			log_dynamic("Roundstart: Ruleset is a solo ruleset. Cancelling other picks.")
 			QDEL_LIST(picked_rulesets)
+			total_weight -= rulesets_weighted[picked_ruleset] // BANDASTATION ADDITION: Repeatable rulesets fix
 			rulesets_weighted -= picked_ruleset
-			picked_rulesets += picked_ruleset
+			picked_rulesets += picked_ruleset.type
 			break
 		if(current_tier.tier != DYNAMIC_TIER_HIGH && (picked_ruleset.ruleset_flags & RULESET_HIGH_IMPACT))
 			for(var/datum/dynamic_ruleset/roundstart/high_impact_ruleset as anything in rulesets_weighted)
@@ -288,14 +290,15 @@ SUBSYSTEM_DEF(dynamic)
 				total_weight -= rulesets_weighted[high_impact_ruleset]
 				rulesets_weighted -= high_impact_ruleset
 		if(!picked_ruleset.repeatable)
+			total_weight -= rulesets_weighted[picked_ruleset] // BANDASTATION ADDITION: Repeatable rulesets fix
 			rulesets_weighted -= picked_ruleset
-			picked_rulesets += picked_ruleset
+			picked_rulesets += picked_ruleset.type
 			continue
 
 		rulesets_weighted[picked_ruleset] -= picked_ruleset.repeatable_weight_decrease
 		total_weight -= picked_ruleset.repeatable_weight_decrease
-		// Rulesets are not singletons. We need to to make a new one
-		picked_rulesets += new picked_ruleset.type(dynamic_config)
+		picked_rulesets += picked_ruleset.type
+		// Rulesets are not singletons. Queue_ruleset() will make them one.
 
 	// clean up unused rulesets
 	QDEL_LIST(rulesets_weighted)
@@ -368,7 +371,7 @@ SUBSYSTEM_DEF(dynamic)
 
 	// NOTE: !! THIS CAN SLEEP !!
 	if(!picked_ruleset.prepare_execution(player_count, picked_ruleset.collect_candidates()))
-		log_dynamic("Midround ([range]): Selected ruleset [picked_ruleset.config_tag], but preparation failed!")
+		log_dynamic("Midround ([range]): Selected ruleset [picked_ruleset.config_tag], but preparation failed! [picked_ruleset.log_data]")
 		QDEL_LIST(rulesets_weighted)
 		return FALSE
 	// Run the thing
@@ -430,8 +433,8 @@ SUBSYSTEM_DEF(dynamic)
 	// NOTE: !! THIS CAN SLEEP !!
 	if(!running.prepare_execution(get_active_player_count(afk_check = TRUE), running.collect_candidates()))
 		if(alert_admins_on_fail)
-			message_admins("Midround (forced): Forced ruleset [running.config_tag], but preparation failed!")
-		log_dynamic("Midround (forced): Forced ruleset [running.config_tag], but preparation failed!")
+			message_admins("Midround (forced): Forced ruleset [running.config_tag], but preparation failed! [running.log_data]")
+		log_dynamic("Midround (forced): Forced ruleset [running.config_tag], but preparation failed! [running.log_data]")
 		qdel(running)
 		return FALSE
 
@@ -459,7 +462,7 @@ SUBSYSTEM_DEF(dynamic)
 			continue
 		message_admins("Latejoin (forced): [ADMIN_LOOKUPFLW(latejoiner)] has been selected for [queued.config_tag].")
 		log_dynamic("Latejoin (forced): [key_name(latejoiner)] has been selected for [queued.config_tag].")
-		queued_rulesets -= queued
+		unqueue_ruleset(queued)
 		executed_rulesets += queued
 		queued.execute()
 		return
@@ -493,7 +496,7 @@ SUBSYSTEM_DEF(dynamic)
 		return FALSE
 	// NOTE: !! THIS CAN SLEEP !!
 	if(!picked_ruleset.prepare_execution(player_count, list(latejoiner)))
-		log_dynamic("Latejoin: Selected ruleset [picked_ruleset.name] for [key_name(latejoiner)], but preparation failed! Latejoin chance has increased.")
+		log_dynamic("Latejoin: Selected ruleset [picked_ruleset.name] for [key_name(latejoiner)], but preparation failed! Latejoin chance has increased. [picked_ruleset.log_data]")
 		QDEL_LIST(rulesets_weighted)
 		failed_latejoins++
 		return FALSE
@@ -538,6 +541,15 @@ SUBSYSTEM_DEF(dynamic)
 		CRASH("queue_ruleset() was called with an invalid type: [ruleset_typepath]")
 
 	queued_rulesets += new ruleset_typepath(dynamic_config)
+
+/**
+ * Unqueues a ruleset because it has executed
+ */
+/datum/controller/subsystem/dynamic/proc/unqueue_ruleset(datum/dynamic_ruleset/ruleset)
+	if(!istype(ruleset, /datum/dynamic_ruleset/latejoin) && !istype(ruleset, /datum/dynamic_ruleset/roundstart))
+		CRASH("queue_ruleset() was called with an invalid type: [ruleset.type]")
+
+	queued_rulesets -= ruleset
 
 /**
  * Get the cooldown between attempts to spawn a ruleset of the given type
@@ -638,7 +650,7 @@ SUBSYSTEM_DEF(dynamic)
 		var/datum/dynamic_ruleset/to_remove = locate(href_list["admin_dequeue"]) in queued_rulesets
 		if(!istype(to_remove))
 			return
-		queued_rulesets -= to_remove
+		unqueue_ruleset(to_remove)
 		qdel(to_remove)
 		message_admins(span_adminnotice("[key_name_admin(usr)] [to_remove.config_tag] from the latejoin queue."))
 		log_admin("[key_name(usr)] removed [to_remove.config_tag] from the latejoin queue.")
@@ -718,7 +730,7 @@ SUBSYSTEM_DEF(dynamic)
 			data += "\]\n"
 		else
 			data += "blacklisted_roles = \[\]\n"
-		if(!istype(ruleset, /datum/dynamic_ruleset/latejoin) && !istype(ruleset, /datum/dynamic_ruleset/midround/from_living))
+		if(!istype(ruleset, /datum/dynamic_ruleset/latejoin))
 			if(islist(ruleset.min_antag_cap))
 				for(var/ruleset_min_antag_cap in ruleset.min_antag_cap)
 					data += "min_antag_cap.[ruleset_min_antag_cap] = [ruleset.min_antag_cap[ruleset_min_antag_cap]]\n"

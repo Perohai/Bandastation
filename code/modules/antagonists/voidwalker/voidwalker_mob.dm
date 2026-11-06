@@ -4,14 +4,14 @@
 /// Voidwalker mob to void all over the place
 /mob/living/basic/voidwalker
 	name = "voidwalker"
-	desc = "A glass-like entity from the void between stars. You probably shouldn't stare."
+	desc = "Стеклообразное существо из пустоты между звездами. Наверное, вам не стоит так пристально смотреть."
 	icon = 'icons/mob/simple/voidwalker.dmi'
 	icon_state = "voidwalker"
 
 	mob_biotypes = MOB_SPECIAL
 	maxHealth = 150
 	health = 150
-	damage_coeff = list(BRUTE = 1, BURN = 0.66, TOX = 1, STAMINA = 1, OXY = 0)
+	physiology = list(BURN = 0.66, OXY = 0)
 
 	pressure_resistance = 200
 	combat_mode = TRUE
@@ -39,6 +39,11 @@
 	hud_type = /datum/hud/dextrous/voidwalker
 	hud_possible = list(ANTAG_HUD)
 	sight = SEE_TURFS | SEE_MOBS
+
+	//purplish tint night vision because the voidwalker is purple
+	lighting_cutoff_red = 30
+	lighting_cutoff_green = 15
+	lighting_cutoff_blue = 30
 
 	/// Color of our regen outline
 	var/regenerate_colour = COLOR_GRAY
@@ -83,6 +88,7 @@
 	ADD_TRAIT(src, TRAIT_FREE_HYPERSPACE_MOVEMENT, INNATE_TRAIT) //Need to set before init cause if we init in hyperspace we get dragged before the trait can be added
 	. = ..()
 
+	status_flags &= ~CANSTUN
 	AddElement(/datum/element/simple_flying)
 	AddElement(/datum/element/glass_pacifist)
 
@@ -103,7 +109,7 @@
 	charge.Grant(src)
 
 	// Glass passing is handled by the glass passer component
-	passtable_on(src, type)
+	ADD_TRAIT(src, TRAIT_PASSWINDOW, INNATE_TRAIT)
 
 	// Voidwalker lore is that radio's actually attracted them, so they should be able to listen to it
 	var/obj/item/radio/internal_radio = new /obj/item/radio(src)
@@ -138,7 +144,7 @@
 /mob/living/basic/voidwalker/early_melee_attack(atom/target, list/modifiers, ignore_cooldown)
 	. = ..()
 
-	if(!. || !can_do_abductions)
+	if(. || !can_do_abductions)
 		return
 
 	if(ishuman(target))
@@ -146,13 +152,16 @@
 
 		var/should_attack = try_kidnap(hewmon)
 
+		// Marks the victim with nodeath
+		hewmon.apply_status_effect(/datum/status_effect/void_chomped)
+
 		if(!should_attack)
-			return FALSE
+			return BASIC_MOB_CONTINUE_ATTACK_CHAIN
 
 		if(hewmon.stat == HARD_CRIT && !hewmon.has_trauma_type(/datum/brain_trauma/voided))
-			hewmon.balloon_alert(src, "is in crit!")
+			hewmon.balloon_alert(src.declent_ru(NOMINATIVE), "в критическом состоянии!")
 			hewmon.Stun(5 SECONDS) // blocks some crit movement mechanics from a bunch of sources
-			return FALSE
+			return BASIC_MOB_END_ATTACK_CHAIN_COOLDOWN
 
 	// left click
 	if(LAZYACCESS(modifiers, LEFT_CLICK))
@@ -163,9 +172,9 @@
 		melee_damage_type = rclick_damage_type
 
 		if(!istype(target, /turf/closed/wall))
-			return
+			return BASIC_MOB_CONTINUE_ATTACK_CHAIN
 		INVOKE_ASYNC(src, PROC_REF(try_convert_wall), target)
-	return TRUE
+	return BASIC_MOB_CONTINUE_ATTACK_CHAIN
 
 /// Called by the regenerator component so we only regen in space
 /mob/living/basic/voidwalker/proc/can_regen()
@@ -207,20 +216,20 @@
 /// Start the kidnap interactions, including surprises for those who are already voided
 /mob/living/basic/voidwalker/proc/try_kidnap(mob/living/carbon/human/victim)
 	if(victim.has_trauma_type(/datum/brain_trauma/voided))
-		victim.balloon_alert(src, "already voided!")
+		victim.balloon_alert(src.declent_ru(NOMINATIVE), "уже опустошен!")
 		new /obj/effect/temp_visual/circle_wave/unsettle(get_turf(victim))
 		victim.SetSleeping(30 SECONDS)
 		return FALSE
 
 	if(victim.stat == DEAD)
-		victim.balloon_alert(src, "is dead!")
+		victim.balloon_alert(src.declent_ru(NOMINATIVE), "мёртв!")
 		return FALSE
 
-	if(victim.stat == CONSCIOUS) //we're still beating them up!!
+	if(!IS_UNCONSCIOUS_OR_CRIT(victim)) //we're still beating them up!!
 		return TRUE
 
 	if(!istype(get_turf(victim), home_turf) && !(locate(kidnapping_decal) in get_turf(victim)))
-		victim.balloon_alert(src, "not in space!")
+		victim.balloon_alert(src.declent_ru(NOMINATIVE), "не в космосе!")
 		return FALSE
 
 	if(!kidnapping)
@@ -259,7 +268,7 @@
 		CRASH("[victim] was instantly dumped after being voidwalker kidnapped due to a missing landmark!")
 	else
 		victim.heal_and_revive(90)
-		victim.adjustOxyLoss(-100, FALSE)
+		victim.adjust_oxy_loss(-100, FALSE)
 
 		conversions_remaining++
 
@@ -296,11 +305,11 @@
 /// Attempt to convert a wall into passable voidwalker windows
 /mob/living/basic/voidwalker/proc/try_convert_wall(turf/closed/wall/our_wall)
 	if(!conversions_remaining)
-		balloon_alert(src, "need more kidnaps!")
+		balloon_alert(src.declent_ru(NOMINATIVE), "нужны ещё похищения!")
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 
 	if(!COOLDOWN_FINISHED(src, wall_conversion))
-		balloon_alert(src, "must wait [DisplayTimeText(COOLDOWN_TIMELEFT(src, wall_conversion))]!")
+		balloon_alert(src.declent_ru(NOMINATIVE), "нужно подождать [DisplayTimeText(COOLDOWN_TIMELEFT(src, wall_conversion))]!")
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 
 	if(!check_wall_validity(our_wall, src, silent = FALSE))
@@ -310,8 +319,8 @@
 
 	var/obj/particles = new /obj/effect/abstract/particle_holder (our_wall, /particles/void_wall)
 
-	balloon_alert(src, "opening window...")
-	if(!do_after(src, 8 SECONDS, our_wall, hidden = TRUE))
+	balloon_alert(src.declent_ru(NOMINATIVE), "открывает окно...")
+	if(!do_after(src, 8 SECONDS, our_wall, cog_icon = null))
 		qdel(particles)
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 	if(!conversions_remaining)
@@ -340,7 +349,7 @@
 /mob/living/basic/voidwalker/proc/check_wall_validity(turf/closed/wall/wall_to_check, silent = TRUE)
 	if(wall_to_check.hardness < WALL_CONVERT_STRENGTH)
 		if(!silent)
-			balloon_alert(src, "too strong!")
+			balloon_alert(src.declent_ru(NOMINATIVE), "слишком крепкая!")
 		return FALSE
 	return TRUE
 

@@ -10,6 +10,14 @@
 	. = ..()
 
 	setup_shuttle_events()
+	RegisterSignal(SSsecurity_level, COMSIG_SECURITY_LEVEL_CHANGED, PROC_REF(on_security_level_changed))
+
+/obj/docking_port/mobile/emergency/proc/on_security_level_changed(datum/controller/subsystem/security_level/source)
+	SIGNAL_HANDLER
+	if(src != SSshuttle.emergency)
+		return
+	if(mode == SHUTTLE_CALL || mode == SHUTTLE_RECALL)
+		alert_coeff_change(source.current_security_level.shuttle_call_time_mod)
 
 /obj/docking_port/mobile/emergency/canDock(obj/docking_port/stationary/S)
 	return SHUTTLE_CAN_DOCK //If the emergency shuttle can't move, the whole game breaks, so it will force itself to land even if it has to crush a few departments in the process
@@ -55,19 +63,20 @@
 		color_override = "orange",
 		)
 
-/obj/docking_port/mobile/emergency/cancel(area/signalOrigin)
+/// This proc will assume you have done all of the necessary checks to see if the shuttle can be recalled, it will always recall when invoked.
+/// signal_origin is an optional parameter that will log where the recall signal was sent from
+/obj/docking_port/mobile/emergency/cancel(area/signal_origin = null)
 	if(mode != SHUTTLE_CALL)
-		return
-	if(SSshuttle.emergency_no_recall)
 		return
 
 	invertTimer()
 	mode = SHUTTLE_RECALL
 
 	if(prob(70))
-		SSshuttle.emergency_last_call_loc = signalOrigin
+		SSshuttle.emergency_last_call_loc = signal_origin
 	else
 		SSshuttle.emergency_last_call_loc = null
+
 	priority_announce(
 		text = "Эвакуационный шаттл был отозван.[SSshuttle.emergency_last_call_loc ? " Сигнал отзыва шаттла отслежен. Результаты можно просмотреть на любой консоли коммуникаций." : "" ]",
 		title = "Эвакуационный шаттл отозван",
@@ -233,7 +242,7 @@
 					color_override = "orange",
 				)
 				INVOKE_ASYNC(SSticker, TYPE_PROC_REF(/datum/controller/subsystem/ticker, poll_hearts))
-				INVOKE_ASYNC(SSvote, TYPE_PROC_REF(/datum/controller/subsystem/vote, initiate_vote), /datum/vote/map_vote, vote_initiator_name = "Map Rotation", forced = TRUE)
+				// INVOKE_ASYNC(SSvote, TYPE_PROC_REF(/datum/controller/subsystem/vote, initiate_vote), /datum/vote/map_vote, vote_initiator_name = "Map Rotation", forced = TRUE) // BANDASTATION REMOVE - move to roundend
 
 				if(!is_reserved_level(z))
 					CRASH("Emergency shuttle did not move to transit z-level!")
@@ -273,7 +282,7 @@
 				// now move the actual emergency shuttle to centcom
 				// unless the shuttle is "hijacked"
 				var/destination_dock = "emergency_away"
-				if(is_hijacked() || elimination_hijack())
+				if(GLOB.revolution_handler?.result == REVOLUTION_VICTORY || is_hijacked() || elimination_hijack())  // SS220 BandaStation EDIT - Shuttle goes to SyndieBase if Revs win
 					// just double check
 					SSmapping.lazy_load_template(LAZY_TEMPLATE_KEY_NUKIEBASE)
 					destination_dock = "emergency_syndicate"

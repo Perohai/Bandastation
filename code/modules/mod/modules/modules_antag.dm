@@ -2,7 +2,7 @@
 
 ///Energy Shield - Gives you a rechargeable energy shield that nullifies attacks.
 /obj/item/mod/module/energy_shield
-	name = "MOD energy shield module"
+	name = "\improper MOD energy shield module"
 	desc = "A personal, protective forcefield typically seen in military applications. \
 		This advanced deflector shield is essentially a scaled down version of those seen on starships, \
 		and the power cost can be an easy indicator of this. However, it is capable of blocking nearly any incoming attack, \
@@ -29,6 +29,8 @@
 	var/shield_icon = "shield-red"
 	/// Charges the shield should start with.
 	var/charges
+	/// Whether or not we allow this shield to block overwhelming attacks, such as from mechs.
+	var/block_overwhelming_attacks = FALSE
 
 /obj/item/mod/module/energy_shield/Initialize(mapload)
 	. = ..()
@@ -43,6 +45,7 @@
 		charge_recovery = charge_recovery, \
 		lose_multiple_charges = lose_multiple_charges, \
 		starting_charges = charges, \
+		can_block_overwhelming = block_overwhelming_attacks, \
 		shield_icon_file = shield_icon_file, \
 		shield_icon = shield_icon)
 	RegisterSignal(mod.wearer, COMSIG_LIVING_CHECK_BLOCK, PROC_REF(shield_reaction))
@@ -64,12 +67,12 @@
 	SIGNAL_HANDLER
 
 	if(mod.hit_reaction(owner, hitby, attack_text, 0, damage, attack_type))
-		drain_power(use_energy_cost)
+		drain_power(use_energy_cost + use_energy_cost * (attack_type == OVERWHELMING_ATTACK ? (damage/100) : 0))
 		return SUCCESSFUL_BLOCK
 	return NONE
 
 /obj/item/mod/module/energy_shield/wizard
-	name = "MOD battlemage shield module"
+	name = "\improper MOD battlemage shield module"
 	desc = "The caster wielding this spell gains a visible barrier around them, channeling arcane power through \
 		specialized runes engraved onto the surface of the suit to generate a wall of force. \
 		This shield can perfectly nullify attacks ranging from high-caliber rifles to magic missiles, \
@@ -78,13 +81,16 @@
 	idle_power_cost = 0 //magic
 	use_energy_cost = 0 //magic too
 	max_charges = 5
+	recharge_start_delay = 20 SECONDS
+	charge_increment_delay = 3 SECONDS
+	block_overwhelming_attacks = TRUE // It's magic, bitch
 	shield_icon_file = 'icons/effects/magic.dmi'
 	shield_icon = "mageshield"
 	required_slots = list()
 
 ///Magic Nullifier - Protects you from magic.
 /obj/item/mod/module/anti_magic
-	name = "MOD magic nullifier module"
+	name = "\improper MOD magic nullifier module"
 	desc = "A series of obsidian rods installed into critical points around the suit, \
 		vibrated at a certain low frequency to enable them to resonate. \
 		This creates a low-range, yet strong, magic nullification field around the user, \
@@ -102,7 +108,7 @@
 	mod.wearer.remove_traits(list(TRAIT_ANTIMAGIC, TRAIT_HOLY), REF(src))
 
 /obj/item/mod/module/anti_magic/wizard
-	name = "MOD magic neutralizer module"
+	name = "\improper MOD magic neutralizer module"
 	desc = "The caster wielding this spell gains an invisible barrier around them, channeling arcane power through \
 		specialized runes engraved onto the surface of the suit to generate anti-magic field. \
 		The field will neutralize all magic that comes into contact with the user. \
@@ -118,7 +124,7 @@
 
 ///Insignia - Gives you a skin specific stripe.
 /obj/item/mod/module/insignia
-	name = "MOD insignia module"
+	name = "\improper MOD insignia module"
 	desc = "Despite the existence of IFF systems, radio communique, and modern methods of deductive reasoning involving \
 		the wearer's own eyes, colorful paint jobs remain a popular way for different factions in the galaxy to display who \
 		they are. This system utilizes a series of tiny moving paint sprayers to both apply and remove different \
@@ -161,7 +167,7 @@
 
 ///Anti Slip - Prevents you from slipping on water.
 /obj/item/mod/module/noslip
-	name = "MOD anti slip module"
+	name = "\improper MOD anti slip module"
 	desc = "These are a modified variant of standard magnetic boots, utilizing piezoelectric crystals on the soles. \
 		The two plates on the bottom of the boots automatically extend and magnetize as the user steps; \
 		a pull that's too weak to offer them the ability to affix to a hull, but just strong enough to \
@@ -197,7 +203,7 @@
 
 ///Flamethrower - Launches fire across the area.
 /obj/item/mod/module/flamethrower
-	name = "MOD flamethrower module"
+	name = "\improper MOD flamethrower module"
 	desc = "A custom-manufactured flamethrower, used to burn through your path. Burn well."
 	icon_state = "flamethrower"
 	module_type = MODULE_ACTIVE
@@ -222,7 +228,7 @@
 
 ///Power kick - Lets the user launch themselves at someone to kick them.
 /obj/item/mod/module/power_kick
-	name = "MOD power kick module"
+	name = "\improper MOD power kick module"
 	desc = "This module uses high-power myomer to generate an incredible amount of energy, transferred into the power of a kick."
 	icon_state = "power_kick"
 	module_type = MODULE_ACTIVE
@@ -283,14 +289,14 @@
 
 ///Chameleon - lets the suit disguise as any item that would fit on that slot.
 /obj/item/mod/module/chameleon
-	name = "MOD chameleon module"
+	name = "\improper MOD chameleon module"
 	desc = "A module using chameleon technology to disguise the suit as another object."
 	icon_state = "chameleon"
 	module_type = MODULE_USABLE
 	complexity = 2
 	incompatible_modules = list(/obj/item/mod/module/chameleon)
 	cooldown_time = 0.5 SECONDS
-	allow_flags = MODULE_ALLOW_INACTIVE
+	allow_flags = list(MODULE_ALLOW_INACTIVE|MODULE_ALLOW_UNWORN)
 	/// A list of all the items the suit can disguise as.
 	var/list/possible_disguises = list()
 	/// The path of the item we're disguised as.
@@ -312,17 +318,17 @@
 		return_look()
 	possible_disguises = null
 
-/obj/item/mod/module/chameleon/used()
+/obj/item/mod/module/chameleon/used(mob/activator)
 	if(mod.active || mod.activating)
-		balloon_alert(mod.wearer, "unit active!")
+		balloon_alert(activator, "unit active!")
 		return FALSE
 	return ..()
 
-/obj/item/mod/module/chameleon/on_use()
+/obj/item/mod/module/chameleon/on_use(mob/activator)
 	if(current_disguise)
 		return_look()
 		return
-	var/picked_name = tgui_input_list(mod.wearer, "Select look to change into", "Chameleon Settings", possible_disguises)
+	var/picked_name = tgui_input_list(activator, "Select look to change into", "Chameleon Settings", possible_disguises)
 	if(!possible_disguises[picked_name] || mod.active || mod.activating)
 		return
 	current_disguise = possible_disguises[picked_name]
@@ -359,7 +365,7 @@
 
 ///Plate Compression - Compresses the suit to normal size
 /obj/item/mod/module/plate_compression
-	name = "MOD plate compression module"
+	name = "\improper MOD plate compression module"
 	desc = "A module that keeps the suit in a very tightly fit state, lowering the overall size. \
 		Due to the pressure on all the parts, typical storage modules do not fit."
 	icon_state = "plate_compression"
@@ -384,10 +390,10 @@
 	var/datum/storage/holding_storage = mod.loc.atom_storage
 	if(!holding_storage || holding_storage.max_specific_storage >= mod.w_class)
 		return
-	mod.forceMove(drop_location())
+	mod.forceMove(mod.drop_location())
 
 /obj/item/mod/module/demoralizer
-	name = "MOD psi-echo demoralizer module"
+	name = "\improper MOD psi-echo demoralizer module"
 	desc = "One incredibly morbid member of the RND team at Roseus Galactic posed a question to her colleagues. \
 	'I desire the power to scar my enemies mentally as I murder them. Who will stop me implementing this in our next project?' \
 	And thus the Psi-Echo Demoralizer Device was reluctantly invented. The future of psychological warfare, today!"
@@ -406,7 +412,7 @@
 	QDEL_NULL(demoralizer)
 
 /obj/item/mod/module/infiltrator
-	name = "MOD infiltration core programs module"
+	name = "\improper MOD infiltration core programs module"
 	desc = "The primary stealth systems operating within the suit. Utilizing electromagnetic signals, \
 		the wearer simply cannot be observed closely, or heard clearly by those around them.\
 		It also contains some dampening systems to help protect a user from blows to the head."
@@ -417,7 +423,7 @@
 	incompatible_modules = list(/obj/item/mod/module/infiltrator, /obj/item/mod/module/welding/syndicate, /obj/item/mod/module/welding, /obj/item/mod/module/headprotector)
 	required_slots = list(ITEM_SLOT_FEET, ITEM_SLOT_HEAD, ITEM_SLOT_OCLOTHING)
 	/// List of traits added when the suit is activated
-	var/list/traits_to_add = list(TRAIT_SILENT_FOOTSTEPS, TRAIT_UNKNOWN, TRAIT_HEAD_INJURY_BLOCKED)
+	var/list/traits_to_add = list(TRAIT_SILENT_FOOTSTEPS, TRAIT_UNKNOWN_APPEARANCE, TRAIT_UNKNOWN_VOICE, TRAIT_HEAD_INJURY_BLOCKED)
 
 /obj/item/mod/module/infiltrator/on_install()
 	. = ..()
@@ -456,7 +462,7 @@
 
 ///Medbeam - Medbeam but built into a modsuit
 /obj/item/mod/module/medbeam
-	name = "MOD medical beamgun module"
+	name = "\improper MOD medical beamgun module"
 	desc = "A wrist mounted variant of the medbeam gun, allowing the user to heal their allies without the risk of dropping it."
 	icon_state = "chronogun"
 	module_type = MODULE_ACTIVE
@@ -469,10 +475,10 @@
 	required_slots = list(ITEM_SLOT_BACK)
 
 /obj/item/gun/medbeam/mod
-	name = "MOD medbeam"
+	name = "\improper MOD medbeam"
 
 /obj/item/mod/module/stealth/wraith
-	name = "MOD Wraith Cloaking Module"
+	name = "\improper MOD Wraith Cloaking Module"
 	desc = "A more destructive adaptation of the stealth module. Incompatible with armor modules"
 	icon_state = "cloak_traitor"
 	stealth_alpha = 30
@@ -498,16 +504,16 @@
 	var/list/things_to_disrupt = list(target)
 	if(isliving(target))
 		var/mob/living/live_target = target
-		things_to_disrupt += live_target.get_all_gear()
+		things_to_disrupt += live_target.get_all_gear(INCLUDE_PROSTHETICS|INCLUDE_ABSTRACT|INCLUDE_ACCESSORIES)
 
 	for(var/atom/disrupted as anything in things_to_disrupt)
 		if(disrupted.on_saboteur(src, 1 MINUTES))
 			mod.add_charge(DEFAULT_CHARGE_DRAIN * 250)
 
-/obj/item/mod/module/stealth/wraith/on_activation()
+/obj/item/mod/module/stealth/wraith/on_activation(mob/activator)
 	return // Don't activate stealth when the module is activated because the stealth portion of the module is fully passive
 
-/obj/item/mod/module/stealth/wraith/on_deactivation(display_message = TRUE, deleting = FALSE)
+/obj/item/mod/module/stealth/wraith/on_deactivation(mob/activator, display_message = TRUE, deleting = FALSE)
 	. = ..()
 	UnregisterSignal(mod.wearer, list(COMSIG_LIVING_MOB_BUMP, COMSIG_ATOM_BUMPED, COMSIG_MOB_FIRED_GUN))
 
@@ -521,7 +527,7 @@
 
 /obj/item/mod/module/stealth/wraith/proc/start_stealth()
 	if(!COOLDOWN_FINISHED(src, recloak_timer)) // Prevents being able to bypass the cooldown by disabling and re-enabling the module
-		addtimer(CALLBACK(src, PROC_REF(start_stealth)), recloak_timer)
+		addtimer(CALLBACK(src, PROC_REF(start_stealth)), COOLDOWN_TIMELEFT(src, recloak_timer))
 		return
 	RegisterSignals(mod.wearer, list(COMSIG_LIVING_MOB_BUMP, COMSIG_ATOM_BUMPED, COMSIG_MOB_FIRED_GUN), PROC_REF(unstealth))
 	RegisterSignal(mod.wearer, COMSIG_LIVING_UNARMED_ATTACK, PROC_REF(on_unarmed_attack))
@@ -534,11 +540,16 @@
 /obj/item/mod/module/stealth/wraith/unstealth(datum/source)
 	if(!stealth_active)
 		return
-	. = ..()
-	if(mod.active)
-		COOLDOWN_START(src, recloak_timer, 20 SECONDS)
-		addtimer(CALLBACK(src, PROC_REF(start_stealth)), 20 SECONDS)
-		stealth_active = FALSE
+	to_chat(mod.wearer, span_warning("[src] gets discharged from contact!"))
+	do_sparks(2, TRUE, src)
+	drain_power(use_energy_cost)
+	// Don't deactivate() directly as the module may not be active in the first place when stealthing
+	on_deactivation()
+	if(!mod.active)
+		return
+	COOLDOWN_START(src, recloak_timer, 20 SECONDS)
+	addtimer(CALLBACK(src, PROC_REF(start_stealth)), 20 SECONDS)
+	stealth_active = FALSE
 
 /obj/item/mod/module/stealth/wraith/examine_more(mob/user)
 	. = ..()

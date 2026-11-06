@@ -2,7 +2,6 @@
 	title = JOB_CHEMIST
 	description = "Варите все необходимые химикаты для врачей, делайте препараты, а также \
 		менее приятные вещества в комфортной и полностью укрепленной комнате."
-	department_head = list(JOB_CHIEF_MEDICAL_OFFICER)
 	faction = FACTION_STATION
 	total_positions = 2
 	spawn_positions = 2
@@ -36,6 +35,7 @@
 	)
 	rpg_title = "Alchemist"
 	job_flags = STATION_JOB_FLAGS
+	tgui_icon = FA_ICON_PRESCRIPTION_BOTTLE
 
 
 /datum/outfit/job/chemist
@@ -45,7 +45,7 @@
 	id_trim = /datum/id_trim/job/chemist
 	uniform = /obj/item/clothing/under/rank/medical/chemist
 	suit = /obj/item/clothing/suit/toggle/labcoat/chemist
-	belt = /obj/item/modular_computer/pda/chemist
+	belt = /obj/item/modular_computer/pda/crew/chemist
 	ears = /obj/item/radio/headset/headset_med
 	glasses = /obj/item/clothing/glasses/science
 	shoes = /obj/item/clothing/shoes/sneakers/white
@@ -59,3 +59,5 @@
 
 	box = /obj/item/storage/box/survival/medical
 	chameleon_extras = /obj/item/gun/syringe
+
+	wintercoat = /obj/item/clothing/suit/hooded/wintercoat/medical/chemistry

@@ -3,7 +3,7 @@
 // Ordinary survival box. Every crewmember gets one of these.
 /obj/item/storage/box/survival
 	name = "survival box"
-	desc = "A box with the bare essentials of ensuring the survival of you and others."
+	desc = "Небольшая коробка с самым необходимым для обеспечения выживания вас и окружающих."
 	icon_state = "internals"
 	illustration = "emergencytank"
 	/// What type of mask are we going to use for this box?
@@ -54,14 +54,22 @@
 	..() // we want the survival stuff too.
 	new /obj/item/radio/off(src)
 
-/obj/item/storage/box/survival/proc/wardrobe_removal()
-	if(!isplasmaman(loc)) //We need to specially fill the box with plasmaman gear, since it's intended for one
+/obj/item/storage/box/survival/proc/apply_overrides()
+	if(!ishuman(loc) || QDELING(src))
 		return
-	var/obj/item/mask = locate(mask_type) in src
-	var/obj/item/internals = locate(internal_type) in src
-	new /obj/item/tank/internals/plasmaman/belt(src)
-	qdel(mask) // Get rid of the items that shouldn't be
-	qdel(internals)
+	var/mob/living/carbon/human/owner = loc
+	if(!length(owner.dna.species.survival_box_overrides))
+		return
+	var/list/items_to_clear = list(
+		locate(mask_type) in src,
+		locate(internal_type) in src,
+		locate(medipen_type) in src,
+	)
+	QDEL_LIST(items_to_clear)
+	var/list/survival_box_overrides = owner.dna.species.survival_box_overrides.Copy()
+	for(var/survival_types in survival_box_overrides)
+		var/item_to_add = survival_box_overrides[survival_types]
+		new item_to_add(src)
 
 // Prisoners don't get an escape hook
 /obj/item/storage/box/survival/prisoner
@@ -80,7 +88,7 @@
 // Engineer survival box
 /obj/item/storage/box/survival/engineer
 	name = "extended-capacity survival box"
-	desc = "A box with the bare essentials of ensuring the survival of you and others. This one is labelled to contain an extended-capacity tank."
+	desc = "Небольшая коробка с самым необходимым для обеспечения выживания вас и окружающих. На этой — жёлтый стикер с надписью \"ДОП. КИСЛ.\"."
 	illustration = "extendedtank"
 	internal_type = /obj/item/tank/internals/emergency_oxygen/engi
 
@@ -91,7 +99,7 @@
 // Syndie survival box
 /obj/item/storage/box/survival/syndie
 	name = "operation-ready survival box"
-	desc = "A box with the essentials of your operation. This one is labelled to contain an extended-capacity tank and a handy guide on survival."
+	desc = "Небольшая коробка с самым необходимым для успешности вашей миссии. На этой — два небольших стикера. На них написано \"ДОП. КИСЛ.\" и \"МАНУАЛ ВНУТРИ\"."
 	icon_state = "syndiebox"
 	illustration = "extendedtank"
 	mask_type = /obj/item/clothing/mask/gas/syndicate
@@ -107,7 +115,7 @@
 
 /obj/item/storage/box/survival/centcom
 	name = "emergency response survival box"
-	desc = "A box with the bare essentials of ensuring the survival of your team. This one is labelled to contain a double tank."
+	desc = "Небольшая коробка с самым необходимым для обеспечения выживания вас и окружающих. На этой — жёлтый стикер с надписью \"ДВОЙН. КИСЛ.\"."
 	illustration = "extendedtank"
 	internal_type = /obj/item/tank/internals/emergency_oxygen/double
 
@@ -137,7 +145,7 @@
 
 /obj/item/storage/box/mime
 	name = "invisible box"
-	desc = "Unfortunately not large enough to trap the mime."
+	desc = "Увы, мим сюда не влезет. Маловата."
 	foldable_result = null
 	icon_state = "box"
 	inhand_icon_state = null
@@ -168,7 +176,7 @@
 	..()
 	user.changeNext_move(CLICK_CD_MELEE)
 	playsound(loc, SFX_RUSTLE, 50, vary=TRUE, extrarange=-5)
-	user.visible_message(span_notice("[user] hugs [src]."),span_notice("You hug [src]."))
+	user.visible_message(span_notice("[user] обнимает [src]."),span_notice("Вы обнимаете [src]."))
 
 /obj/item/storage/box/hug/black
 	icon_state = "hugbox_black"
@@ -190,9 +198,11 @@
 		return ITEM_INTERACT_BLOCKING
 	qdel(tool)
 	loc.balloon_alert(user, "wheels added, honk!")
-	var/obj/item/bot_assembly/honkbot/A = new
+	var/obj/item/bot_assembly/honkbot/assembly = new(drop_location())
+	var/held_index = user.get_held_index_of_item(src)
 	qdel(src)
-	user.put_in_hands(A)
+	if (held_index)
+		user.put_in_hand(assembly, held_index)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/storage/box/clown/suicide_act(mob/living/user)
@@ -317,4 +327,4 @@
 
 /obj/item/storage/box/contractor/fulton_extraction/PopulateContents()
 	new /obj/item/extraction_pack/syndicate(src)
-	new /obj/item/fulton_core(src)
+	new /obj/item/fulton_core/syndicate(src)

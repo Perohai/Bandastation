@@ -34,7 +34,7 @@
 	if (soft_filter_result)
 		if(tgui_alert(usr,"Your message contains \"[soft_filter_result[CHAT_FILTER_INDEX_WORD]]\". \"[soft_filter_result[CHAT_FILTER_INDEX_REASON]]\", Are you sure you want to say it?", "Soft Blocked Word", list("Yes", "No")) != "Yes")
 			return
-		message_admins("[ADMIN_LOOKUPFLW(usr)] has passed the soft filter for \"[soft_filter_result[CHAT_FILTER_INDEX_WORD]]\" they may be using a disallowed term. Message: \"[message]\"")
+		message_admins("[ADMIN_LOOKUPFLW(usr)] has passed the soft filter for \"[soft_filter_result[CHAT_FILTER_INDEX_WORD]]\" they may be using a disallowed term. Message: \"[html_encode(message)]\"")
 		log_admin_private("[key_name(usr)] has passed the soft filter for \"[soft_filter_result[CHAT_FILTER_INDEX_WORD]]\" they may be using a disallowed term. Message: \"[message]\"")
 
 	if(!message)
@@ -56,9 +56,15 @@
 	if(message[1] == "*" && check_emote(message, forced))
 		return
 
-	. = say_dead(message)
+	// BANDASTATION EDIT START: Possessed objects can speak
+	var/obj/possessed_atom = usr.GetComponent(/datum/component/object_possession)?.possessed
+	if(!possessed_atom)
+		. = say_dead(message)
+	else
+		. = possessed_atom.say(message)
+	// BANDASTATION EDIT END: Possessed objects can speak
 
-/mob/dead/observer/Hear(message, atom/movable/speaker, message_language, raw_message, radio_freq, radio_freq_name, radio_freq_color, list/spans, list/message_mods = list(), message_range)
+/mob/dead/observer/Hear(atom/movable/speaker, message_language, raw_message, radio_freq, radio_freq_name, radio_freq_color, list/spans, list/message_mods = list(), message_range)
 	. = ..()
 	var/atom/movable/to_follow = speaker
 	if(radio_freq)
@@ -70,19 +76,29 @@
 		else
 			to_follow = V.source
 	var/link = FOLLOW_LINK(src, to_follow)
+	var/is_custom_emote = message_mods[MODE_CUSTOM_SAY_ERASE_INPUT]
 	// Create map text prior to modifying message for goonchat
 	if (safe_read_pref(client, /datum/preference/toggle/enable_runechat) && (safe_read_pref(client, /datum/preference/toggle/enable_runechat_non_mobs) || ismob(speaker)))
-		create_chat_message(speaker, message_language, raw_message, spans)
+		if(is_custom_emote)
+			create_chat_message(speaker, null, message_mods[MODE_CUSTOM_SAY_EMOTE], spans, EMOTE_MESSAGE)
+		else
+			create_chat_message(speaker, message_language, raw_message, spans)
 	// Recompose the message, because it's scrambled by default
-	message = compose_message(speaker, message_language, raw_message, radio_freq, radio_freq_name, radio_freq_color, spans, message_mods)
+	var/message = compose_message(speaker, message_language, raw_message, radio_freq, radio_freq_name, radio_freq_color, spans, message_mods)
 	to_chat(src,
 		html = "[link] [message]",
 		avoid_highlighting = speaker == src)
 
 	// BANDASTATION ADDITION START - TTS
-	if(isnull(message_mods[MODE_CUSTOM_SAY_EMOTE]) && isnull(message_mods[MODE_CUSTOM_SAY_ERASE_INPUT]) && radio_freq != FREQ_ENTERTAINMENT)
+	if(isnull(message_mods[MODE_CUSTOM_SAY_EMOTE]) && isnull(message_mods[MODE_CUSTOM_SAY_ERASE_INPUT]) && !radio_freq)
 		var/tts_message = message_mods[MODE_TTS_MESSAGE_OVERRIDE] || raw_message
-		speaker.cast_tts(src, tts_message, is_radio = !!radio_freq, tts_seed_override = LAZYACCESS(message_mods, MODE_TTS_SEED_OVERRIDE), channel_override = radio_freq ? CHANNEL_TTS_RADIO : null)
+		speaker.cast_tts(
+			src,
+			tts_message,
+			is_radio = !!radio_freq,
+			tts_seed_override = LAZYACCESS(message_mods, MODE_TTS_SEED_OVERRIDE),
+			channel_override = radio_freq ? CHANNEL_TTS_RADIO : null
+		)
 	// BANDASTATION ADDITION END - TTS
 
-	return TRUE
+	return HEAR_HEARD | HEAR_UNDERSTOOD

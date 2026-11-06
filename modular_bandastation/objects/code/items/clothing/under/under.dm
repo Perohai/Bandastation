@@ -1,3 +1,7 @@
+/obj/item/clothing/under
+	/// Holder for modular overrides
+	var/datum/female_uniform/female_version
+
 /obj/item/clothing/under/costume/katarina_cybersuit
 	name = "catarine's cybersuit"
 	desc = "Кибер-костюм так называемой Катарины."
@@ -248,3 +252,6 @@
 	worn_icon = 'modular_bandastation/objects/icons/mob/clothing/under/under.dmi'
 	icon_state = "shirt_white"
 	armor_type = /datum/armor/clothing_under/security_head_of_security
+
+/obj/item/clothing/under/dress/skirt/turtleskirt
+	female_version = /datum/female_uniform/turtleneck

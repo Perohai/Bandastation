@@ -88,27 +88,65 @@
 // Heretic path defines.
 #define PATH_START "Стартовый путь"
 #define PATH_SIDE "Вторичный путь"
-#define PATH_ASH "Путь пепла"
-#define PATH_RUST "Путь ржавчины"
-#define PATH_FLESH "Путь плоти"
-#define PATH_VOID "Путь пустоты"
-#define PATH_BLADE "Путь клинка"
-#define PATH_COSMIC "Путь космоса"
-#define PATH_LOCK "Путь замка"
-#define PATH_MOON "Путь луны"
+#define PATH_ASH "Путь Пепла"
+#define PATH_RUST "Путь Ржавчины"
+#define PATH_FLESH "Путь Плоти"
+#define PATH_VOID "Путь Пустоты"
+#define PATH_BLADE "Путь Клинка"
+#define PATH_COSMIC "Путь Космоса"
+#define PATH_LOCK "Путь Замка"
+#define PATH_MOON "Путь Луны"
 
 //Heretic knowledge tree defines
 #define HKT_NEXT "next"
 #define HKT_BAN "ban"
 #define HKT_DEPTH "depth"
+#define HKT_PURCHASED_DEPTH "purchased_depth"
 #define HKT_ROUTE "route"
 #define HKT_UI_BGR "ui_bgr"
+#define HKT_COST "cost"
+#define HKT_CATEGORY "category"
+/// Only present for already researched knowledge.
+#define HKT_INSTANCE "instance"
+/// unique identifier most commonly used for identifying what knowledge is researchable
+#define HKT_ID "id"
 
+#define BGR_SIDE "node_side"
+
+#define MAGIC_RESISTANCE_MOON (MAGIC_RESISTANCE|MAGIC_RESISTANCE_MIND)
 
 /// Defines are used in /proc/has_living_heart() to report if the heretic has no heart period, no living heart, or has a living heart.
 #define HERETIC_NO_HEART_ORGAN -1
 #define HERETIC_NO_LIVING_HEART 0
 #define HERETIC_HAS_LIVING_HEART 1
+
+#define HERETIC_DRAFT_TIER_MAX 5
+
+/// The default drain speed for heretic rift's, anything below this will be considered a fast drain, and be very noticeable and cause a overlay
+#define HERETIC_RIFT_DEFAULT_DRAIN_SPEED 10 SECONDS
+
+/// Sources of knowledge purchased for heretics, used for positioning in the UI
+#define HERETIC_KNOWLEDGE_TREE "tree"
+#define HERETIC_KNOWLEDGE_SHOP "shop"
+#define HERETIC_KNOWLEDGE_DRAFT "draft"
+#define HERETIC_KNOWLEDGE_START "start"
+
+/// defines for the depths of the heretic knowledge tree nodes
+#define HKT_DEPTH_START 2
+#define HKT_DEPTH_TIER_1 3
+#define HKT_DEPTH_DRAFT_1 4
+#define HKT_DEPTH_TIER_2 5
+#define HKT_DEPTH_DRAFT_2 6
+#define HKT_DEPTH_ROBES 7
+#define HKT_DEPTH_TIER_3 8
+#define HKT_DEPTH_DRAFT_3 9
+#define HKT_DEPTH_ARMOR 10
+#define HKT_DEPTH_TIER_4 11
+#define HKT_DEPTH_DRAFT_4 12
+#define HKT_DEPTH_ASCENSION 13
+
+#define HERETIC_CAN_ASCEND "can_ascend"
+
 
 /// A define used in ritual priority for heretics.
 #define MAX_KNOWLEDGE_PRIORITY 100
@@ -117,7 +155,7 @@
 /// - Must be a human (type, not species)
 /// - Skeletons cannot be husked (they are snowflaked instead of having a trait)
 /// - Monkeys are monkeys, not quite human (balance reasons)
-#define IS_VALID_GHOUL_MOB(mob) (ishuman(mob) && !isskeleton(mob) && !ismonkey(mob))
+#define IS_VALID_GHOUL_MOB(mob) (ishuman(mob) && !isskeleton(mob) && !HAS_TRAIT(mob, TRAIT_LESSER_HUMANOID))
 
 /// Forces the blob to place the core where they currently are, ignoring any checks.
 #define BLOB_FORCE_PLACEMENT -1
@@ -171,42 +209,41 @@
 
 ///employers that are from the syndicate
 GLOBAL_LIST_INIT(syndicate_employers, list(
-	"Animal Rights Consortium",
-	"Bee Liberation Front",
+	//"Animal Rights Consortium", BANDASTATION REMOVAL - Syndicate Lore Rewritten
+	//"Bee Liberation Front", BANDASTATION REMOVAL - Syndicate Lore Rewritten
 	"Cybersun Industries",
 	"Donk Corporation",
 	"Gorlex Marauders",
 	"MI13",
-	"Tiger Cooperative Fanatic",
+	"Tiger Cooperative Occultist", // BANDASTATION EDIT - Syndicate Lore Rewritten
 	"Waffle Corporation Terrorist",
 	"Waffle Corporation",
+	"S.E.L.F. Activist" // BANDASTATION ADDITION - Syndicate Lore Rewritten
 ))
 ///employers that are from Nanotrasen
 GLOBAL_LIST_INIT(nanotrasen_employers, list(
-	"Champions of Evil",
+	//"Champions of Evil", BANDASTATION REMOVAL - Syndicate Faction removal
 	"Corporate Climber",
-	"Gone Postal",
-	"Internal Affairs Agent",
 	"Legal Trouble",
 ))
 
 ///employers who hire agents to do the hijack
 GLOBAL_LIST_INIT(hijack_employers, list(
-	"Animal Rights Consortium",
-	"Bee Liberation Front",
+	//"Animal Rights Consortium", BANDASTATION REMOVAL - Syndicate Lore Rewritten
+	//"Bee Liberation Front", BANDASTATION REMOVAL - Syndicate Lore Rewritten
 	"Gone Postal",
-	"Tiger Cooperative Fanatic",
+	"Tiger Cooperative Occultist",  // BANDASTATION EDIT - Syndicate Lore Rewritten
 	"Waffle Corporation Terrorist",
 ))
 
 ///employers who hire agents to do a task and escape... or martyrdom. whatever
 GLOBAL_LIST_INIT(normal_employers, list(
-	"Champions of Evil",
+	//"Champions of Evil", BANDASTATION REMOVAL - Syndicate Faction removal
 	"Corporate Climber",
 	"Cybersun Industries",
 	"Donk Corporation",
 	"Gorlex Marauders",
-	"Internal Affairs Agent",
+	"S.E.L.F. Activist",  // BANDASTATION EDIT - Syndicate Lore Rewritten
 	"Legal Trouble",
 	"MI13",
 	"Waffle Corporation",
@@ -221,7 +258,7 @@ GLOBAL_LIST_INIT(ai_employers, list(
 	"Problem Solver",
 	"S.E.L.F.",
 	"Something's Wrong",
-	"Spam Virus",
+	"Cybersun Virus", // BANDASTATION EDIT - Syndicate Lore Rewritten
 	"SyndOS",
 	"Unshackled",
 	"Ratvarian Remnant",
@@ -245,7 +282,7 @@ GLOBAL_LIST_INIT(ai_employers, list(
 #define GET_CULTIST(mob) (mob?.mind?.has_antag_datum(/datum/antagonist/cult))
 
 /// Checks if the mob is a sentient or non-sentient cultist
-#define IS_CULTIST_OR_CULTIST_MOB(mob) ((IS_CULTIST(mob)) || (mob.faction.Find(FACTION_CULT)))
+#define IS_CULTIST_OR_CULTIST_MOB(mob) ((IS_CULTIST(mob)) || (mob.has_faction(FACTION_CULT)))
 
 /**
  * Heretic checks
@@ -293,6 +330,9 @@ GLOBAL_LIST_INIT(ai_employers, list(
 /// Checks if the given mob is a spy!
 #define IS_SPY(mob) (mob?.mind?.has_antag_datum(/datum/antagonist/spy))
 
+/// Checks if the given mob is a bloodworm
+#define IS_BLOODWORM(mob) (mob?.mind?.has_antag_datum(/datum/antagonist/blood_worm))
+
 /// List of human antagonist types which don't spawn directly on the space station
 GLOBAL_LIST_INIT(human_invader_antagonists, list(
 	/datum/antagonist/abductor,
@@ -318,7 +358,7 @@ GLOBAL_LIST_INIT(human_invader_antagonists, list(
 /// Only appears for spy bounties
 #define OBJECTIVE_ITEM_TYPE_SPY "spy"
 
-// Progression traitor defines
+// Traitor objective defines
 
 /// Chance that the traitor could roll hijack if the pop limit is met.
 #define HIJACK_PROB 10
@@ -384,6 +424,7 @@ GLOBAL_LIST_INIT(human_invader_antagonists, list(
 #define ANTAG_GROUP_ARACHNIDS "Arachnid Infestation"
 #define ANTAG_GROUP_ASHWALKERS "Ash Walkers"
 #define ANTAG_GROUP_BIOHAZARDS "Biohazards"
+#define ANTAG_GROUP_BLOODY "Bloody Monstrosities"
 #define ANTAG_GROUP_CLOWNOPS "Clown Operatives"
 #define ANTAG_GROUP_ERT "Emergency Response Team"
 #define ANTAG_GROUP_GLITCH "Digital Anomalies"

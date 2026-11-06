@@ -62,6 +62,7 @@
 	greyscale_config = /datum/greyscale_config/mutant_organ
 	greyscale_colors = RAT_COLORS
 	beat_noise = "a fast-paced high-pitched pit-pat"
+	organ_traits = list(TRAIT_DWARF)
 
 /obj/item/organ/heart/rat/Initialize(mapload)
 	. = ..()
@@ -71,21 +72,11 @@
 
 /obj/item/organ/heart/rat/on_mob_insert(mob/living/carbon/receiver)
 	. = ..()
-	if(!ishuman(receiver))
-		return
-	var/mob/living/carbon/human/human_receiver = receiver
-	if(human_receiver.can_mutate())
-		human_receiver.dna.add_mutation(/datum/mutation/dwarfism, MUTATION_SOURCE_RAT_HEART)
-	//but 1.5 damage
-	human_receiver.physiology?.damage_resistance -= 50
+	receiver.damage_resistance -= 50 //but 1.5 damage
 
 /obj/item/organ/heart/rat/on_mob_remove(mob/living/carbon/heartless, special, movement_flags)
 	. = ..()
-	if(!ishuman(heartless))
-		return
-	var/mob/living/carbon/human/human_heartless = heartless
-	human_heartless.dna.remove_mutation(/datum/mutation/dwarfism, MUTATION_SOURCE_RAT_HEART)
-	human_heartless.physiology?.damage_resistance += 50
+	heartless.damage_resistance += 50 //revert damage resistance
 
 /// you occasionally squeak, and have some rat related verbal tics
 /obj/item/organ/tongue/rat
@@ -107,8 +98,19 @@
 	AddElement(/datum/element/noticable_organ, "%PRONOUN_Their teeth are oddly shaped and yellowing.", BODY_ZONE_PRECISE_MOUTH)
 	AddElement(/datum/element/organ_set_bonus, /datum/status_effect/organ_set_bonus/rat)
 
+/obj/item/organ/tongue/rat/proc/whimsy_check(mob/living/checking)
+	if(check_holidays(APRIL_FOOLS))
+		return TRUE
+	if(HAS_PERSONALITY(checking, /datum/personality/whimsical))
+		return TRUE
+	if(prob(1))
+		return TRUE
+	return FALSE
+
 /obj/item/organ/tongue/rat/modify_speech(datum/source, list/speech_args)
 	. = ..()
+	if(!whimsy_check(source))
+		return
 	var/message = LOWER_TEXT(speech_args[SPEECH_MESSAGE])
 	if(message == "hi" || message == "hi.")
 		speech_args[SPEECH_MESSAGE] = "Cheesed to meet you!"
@@ -125,13 +127,15 @@
 
 /obj/item/organ/tongue/rat/proc/on_item_given(mob/living/carbon/offerer, mob/living/taker, obj/item/given)
 	SIGNAL_HANDLER
+	if(!whimsy_check(offerer))
+		return
 	INVOKE_ASYNC(src, PROC_REF(its_on_the_mouse), offerer, taker)
 
 /obj/item/organ/tongue/rat/proc/its_on_the_mouse(mob/living/carbon/offerer, mob/living/taker)
 	offerer.say("Для вас, все самое чумовое.")
 	taker.add_mood_event("it_was_on_the_mouse", /datum/mood_event/it_was_on_the_mouse)
 
-/obj/item/organ/tongue/rat/on_life(seconds_per_tick, times_fired)
+/obj/item/organ/tongue/rat/on_life(seconds_per_tick)
 	. = ..()
 	if(prob(5))
 		owner.emote("squeaks")

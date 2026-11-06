@@ -1,7 +1,7 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
 "a" = (
 /turf/closed/mineral/random/stationside/asteroid/porus,
-/area/template_noop)
+/area/space/nearstation)
 "b" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/structure/table/wood,
@@ -117,7 +117,7 @@
 /obj/item/food/grown/banana,
 /obj/item/food/grown/banana,
 /obj/item/food/grown/banana,
-/obj/item/food/grown/sunflower,
+/obj/item/food/grown/flower/sunflower,
 /turf/open/floor/iron/white,
 /area/station/maintenance/department/cargo)
 "T" = (

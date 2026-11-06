@@ -45,6 +45,7 @@ GLOBAL_VAR(antag_prototypes)
 		result += "EMPTY<br>"
 	else
 		var/obj_count = 1
+		list_clear_nulls(objectives) // BANDASTATION EDIT: null reference removal
 		for(var/datum/objective/objective as anything in objectives)
 			result += "<B>[obj_count]</B>: [objective.explanation_text] \
 				<a href='byond://?src=[REF(owner)];obj_edit=[REF(objective)]'>Edit</a> \
@@ -205,12 +206,8 @@ GLOBAL_VAR(antag_prototypes)
 		if(U)
 			if (check_rights(R_FUN, 0))
 				uplink_info += ", <a href='byond://?src=[REF(src)];common=crystals'>[U.uplink_handler.telecrystals]</a> TC"
-				if(U.uplink_handler.has_progression)
-					uplink_info += ", <a href='byond://?src=[REF(src)];common=progression'>[U.uplink_handler.progression_points]</a> PR"
 			else
 				uplink_info += ", [U.uplink_handler.telecrystals] TC"
-				if(U.uplink_handler.has_progression)
-					uplink_info += ", [U.uplink_handler.progression_points] PR"
 		else
 			uplink_info += "<a href='byond://?src=[REF(src)];common=uplink'>give</a>"
 		uplink_info += "." //hiel grammar

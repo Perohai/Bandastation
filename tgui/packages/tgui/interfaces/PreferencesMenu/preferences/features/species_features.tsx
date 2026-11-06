@@ -1,8 +1,10 @@
 import {
+  CheckboxInput,
   type Feature,
   type FeatureChoiced,
   type FeatureChoicedServerData,
   FeatureColorInput,
+  type FeatureToggle,
   type FeatureValueProps,
 } from './base';
 import { FeatureDropdownInput } from './dropdowns';
@@ -50,7 +52,7 @@ export const hair_gradient_color: Feature<string> = {
   component: FeatureColorInput,
 };
 
-export const feature_human_ears: FeatureChoiced = {
+export const feature_cat_ears: FeatureChoiced = {
   name: 'Уши',
   component: (
     props: FeatureValueProps<string, string, FeatureChoicedServerData>,
@@ -59,7 +61,7 @@ export const feature_human_ears: FeatureChoiced = {
   },
 };
 
-export const feature_human_tail: FeatureChoiced = {
+export const feature_cat_tail: FeatureChoiced = {
   name: 'Хвост',
   component: (
     props: FeatureValueProps<string, string, FeatureChoicedServerData>,
@@ -257,4 +259,42 @@ export const tajaran_tail_markings_color: Feature<string> = {
 export const skrell_head_tentacle_color: Feature<string> = {
   name: 'Щупальца на голове: цвет',
   component: FeatureColorInput,
+};
+
+export const feature_skrell_head_tentacle_ornament: FeatureChoiced = {
+  name: 'Украшение для щупалец',
+  component: (
+    props: FeatureValueProps<string, string, FeatureChoicedServerData>,
+  ) => {
+    return <FeatureDropdownInput buttons {...props} />;
+  },
+};
+
+export const feature_skrell_cloth_wrap_toggle: FeatureChoiced = {
+  name: 'Ткань для щупалец',
+  component: (
+    props: FeatureValueProps<string, string, FeatureChoicedServerData>,
+  ) => {
+    return <FeatureDropdownInput buttons {...props} />;
+  },
+};
+
+export const skrell_cloth_wrap_color: Feature<string> = {
+  name: 'Ткань для щупалец: цвет',
+  component: FeatureColorInput,
+};
+
+export const feature_fish_tail_color: Feature<string> = {
+  name: 'Цвет рыбьего хвоста',
+  component: FeatureColorInput,
+};
+
+export const feature_cerulean_frills: FeatureToggle = {
+  name: 'Рыбьи плавники',
+  component: CheckboxInput,
+};
+
+export const feature_cerulean_snout: FeatureToggle = {
+  name: 'Рыбья морда',
+  component: CheckboxInput,
 };

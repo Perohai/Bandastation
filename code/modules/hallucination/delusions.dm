@@ -56,13 +56,13 @@
 
 /datum/hallucination/delusion/Destroy()
 	if(!QDELETED(hallucinator) && LAZYLEN(delusions))
-		hallucinator.client?.images -= flatten_list(delusions)
+		hallucinator.client?.images -= assoc_to_values(delusions)
 		LAZYNULL(delusions)
 
 	return ..()
 
 /datum/hallucination/delusion/start()
-	if(!hallucinator.client)
+	if(!hallucinator.client || IS_UNCONSCIOUS(hallucinator))
 		return FALSE
 
 	feedback_details += "Delusion: [delusion_name]"
@@ -70,30 +70,37 @@
 	RegisterSignal(hallucinator, COMSIG_MOB_REQUESTING_SCREENTIP_NAME_FROM_USER, PROC_REF(screentip_name_override))
 	RegisterSignal(hallucinator, COMSIG_LIVING_PERCEIVE_EXAMINE_NAME, PROC_REF(examine_name_override))
 
-	var/list/mob/living/carbon/human/funny_looking_mobs = list()
-
-	// The delusion includes others - all humans
-	if(affects_others)
-		funny_looking_mobs |= GLOB.human_list.Copy()
-
-	// The delusion includes us - we might be in it already, we might not
-	if(affects_us && ishuman(hallucinator))
-		funny_looking_mobs |= hallucinator
-	// The delusion should not inlude us
-	else
-		funny_looking_mobs -= hallucinator
-
-	// The delusion shouldn not include anyone in view of us
-	if(skip_nearby)
-		for(var/mob/living/carbon/human/nearby_human in view(hallucinator))
-			if(nearby_human == hallucinator) // Already handled by affects_us
-				continue
-			funny_looking_mobs -= nearby_human
+	// BANDASTATION EDIT START: Delegate delusion target selection
+	// var/list/mob/living/carbon/human/funny_looking_mobs = list()
+	//
+	// // The delusion includes others - all humans
+	// if(affects_others)
+	// 	funny_looking_mobs |= GLOB.human_list.Copy()
+	//
+	// // The delusion includes us - we might be in it already, we might not
+	// if(affects_us && ishuman(hallucinator))
+	// 	funny_looking_mobs |= hallucinator
+	// // The delusion should not inlude us
+	// else
+	// 	funny_looking_mobs -= hallucinator
+	//
+	// // The delusion shouldn't include anyone in view of us
+	// if(skip_nearby)
+	// 	for(var/mob/living/carbon/human/nearby_human in view(hallucinator))
+	// 		if(nearby_human == hallucinator) // Already handled by affects_us
+	// 			continue
+	// 		funny_looking_mobs -= nearby_human
+	var/list/mob/living/carbon/human/funny_looking_mobs = get_delusion_targets()
+	// BANDASTATION EDIT END: Delegate delusion target selection
 
 	for(var/mob/living/carbon/human/found_human as anything in funny_looking_mobs)
 		var/image/funny_image = make_delusion_image(found_human)
+		if(found_human != hallucinator)
+			RegisterSignal(found_human, COMSIG_QDELETING, PROC_REF(on_mob_delete))
 		RegisterSignal(found_human, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(on_z_change))
-		RegisterSignal(found_human, COMSIG_QDELETING, PROC_REF(on_mob_delete), TRUE)
+		// ensures the delusion image's lighting updates if the mob's lighting changes
+		RegisterSignal(found_human, COMSIG_ATOM_HOLDER_OVERLAY_LIGHT_APPLIED, PROC_REF(on_mob_light_add))
+		RegisterSignal(found_human, COMSIG_ATOM_HOLDER_OVERLAY_LIGHT_REMOVED, PROC_REF(on_mob_light_remove))
 		LAZYSET(delusions, found_human, funny_image)
 		hallucinator.client.images |= funny_image
 
@@ -105,6 +112,30 @@
 		QDEL_IN(src, duration)
 	return TRUE
 
+// BANDASTATION EDIT START: Select delusion appearance targets
+/// Returns the humans whose appearances this delusion replaces.
+/datum/hallucination/delusion/proc/get_delusion_targets()
+	. = list()
+
+	// The delusion includes others - all humans
+	if(affects_others)
+		. |= GLOB.human_list.Copy()
+
+	// The delusion includes us - we might be in it already, we might not
+	if(affects_us && ishuman(hallucinator))
+		. |= hallucinator
+	// The delusion should not include us
+	else
+		. -= hallucinator
+
+	// The delusion shouldn't include anyone in view of us
+	if(skip_nearby)
+		for(var/mob/living/carbon/human/nearby_human in view(hallucinator))
+			if(nearby_human == hallucinator) // Already handled by affects_us
+				continue
+			. -= nearby_human
+// BANDASTATION EDIT END: Select delusion appearance targets
+
 /datum/hallucination/delusion/proc/make_delusion_image(mob/over_who)
 	var/image/funny_image
 	if(delusion_appearance)
@@ -114,14 +145,14 @@
 	funny_image.name = delusion_name
 	funny_image.override = TRUE
 	SET_PLANE_EXPLICIT(funny_image, ABOVE_GAME_PLANE, over_who)
+	// copies over lighting underlays
+	for(var/image/underlay as anything in over_who.underlays)
+		if(PLANE_TO_TRUE(underlay.plane) == O_LIGHTING_VISUAL_PLANE)
+			funny_image.underlays += underlay
 	return funny_image
 
 /datum/hallucination/delusion/proc/on_mob_delete(mob/living/carbon/human/source)
 	SIGNAL_HANDLER
-
-	if (source == hallucinator)
-		qdel(src)
-		return
 
 	hallucinator.client.images -= delusions[source]
 	LAZYREMOVE(delusions, source)
@@ -130,6 +161,20 @@
 	SIGNAL_HANDLER
 	var/image/funny_image = delusions[source]
 	SET_PLANE_EXPLICIT(funny_image, ABOVE_GAME_PLANE, source)
+
+/datum/hallucination/delusion/proc/on_mob_light_add(mob/living/carbon/human/source, image/visible_mask, image/cone)
+	SIGNAL_HANDLER
+	var/image/funny_image = delusions[source]
+	funny_image.underlays |= visible_mask
+	if(cone)
+		funny_image.underlays |= cone
+
+/datum/hallucination/delusion/proc/on_mob_light_remove(mob/living/carbon/human/source)
+	SIGNAL_HANDLER
+	var/image/funny_image = delusions[source]
+	for(var/image/underlay as anything in funny_image.underlays)
+		if(PLANE_TO_TRUE(underlay.plane) == O_LIGHTING_VISUAL_PLANE)
+			funny_image.underlays -= underlay
 
 /datum/hallucination/delusion/proc/examine_name_override(datum/source, mob/living/examined, visible_name, list/name_override)
 	SIGNAL_HANDLER

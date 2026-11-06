@@ -3,10 +3,13 @@
 	abstract_type = /datum/body_modification/limb_amputation
 	var/limb_body_zone = null
 
-/datum/body_modification/limb_amputation/apply_to_human(mob/living/carbon/target)
+/datum/body_modification/limb_amputation/apply_to_human(mob/living/carbon/target, additional_params)
 	. = ..()
 	if(!.)
 		return
+
+	if(HAS_TRAIT(target, TRAIT_NODISMEMBER))
+		return FALSE
 
 	var/obj/item/bodypart/limb_to_remove = target.get_bodypart(limb_body_zone)
 	if(!limb_to_remove)

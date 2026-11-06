@@ -20,7 +20,6 @@ GLOBAL_LIST_INIT(possible_food_allergies, list(
 	lose_text = span_notice("Вы чувствуете, как ваша иммунная система возвращается к норме.")
 	medical_record_text = "Иммунная система пациента бурно реагирует на определенные продукты питания."
 	hardcore_value = 1
-	quirk_flags = QUIRK_HUMAN_ONLY
 	mail_goodies = list(/obj/item/reagent_containers/hypospray/medipen)
 	/// Footype flags that will trigger the allergy
 	var/target_foodtypes = NONE
@@ -39,7 +38,7 @@ GLOBAL_LIST_INIT(possible_food_allergies, list(
 		if(target_foodtypes != NONE) // Got a preference, don't care
 			return
 
-	target_foodtypes = pick(flatten_list(GLOB.possible_food_allergies))
+	target_foodtypes = pick(assoc_to_values(GLOB.possible_food_allergies))
 
 /datum/quirk/item_quirk/food_allergic/add_unique(client/client_source)
 	var/what_are_we_actually_killed_by = english_list(bitfield_to_list(target_foodtypes, FOOD_FLAGS_IC)) // This should never be more than one thing but just in case we can support it

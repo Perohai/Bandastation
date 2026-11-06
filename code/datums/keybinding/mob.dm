@@ -3,13 +3,13 @@
 	weight = WEIGHT_MOB
 
 /datum/keybinding/mob/stop_pulling
-	hotkey_keys = list("H", "Delete")
+	hotkey_keys = list("C", "Delete") // BANDASTATION EDIT
 	name = "stop_pulling"
-	full_name = "Stop pulling"
+	full_name = "Перестать тащить"
 	description = ""
 	keybind_signal = COMSIG_KB_MOB_STOPPULLING_DOWN
 
-/datum/keybinding/mob/stop_pulling/down(client/user, turf/target)
+/datum/keybinding/mob/stop_pulling/down(client/user, turf/target, mousepos_x, mousepos_y)
 	. = ..()
 	if(.)
 		return
@@ -20,58 +20,7 @@
 		M.stop_pulling()
 	return TRUE
 
-/datum/keybinding/mob/swap_hands
-	hotkey_keys = list("X")
-	name = "swap_hands"
-	full_name = "Swap hands"
-	description = ""
-	keybind_signal = COMSIG_KB_MOB_SWAPHANDS_DOWN
-
-/datum/keybinding/mob/swap_hands/down(client/user, turf/target)
-	. = ..()
-	if(.)
-		return
-	var/mob/M = user.mob
-	M.swap_hand()
-	return TRUE
-
-/datum/keybinding/mob/activate_inhand
-	hotkey_keys = list("Z")
-	name = "activate_inhand"
-	full_name = "Activate in-hand"
-	description = "Uses whatever item you have inhand"
-	keybind_signal = COMSIG_KB_MOB_ACTIVATEINHAND_DOWN
-
-/datum/keybinding/mob/activate_inhand/down(client/user, turf/target)
-	. = ..()
-	if(.)
-		return
-	var/mob/M = user.mob
-	M.mode()
-	return TRUE
-
-/datum/keybinding/mob/drop_item
-	hotkey_keys = list("Q")
-	name = "drop_item"
-	full_name = "Drop Item"
-	description = ""
-	keybind_signal = COMSIG_KB_MOB_DROPITEM_DOWN
-
-/datum/keybinding/mob/drop_item/down(client/user, turf/target)
-	. = ..()
-	if(.)
-		return
-	if(iscyborg(user.mob)) //cyborgs can't drop items
-		return FALSE
-	var/mob/M = user.mob
-	var/obj/item/I = M.get_active_held_item()
-	if(!I)
-		to_chat(user, span_warning("Вам нечего выбрасывать из руки!"))
-	else
-		user.mob.dropItemToGround(I)
-	return TRUE
-
-/datum/keybinding/mob/target/down(client/user, turf/target)
+/datum/keybinding/mob/target/down(client/user, turf/target, mousepos_x, mousepos_y)
 	. = ..()
 	if(.)
 		return .
@@ -106,81 +55,81 @@
 /datum/keybinding/mob/target/head_cycle
 	hotkey_keys = list("Numpad8")
 	name = "target_head_cycle"
-	full_name = "Target: Cycle Head"
-	description = "Pressing this key targets the head, and continued presses will cycle to the eyes and mouth. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать голову/глаза/рот"
+	description = "Выбрать голову, глаза или рот как цель. Каждое нажатие циклирует между ними. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETCYCLEHEAD_DOWN
 
 /datum/keybinding/mob/target/head
-	hotkey_keys = list("Unbound")
+	hotkey_keys = list(UNBOUND_KEY)
 	name = "target_head"
-	full_name = "Target: Head"
-	description = "Pressing this key targets the head. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать голову"
+	description = "Выбрать голову, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETHEAD_DOWN
 
 /datum/keybinding/mob/target/eyes
 	hotkey_keys = list("Numpad7")
 	name = "target_eyes"
-	full_name = "Target: Eyes"
-	description = "Pressing this key targets the eyes. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать глаза"
+	description = "Выбрать глаза, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETEYES_DOWN
 
 /datum/keybinding/mob/target/mouth
 	hotkey_keys = list("Numpad9")
 	name = "target_mouths"
-	full_name = "Target: Mouth"
-	description = "Pressing this key targets the mouth. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать рот"
+	description = "Выбрать рот, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETMOUTH_DOWN
 
 /datum/keybinding/mob/target/r_arm
 	hotkey_keys = list("Numpad4")
 	name = "target_r_arm"
-	full_name = "Target: right arm"
-	description = "Pressing this key targets the right arm. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать правую руку"
+	description = "Выбрать правую руку, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETRIGHTARM_DOWN
 
 /datum/keybinding/mob/target/body_chest
 	hotkey_keys = list("Numpad5")
 	name = "target_body_chest"
-	full_name = "Target: Body"
-	description = "Pressing this key targets the body. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать грудь"
+	description = "Выбрать грудь, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETBODYCHEST_DOWN
 
 /datum/keybinding/mob/target/left_arm
 	hotkey_keys = list("Numpad6")
 	name = "target_left_arm"
-	full_name = "Target: left arm"
-	description = "Pressing this key targets the body. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать левую руку"
+	description = "Выбрать левую руку, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETLEFTARM_DOWN
 
 /datum/keybinding/mob/target/right_leg
 	hotkey_keys = list("Numpad1")
 	name = "target_right_leg"
-	full_name = "Target: Right leg"
-	description = "Pressing this key targets the right leg. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать правую ногу"
+	description = "Выбрать правую ногу, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETRIGHTLEG_DOWN
 
 /datum/keybinding/mob/target/body_groin
 	hotkey_keys = list("Numpad2")
 	name = "target_body_groin"
-	full_name = "Target: Groin"
-	description = "Pressing this key targets the groin. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать пах"
+	description = "Выбрать паховую область, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETBODYGROIN_DOWN
 
 /datum/keybinding/mob/target/left_leg
 	hotkey_keys = list("Numpad3")
 	name = "target_left_leg"
-	full_name = "Target: left leg"
-	description = "Pressing this key targets the left leg. This will impact where you hit people, and can be used for surgery."
+	full_name = "Выбрать левую ногу"
+	description = "Выбрать левую ногу, как цель. Влияет на то, куда вы ударяете, или где вы проводите операции."
 	keybind_signal = COMSIG_KB_MOB_TARGETLEFTLEG_DOWN
 
 /datum/keybinding/mob/prevent_movement
 	hotkey_keys = list("Alt")
 	name = "block_movement"
-	full_name = "Block movement"
-	description = "Prevents you from moving"
+	full_name = "Остановиться (зажать)"
+	description = "При удержании, не дает вам самостоятельно двигаться."
 	keybind_signal = COMSIG_KB_MOB_BLOCKMOVEMENT_DOWN
 
-/datum/keybinding/mob/prevent_movement/down(client/user, turf/target)
+/datum/keybinding/mob/prevent_movement/down(client/user, turf/target, mousepos_x, mousepos_y)
 	. = ..()
 	if(.)
 		return
@@ -191,10 +140,3 @@
 	if(.)
 		return
 	user.movement_locked = FALSE
-
-/datum/keybinding/living/view_pet_data
-	hotkey_keys = list("Shift")
-	name = "view_pet_commands"
-	full_name = "View Pet Commands"
-	description = "Hold down to see all the commands you can give your pets!"
-	keybind_signal = COMSIG_KB_LIVING_VIEW_PET_COMMANDS

@@ -1,6 +1,7 @@
 /obj/machinery/computer/apc_control
 	name = "power flow control console"
-	desc = "Used to remotely control the flow of power to different parts of the station."
+	desc = "Используется для удалённого управления потоком энергии на разные части станции."
+	icon_state = MAP_SWITCH("computer", "/obj/machinery/computer/apc_control")
 	icon_screen = "solar"
 	icon_keyboard = "power_key"
 	req_access = list(ACCESS_CE)
@@ -30,7 +31,7 @@
 
 /obj/machinery/computer/apc_control/attack_ai(mob/user)
 	if(!isAdminGhostAI(user))
-		to_chat(user,span_warning("[src] does not support AI control.")) //You already have APC access, cheater!
+		to_chat(user,span_warning("[declent_ru(NOMINATIVE)] не доступен для контроля ИИ.")) //You already have APC access, cheater!
 		return
 	return ..()
 
@@ -40,7 +41,7 @@
 	obj_flags |= EMAGGED
 	if (user)
 		user.log_message("emagged [src].", LOG_ATTACK, color="red")
-		balloon_alert(user, "access controller shorted")
+		balloon_alert(user, "управление доступами замкнуто")
 	playsound(src, SFX_SPARKS, 50, TRUE, SHORT_RANGE_SOUND_EXTRARANGE)
 	return TRUE
 
@@ -48,7 +49,7 @@
 /obj/machinery/computer/apc_control/proc/log_activity(log_text)
 	if(!should_log)
 		return
-	LAZYADD(logs, "([station_time_timestamp()]): [auth_id] [log_text]")
+	LAZYADD(logs, "([round_timestamp()]): [auth_id] [log_text]")
 
 ///Resets the console's emagged state and re-enables logging of activity
 /obj/machinery/computer/apc_control/proc/restore_comp(mob/user)
@@ -102,7 +103,7 @@
 */
 
 /obj/machinery/computer/apc_control/proc/check_apc(obj/machinery/power/apc/checked_apc)
-	return (is_on_station ? is_station_level(checked_apc.z) : checked_apc.z == z) && !checked_apc.malfhack && !checked_apc.aidisabled && !(checked_apc.obj_flags & EMAGGED) && !checked_apc.machine_stat && !istype(checked_apc.area, /area/station/ai_monitored)
+	return (is_on_station ? is_station_level(checked_apc.z) : checked_apc.z == z) && !checked_apc.malfhack && !checked_apc.aidisabled && !(checked_apc.obj_flags & EMAGGED) && !checked_apc.machine_stat && !istype(checked_apc.area, /area/station/ai)
 
 /obj/machinery/computer/apc_control/ui_interact(mob/user, datum/tgui/ui)
 	. = ..()

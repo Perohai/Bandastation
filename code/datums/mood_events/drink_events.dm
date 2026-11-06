@@ -18,24 +18,34 @@
 	switch(drunkness)
 		if(0 to 30)
 			mood_change = 3
-			description = "Everything just feels better after a drink or two."
+			description = "После одной-двух рюмок всё становится лучше."
 		if(30 to 45)
 			mood_change = 4
-			description = "Is it getting hotter, or is it just me? I need another drink to cool down."
+			description = "Становится всё жарче, или мне только кажется? Мне нужно выпить ещё, чтобы остыть."
 		if(45 to 60)
 			mood_change = 5
-			description = "Who keeps moving the floor? I'm going to talk to them... after this drink."
+			description = "Кто продолжает двигать пол? Я собираюсь поговорить с ним... после того, как выпью."
 		if(60 to 90)
 			mood_change = 6
-			description = "I'm noooot drunk, you're drunk! In fact... I need another drink!"
+			description = "Я вооовсе не пьян, ты пьян! На самом деле... Мне нужно выпить ещё!"
 		if(90 to INFINITY)
 			mood_change = 3 // crash out
-			description = "You're my BESSST frien'... You and me agains' th' world, buddy. Le's get another drink."
+			description = "Ты мой лууууууучший дру'хх! Мы с тобо'й прооотив все'гхо мииира, при...ятель. Давааай ещё по одной..."
+	if(HAS_PERSONALITY(owner, /datum/personality/teetotal))
+		mood_change *= -1.5
+		description = "Я не люблю пить... Из-за этого я чувствую себя ужасно."
+	if(HAS_PERSONALITY(owner, /datum/personality/bibulous))
+		mood_change *= 1.5
 	if(old_mood != mood_change)
 		owner.mob_mood.update_mood()
 
 /datum/mood_event/drunk/remove_effects()
 	QDEL_NULL(blush_overlay)
+
+/datum/mood_event/drunk_after
+	mood_change = 2
+	description = "Может, кайф и прошел, но я все ещё чувствую себя хорошо."
+	timeout = 5 MINUTES
 
 /datum/mood_event/wrong_brandy
 	description = "Я ненавижу такие напитки."
@@ -76,3 +86,30 @@
 	description = "Ах, хороший экземпляр Wellcheers. Соленый виноградный вкус отлично поднимает настроение."
 	mood_change = 3
 	timeout = 7 MINUTES
+
+/datum/mood_event/sweetcoffee
+	description = "The bitter sweet taste of coffee was not too bad"
+	mood_change = 2
+	timeout = 5 MINUTES
+
+/datum/mood_event/sweettea
+	description = "Let your worries dissolve like sugar in tea."
+	mood_change = 4
+	timeout = 2.5 MINUTES
+
+//rubywise ruin events
+/datum/mood_event/rubywise_unsatisfied
+	description = "How sweet it would be, just a morsel of meat..."
+	mood_change = -3
+	timeout = 10 SECONDS //Enough to be maintained between ticks
+
+/datum/mood_event/rubywise_satisfied
+	description = "An Appetite... SATISFIED."
+	mood_change = 5
+	timeout = 3 MINUTES
+
+//Completed Farstar Amarita communion
+/datum/mood_event/farstar_shared
+	description = "I can feel a sense of appreciation from somewhere very, very far away."
+	mood_change = 3
+	timeout = 10 MINUTES

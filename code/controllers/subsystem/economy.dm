@@ -14,17 +14,12 @@ SUBSYSTEM_DEF(economy)
 										ACCOUNT_CAR = ACCOUNT_CAR_NAME,
 										ACCOUNT_SEC = ACCOUNT_SEC_NAME)
 	var/list/departmental_accounts = list()
-	/**
-	 * Enables extra money charges for things that normally would be free, such as sleepers/cryo/beepsky.
-	 * Take care when enabling, as players will NOT respond well if the economy is set up for low cash flows.
-	 */
-	var/full_ancap = FALSE
 
 	/// Departmental cash provided to science when a node is researched in specific configs.
 	var/techweb_bounty = 250
 	/**
 	  * List of normal (no department ones) accounts' identifiers with associated datum accounts, for big O performance.
-	  * A list of sole account datums can be obtained with flatten_list(), another variable would be redundant rn.
+	  * A list of sole account datums can be obtained with assoc_to_values(), another variable would be redundant rn.
 	  */
 	var/list/bank_accounts_by_id = list()
 	/// A list of bank accounts indexed by their assigned job typepath.
@@ -55,6 +50,8 @@ SUBSYSTEM_DEF(economy)
 
 	/// Number of mail items generated.
 	var/mail_waiting = 0
+	/// Total quantity of mail that's been opened this shift. Displayed at round-end and blackbox'd.
+	var/mail_opened = 0
 	/// Mail Holiday: AKA does mail arrive today? Always blocked on Sundays.
 	var/mail_blocked = FALSE
 	/// List used to track partially completed processing steps
@@ -67,6 +64,8 @@ SUBSYSTEM_DEF(economy)
 	var/temporary_total = 0
 	/// Determines how many ticks it takes to restock mail
 	var/ticks_per_mail = 2
+	/// Currently boosted exports
+	var/list/boosted_exports = list()
 
 /datum/controller/subsystem/economy/Initialize()
 	//removes cargo from the split
@@ -114,6 +113,7 @@ SUBSYSTEM_DEF(economy)
 		station_target = max(round(temporary_total / max(bank_accounts_by_id.len * 2, 1)) + station_target_buffer, 1)
 
 	if(processing_part == ECON_PRICE_UPDATE_STEP)
+		update_boosted_exports()
 		if(!HAS_TRAIT(SSeconomy, TRAIT_MARKET_CRASHING) && !price_update())
 			return
 
@@ -126,10 +126,20 @@ SUBSYSTEM_DEF(economy)
 /**
  * Handy proc for obtaining a department's bank account, given the department ID, AKA the define assigned for what department they're under.
  */
-/datum/controller/subsystem/economy/proc/get_dep_account(dep_id)
+/datum/controller/subsystem/economy/proc/get_dep_account(dep_id) as /datum/bank_account/department
 	for(var/datum/bank_account/department/D in departmental_accounts)
 		if(D.department_id == dep_id)
 			return D
+
+/// Pick X amount of random exports to boost in price for the tick
+/datum/controller/subsystem/economy/proc/update_boosted_exports()
+	boosted_exports.Cut()
+	// Don't randomize export values during unit tests or we'll get flakies
+#ifndef UNIT_TESTS
+	var/list/valid_exports = valid_typesof(/datum/export)
+	for (var/i in 1 to rand(EXPORT_BOOST_MIN_AMOUNT, EXPORT_BOOST_MAX_AMOUNT))
+		boosted_exports += pick_n_take(valid_exports)
+#endif
 
 /**
  * Departmental income payments are kept static and linear for every department, and paid out once every 5 minutes, as determined by MAX_GRANT_DPT.
@@ -157,7 +167,7 @@ SUBSYSTEM_DEF(economy)
 		var/datum/bank_account/bank_account = cached_processing[cached_processing[i]]
 		if(bank_account?.account_job && !ispath(bank_account.account_job))
 			temporary_total += (bank_account.account_job.paycheck * STARTING_PAYCHECKS)
-		bank_account.payday(1)
+		bank_account.payday(1, skippable = TRUE)
 		station_total += bank_account.account_balance
 		if(MC_TICK_CHECK)
 			cached_processing.Cut(1, i + 1)
@@ -173,9 +183,9 @@ SUBSYSTEM_DEF(economy)
 		fluff_string = ", but company countermeasures protect <b>YOU</b> from being affected!"
 	else
 		fluff_string = ", and company countermeasures are failing to protect <b>YOU</b> from being affected. We're all doomed!"
-	earning_report = "<b>Sector Economic Report</b><br><br> Sector vendor prices is currently at <b>[SSeconomy.inflation_value()*100]%</b>[fluff_string]<br><br> The station spending power is currently <b>[station_total] Credits</b>, and the crew's targeted allowance is at <b>[station_target] Credits</b>.<br><br>[SSstock_market.news_string]"
+	earning_report = "<b>Sector Economic Report</b><br><br> Sector vendor prices is currently at <b>[SSeconomy.inflation_value()*100]%</b>[fluff_string]<br><br> The station spending power is currently <b>[station_total][MONEY_NAME_CAPITALIZED]</b>, and the crew's targeted allowance is at <b>[station_target][MONEY_NAME_CAPITALIZED]</b>.<br><br>[SSstock_market.news_string]"
 	var/update_alerts = FALSE
-	if(HAS_TRAIT(SSstation, STATION_TRAIT_ECONOMY_ALERTS))
+	if(HAS_TRAIT(SSstation, STATION_TRAIT_ECONOMY_ALERTS) && (living_player_count() > 1))
 		var/datum/bank_account/moneybags
 		var/static/list/typecache_bank = typecacheof(list(/datum/bank_account/department, /datum/bank_account/remote))
 		for(var/i in bank_accounts_by_id)
@@ -185,7 +195,7 @@ SUBSYSTEM_DEF(economy)
 			if(!moneybags || moneybags.account_balance < current_acc.account_balance)
 				moneybags = current_acc
 		if (moneybags)
-			earning_report += "Our GMM Spotlight would like to alert you that <b>[moneybags.account_holder]</b> is your station's most affulent crewmate! They've hit it big with [moneybags.account_balance] credits saved. "
+			earning_report += "Our GMM Spotlight would like to alert you that <b>[moneybags.account_holder]</b> is your station's most affulent crewmate! They've hit it big with [moneybags.account_balance][MONEY_NAME] saved. "
 			update_alerts = TRUE
 			inflict_moneybags(moneybags)
 	earning_report += "That's all from the <i>Nanotrasen Economist Division</i>."
@@ -214,14 +224,15 @@ SUBSYSTEM_DEF(economy)
  * * price_to_use: The cost of the purchase made for this transaction.
  * * vendor: The object or structure medium that is charging the user. For Vending machines that's the machine, for payment component that's the parent, cargo that's the crate, etc.
  */
-/datum/controller/subsystem/economy/proc/track_purchase(datum/bank_account/account, price_to_use, vendor)
-	if(!account || isnull(price_to_use) || !vendor)
+/datum/controller/subsystem/economy/proc/add_audit_entry(datum/bank_account/account, price_to_use, vendor)
+	if(isnull(account) || isnull(price_to_use) || !vendor)
 		CRASH("Track purchases was missing an argument! (Account, Price, or Vendor.)")
 
 	audit_log += list(list(
 		"account" = "[account.account_holder]",
 		"cost" = price_to_use,
-		"vendor" = "[vendor]",
+		"vendor" = "[astype(vendor, /atom)?.name || vendor]",
+		"stationtime" = round_timestamp("hh:mm"),
 	))
 
 /**

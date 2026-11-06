@@ -4,17 +4,16 @@
 		сохраните жизнь экипажу, будьте готовы сделать всё возможное или умрите \
 		в муках, пытаясь это сделать."
 	auto_deadmin_role_flags = DEADMIN_POSITION_HEAD|DEADMIN_POSITION_SECURITY
-	department_head = list("CentCom")
 	faction = FACTION_STATION
 	total_positions = 1
 	spawn_positions = 1
 	supervisors = "официальными лицами Нанотрейзен"
 	req_admin_notify = 1
 	minimal_player_age = 14
-	exp_requirements = 180
-	exp_required_type = EXP_TYPE_CREW
+	exp_requirements = 1800
+	exp_required_type = EXP_TYPE_COMMAND
 	exp_required_type_department = EXP_TYPE_COMMAND
-	exp_granted_type = EXP_TYPE_CREW
+	exp_granted_type = EXP_TYPE_COMMAND
 	config_tag = "CAPTAIN"
 
 	outfit = /datum/outfit/job/captain
@@ -24,13 +23,13 @@
 	paycheck_department = ACCOUNT_SEC
 
 	mind_traits = list(HEAD_OF_STAFF_MIND_TRAITS)
+	desensitized_base = DESENSITIZED_THRESHOLD
 	liver_traits = list(TRAIT_ROYAL_METABOLISM)
 
 	display_order = JOB_DISPLAY_ORDER_CAPTAIN
 	department_for_prefs = /datum/job_department/captain
 	departments_list = list(
 		/datum/job_department/command,
-		/datum/job_department/security,
 	)
 
 	family_heirlooms = list(/obj/item/reagent_containers/cup/glass/flask/gold, /obj/item/toy/captainsaid/collector)
@@ -50,6 +49,7 @@
 	human_authority = JOB_AUTHORITY_HUMANS_ONLY
 
 	voice_of_god_power = 1.4 //Command staff has authority
+	tgui_icon = FA_ICON_CROWN
 
 
 /datum/job/captain/get_captaincy_announcement(mob/living/captain)
@@ -71,7 +71,7 @@
 		/obj/item/melee/baton/telescopic/gold = 1,
 		/obj/item/station_charter = 1,
 		)
-	belt = /obj/item/modular_computer/pda/heads/captain
+	belt = /obj/item/modular_computer/pda/crew/heads/captain
 	ears = /obj/item/radio/headset/heads/captain/alt
 	glasses = /obj/item/clothing/glasses/sunglasses
 	gloves = /obj/item/clothing/gloves/captain
@@ -91,6 +91,8 @@
 		)
 	implants = list(/obj/item/implant/mindshield)
 	skillchips = list(/obj/item/skillchip/disk_verifier)
+
+	wintercoat = /obj/item/clothing/suit/hooded/wintercoat/captain
 
 	var/special_charter
 
@@ -117,7 +119,7 @@
 	if(visuals_only || !special_charter)
 		return
 
-	var/obj/item/station_charter/banner/celestial_charter = locate() in equipped.held_items
+	var/obj/item/station_charter/banner/celestial_charter = equipped.is_holding_item_of_type(__IMPLIED_TYPE__)
 	if(isnull(celestial_charter))
 		// failed to give out the unique charter, plop on the ground
 		celestial_charter = new(get_turf(equipped))

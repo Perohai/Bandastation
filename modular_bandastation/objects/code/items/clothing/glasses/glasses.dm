@@ -2,12 +2,12 @@
 /obj/item/clothing/glasses/hud/security/sunglasses/soo
 	name = "special ops officer's HUDSunglasses"
 	desc = "Продвинутый ИЛС-визор, стилизованный под солнцезащитные очки. Никто не укроется."
-	vision_flags = SEE_TURFS|SEE_MOBS|SEE_OBJS
+	clothing_traits = list(TRAIT_SECURITY_HUD, TRAIT_XRAY_VISION)
 
 /obj/item/clothing/glasses/hud/security/sunglasses/centcom_officer
 	name = "fleet officer's HUDSunglasses"
 	desc = "Продвинутый ИЛС-визор, стилизованный под солнцезащитные очки. Почти никто не укроется."
-	vision_flags = SEE_MOBS
+	clothing_traits = list(TRAIT_SECURITY_HUD, TRAIT_THERMAL_VISION)
 
 // MARK: TSF
 /obj/item/clothing/glasses/hud/security/sunglasses/tsf
@@ -15,8 +15,7 @@
 	icon_state = "sunhudmed"
 
 /obj/item/clothing/glasses/thermal/eyepatch/tsf_commander
-	clothing_traits = list(TRAIT_SECURITY_HUD)
-	vision_flags = SEE_TURFS|SEE_MOBS|SEE_OBJS
+	clothing_traits = list(TRAIT_SECURITY_HUD, TRAIT_THERMAL_VISION)
 
 // MARK: Miscellaneous
 /obj/item/clothing/glasses/meson/sunglasses
@@ -50,6 +49,7 @@
 		/obj/item/stack/cable_coil = 5
 	)
 	category = CAT_EQUIPMENT
+	crafting_flags = CRAFT_SKIP_MATERIALS_PARITY
 
 /datum/crafting_recipe/hudsunmesonremoval
 	name = "Meson HUD Removal"
@@ -58,3 +58,4 @@
 	tool_behaviors = list(TOOL_SCREWDRIVER, TOOL_WIRECUTTER)
 	reqs = list(/obj/item/clothing/glasses/meson/sunglasses = 1)
 	category = CAT_EQUIPMENT
+	crafting_flags = CRAFT_SKIP_MATERIALS_PARITY

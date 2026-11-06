@@ -9,6 +9,7 @@
 /mob
 	density = TRUE
 	layer = MOB_LAYER
+	abstract_type = /mob
 	animate_movement = SLIDE_STEPS
 	hud_possible = list(ANTAG_HUD)
 	pressure_resistance = 8
@@ -69,7 +70,7 @@
 	var/mob_flags = NONE
 
 	/// Whether a mob is alive or dead. TODO: Move this to living - Nodrak (2019, still here)
-	var/stat = CONSCIOUS
+	var/stat = STABLE
 
 	/**
 	 * Whether and how a mob is incapacitated
@@ -138,7 +139,7 @@
 	  * `held_items[active_hand_index]` is the actively held item, but please use
 	  * [get_active_held_item()][/mob/proc/get_active_held_item] instead, because OOP
 	  */
-	var/list/held_items = list()
+	VAR_PROTECTED/list/held_items = list()
 	///How many hands this mob has by default, which we divide by to know what y offset to give open inventories.
 	var/default_hand_amount = 2
 
@@ -190,7 +191,7 @@
 	var/list/client_colours = list()
 	/// List of filter names used in the past client color update for cleanup
 	var/list/color_filter_store = list()
-	var/hud_type = /datum/hud
+	var/datum/hud/hud_type = /datum/hud
 
 	var/datum/focus //What receives our keyboard inputs. src by default
 
@@ -215,3 +216,7 @@
 
 	/// A ref of the area we're taking our ambient loop from.
 	var/area/ambience_tracked_area
+
+	/// Sound tokens currently playing for this mob.
+	/// Managed by /datum/sound_token and the soundtoken subsystem
+	var/list/datum/sound_token/sound_tokens

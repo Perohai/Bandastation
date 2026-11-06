@@ -18,12 +18,12 @@ endmap
 # Production-level maps.
 
 map deltastation
-	minplayers 50
+	minplayers 25
 	votable
 endmap
 
 map icebox
-	minplayers 25
+	minplayers 40
 	votable
 endmap
 
@@ -40,8 +40,23 @@ map tramstation
 	votable
 endmap
 
+map nebulastation
+	minplayers 35
+	votable
+endmap
+
 map cyberiad
-	maxplayers 100
+	minplayers 50
+	votable
+endmap
+
+map kilostation
+	maxplayers 40
+	votable
+endmap
+
+map wawastation
+    minplayers 50
 	votable
 endmap
 
@@ -54,4 +69,7 @@ map multiz_debug
 endmap
 
 map runtimestation
+endmap
+
+map runtimestation_minimal
 endmap

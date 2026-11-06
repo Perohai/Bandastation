@@ -24,7 +24,7 @@
 /datum/security_level/gamma
 	name = "gamma"
 	announcement_color = "orange"
-	sound = 'modular_bandastation/security_levels/sound/new_siren.ogg'
+	sound = 'modular_bandastation/security_levels/sound/gamma.ogg'
 	status_display_icon_state = "gammaalert"
 	fire_alarm_light_color = LIGHT_COLOR_ORANGE
 	name_shortform = "Γ"
@@ -109,7 +109,7 @@
 			continue
 
 		var/area/apc_area = current_apc.area
-		if(is_type_in_typecache(apc_area, GLOB.typecache_powerfailure_safe_areas))
+		if(HAS_TRAIT(apc_area, TRAIT_AREA_BLOCK_POWER_FAIL))
 			continue
 
 		current_apc.reboot()

@@ -43,7 +43,7 @@
 
 /datum/religion_rites/burning_sacrifice
 	name = "Burning Offering"
-	desc = "Sacrifice a buckled burning or husked corpse for favor, the more burn damage the corpse has the more favor you will receive."
+	desc = "Sacrifice a buckled burning or husked corpse for favor. The more burn damage the corpse has the more favor you will receive."
 	ritual_length = 15 SECONDS
 	ritual_invocations = list("Горящее тело ...",
 	"... очищенное пламенем ...",
@@ -90,7 +90,7 @@
 		to_chat(user, span_warning("The sacrifice has to stay dead for the rite to work!"))
 		chosen_sacrifice = null
 		return FALSE
-	var/favor_gained = 100 + round(chosen_sacrifice.getFireLoss())
+	var/favor_gained = 100 + round(chosen_sacrifice.get_fire_loss())
 	GLOB.religious_sect.adjust_favor(favor_gained, user)
 	to_chat(user, span_notice("[GLOB.deity] absorbs the charred corpse and any trace of fire with it. [GLOB.deity] rewards you with [favor_gained] favor."))
 	chosen_sacrifice.dust(force = TRUE)
@@ -100,7 +100,7 @@
 
 /datum/religion_rites/infinite_candle
 	name = "Immortal Candles"
-	desc = "Creates 5 candles that never run out of wax."
+	desc = "Create five unextinguishable candles that never run out of wax."
 	ritual_length = 10 SECONDS
 	invoke_msg = "Горите ярко, маленькие свечки, ибо вы погаснете вместе со Вселенной."
 	favor_cost = 200

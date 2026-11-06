@@ -41,7 +41,7 @@
 /proc/sanitize(text, apply_ic_filter = FALSE)
 	text = rustutils_regex_replace(text, "\[\n\t\]", "i", "#")
 	if(apply_ic_filter)
-		text = rustutils_regex_replace(text, "\[^a-zA-Za-åa-ö-w-я 0-9/@%\"!#?¨'.,:;*+\]", "i", "")
+		text = rustutils_regex_replace(text, "\[^a-zA-Za-åa-ö-w-я 0-9/@%\"!#?¨'.,:;*+\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF\u1100-\u11FF]", "i", "")
 
 	return html_encode(text)
 // BANDASTATION EDIT END - Sanitize emotes
@@ -163,8 +163,9 @@
  * * strict - return null immediately instead of filtering out
  * * allow_numbers - allows numbers and common special characters - used for silicon/other weird things names
  * * cap_after_symbols - words like Bob's will be capitalized to Bob'S by default. False is good for titles.
+ * * cap_at_start - capitalize the start of words. False is good for modular computer file names.
  */
-/proc/reject_bad_name(t_in, allow_numbers = FALSE, max_length = MAX_NAME_LEN, ascii_only = TRUE, strict = FALSE, cap_after_symbols = TRUE)
+/proc/reject_bad_name(t_in, allow_numbers = FALSE, max_length = MAX_NAME_LEN, ascii_only = TRUE, strict = FALSE, cap_after_symbols = TRUE, cap_at_start = TRUE)
 	if(!t_in)
 		return //Rejects the input if it is null
 
@@ -191,7 +192,7 @@
 
 			// a  .. z
 			if(97 to 122, 1072 to 1103, 1105) //Lowercase Letters // BANDASTATION EDIT CHANGE - Cyrillic Fixes
-				if(last_char_group == NO_CHARS_DETECTED || last_char_group == SPACES_DETECTED || cap_after_symbols && last_char_group == SYMBOLS_DETECTED) //start of a word
+				if(((last_char_group == NO_CHARS_DETECTED || last_char_group == SPACES_DETECTED) && cap_at_start) || (cap_after_symbols && last_char_group == SYMBOLS_DETECTED)) //start of a word
 					char = uppertext(char)
 				number_of_alphanumeric++
 				last_char_group = LETTERS_DETECTED
@@ -292,6 +293,16 @@
 
 	return TRUE
 
+/proc/filter_illegal_filename_chars(name)
+	var/regex/illegal_chars = new("\[\\/:*?\"<>|]", "g")
+	return !findtext(name, illegal_chars)
+
+/proc/filter_filename_pda(name)
+	if(is_ic_filtered_for_pdas(name) || is_soft_ic_filtered_for_pdas(name))
+		return FALSE
+	if(!filter_illegal_filename_chars(name))
+		return FALSE
+	return TRUE
 
 //html_encode helper proc that returns the smallest non null of two numbers
 //or 0 if they're both null (needed because of findtext returning 0 when a value is not present)
@@ -360,24 +371,26 @@
 		return copytext_char(text, 1, max_length)
 	return text
 
-//Returns a string with reserved characters and spaces before the first word and after the last word removed.
+/// Returns a string with reserved characters and spaces before the first word and after the last word removed.
 /proc/trim(text, max_length)
 	if(max_length)
 		text = copytext_char(text, 1, max_length)
 	return trimtext(text) || "" //users expect atleast an empty string
 
-//Returns a string with the first element of the string capitalized.
+/// Returns a string with the first word of the string capitalized.
 /proc/capitalize(t)
-	t = format_text(t) // BANDASTATION ADDITION - Declents
+	return capitalize_word(format_text(t)) // BANDASTATION EDIT - Declents, upstream regex is latin-only
+
+/// Returns a string with the first letter of each word capitialized
+/proc/full_capitalize(input)
+	return replacetext(input, regex(@"[^A-z]*?([A-z]*)", "g"), /proc/capitalize_word)
+
+/// Capitalizes the first symbol in a passed string. Unsafe when used with BYOND string macros, use capitalize() instead!
+/proc/capitalize_word(t)
 	. = t
 	if(t)
 		. = t[1]
 		return uppertext(.) + copytext(t, 1 + length(.))
-
-///Returns a string with the first letter of each word capitialized
-/proc/full_capitalize(input)
-	var/regex/first_letter = new(@"[^A-z]*?([A-z]*)", "g")
-	return replacetext(input, first_letter, /proc/capitalize)
 
 /proc/stringmerge(text,compare,replace = "*")
 //This proc fills in all spaces with the "replace" var (* by default) with whatever

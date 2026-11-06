@@ -6,18 +6,18 @@
 /datum/mutation/nervousness
 	name = "Nervousness"
 	desc = "Обладатель данного генома заикается."
-	instability = NEGATIVE_STABILITY_MINI
+	instability = NEGATIVE_STABILITY_NONE
 	quality = MINOR_NEGATIVE
 	text_gain_indication = span_danger("Ты нервничаешь.")
 
-/datum/mutation/nervousness/on_life(seconds_per_tick, times_fired)
+/datum/mutation/nervousness/on_life(seconds_per_tick)
 	if(SPT_PROB(5, seconds_per_tick))
 		owner.set_stutter_if_lower(20 SECONDS)
 
 /datum/mutation/wacky
 	name = "Wacky"
 	desc = "Ты не клоун. Ты целый цирк."
-	instability = NEGATIVE_STABILITY_MINI
+	instability = NEGATIVE_STABILITY_NONE
 	quality = MINOR_NEGATIVE
 	text_gain_indication = span_sans(span_notice("Ты чувствуешь странности в своих голосовых связках."))
 	text_lose_indication = span_notice("Странное ощущение проходит.")
@@ -39,7 +39,7 @@
 	speech_args[SPEECH_SPANS] |= SPAN_SANS
 
 /datum/mutation/heckacious
-	name = "heckacious larincks"
+	name = "Heckacious Larincks"
 	desc = "чел что ЖЕЛАЮТ твои слова чувак..........."
 	quality = MINOR_NEGATIVE
 	text_gain_indication = span_sans("ЧЁРТ, чувак. твоё горло как ДЕРЬМО.")
@@ -174,7 +174,7 @@
 /datum/mutation/swedish
 	name = "Swedish"
 	desc = "Ужасающая мутация, котороя происходит из далёкого прошлого. Считается, что она была полностью искоренена после 2037."
-	instability = NEGATIVE_STABILITY_MINI
+	instability = NEGATIVE_STABILITY_NONE
 	quality = MINOR_NEGATIVE
 	text_gain_indication = span_notice("Ты ощущаешь себя шведом, что бы это ни значило.")
 	text_lose_indication = span_notice("Ты перестаешь ощущать себя шведом.")
@@ -187,7 +187,7 @@
 /datum/mutation/chav
 	name = "Chav"
 	desc = "Неизвестно."
-	instability = NEGATIVE_STABILITY_MINI
+	instability = NEGATIVE_STABILITY_NONE
 	quality = MINOR_NEGATIVE
 	text_gain_indication = span_notice("Ты ощущаешь себя мудаком, не так ли?")
 	text_lose_indication = span_notice("Ты перестаешь ощущать себя грубым и нахальным.")
@@ -199,7 +199,7 @@
 /datum/mutation/elvis
 	name = "Elvis"
 	desc = "Ужасающая мутация, названная в честь нулевого пациента."
-	instability = NEGATIVE_STABILITY_MINI
+	instability = NEGATIVE_STABILITY_NONE
 	quality = MINOR_NEGATIVE
 	text_gain_indication = span_notice("Ты хорошо себя чувствуешь, куколка.")
 	text_lose_indication = span_notice("Ты чувствуешь, что немного меньше разговоров не помешало бы.")
@@ -208,11 +208,11 @@
 	. = ..()
 	AddComponent(/datum/component/speechmod, replacements = strings("elvis_replacement.json", "elvis"))
 
-/datum/mutation/chav/New(datum/mutation/copymut)
+/datum/mutation/elvis/New(datum/mutation/copymut)
 	. = ..()
 	AddComponent(/datum/component/speechmod, replacements = strings("elvis_replacement.json", "elvis"))
 
-/datum/mutation/elvis/on_life(seconds_per_tick, times_fired)
+/datum/mutation/elvis/on_life(seconds_per_tick)
 	switch(pick(1,2))
 		if(1)
 			if(SPT_PROB(7.5, seconds_per_tick))
@@ -245,7 +245,7 @@
 /datum/mutation/medieval
 	name = "Medieval"
 	desc = "Ужасная мутация, происходящая из далёкого прошлого, считается, что была распространённым геномом во всей старой Европе."
-	instability = NEGATIVE_STABILITY_MINI
+	instability = NEGATIVE_STABILITY_NONE
 	quality = MINOR_NEGATIVE
 	text_gain_indication = span_notice("Ты чувствуешь себя стремящимся к Святому Граали!")
 	text_lose_indication = span_notice("Ты больше не стремишься к чему-либо.")
@@ -287,7 +287,7 @@
 /datum/mutation/piglatin
 	name = "Pig Latin"
 	desc = "Историки говорят, что в 2020 году человечество полностью говорило на этом мистическом языке."
-	instability = NEGATIVE_STABILITY_MINI
+	instability = NEGATIVE_STABILITY_NONE
 	quality = MINOR_NEGATIVE
 	text_gain_indication = span_notice("Ты ощущаешь себя мамонтом.")
 	text_lose_indication = span_notice("Кажется, это прошло.")

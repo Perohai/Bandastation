@@ -11,7 +11,7 @@
 	// - list(/obj/item/plush/lizard = list("name" = "Tests-The-Loadout", "color" = "#FF0000"))
 
 // Loadouts are applied with job equip code.
-/datum/preference/loadout/apply_to_human(mob/living/carbon/human/target, value)
+/datum/preference/loadout/apply_to_human(mob/living/carbon/human/target, value, datum/preferences/preferences)
 	return
 
 // Sanitize on load to ensure no invalid paths from older saves get in
@@ -50,6 +50,8 @@
 
 
 		var/datum/loadout_item/loadout_item = GLOB.all_loadout_datums[real_path] /// BANDASTATION ADDITION - Loadout
+		if(loadout_item.is_disabled())
+			continue
 		if(!istype(loadout_item, /datum/loadout_item))
 			to_chat(preferences.parent, span_boldnotice("The following invalid loadout item was found \
 				in your character loadout: [real_path || "null"]. \
@@ -83,7 +85,15 @@
 
 		// Set into sanitize list using converted path key
 		var/list/data = passed_list[path]
-		LAZYSET(sanitized_list, real_path, LAZYLISTDUPLICATE(data))
+		data = LAZYLISTDUPLICATE(data)
+		// GAGS can't render malformed colors, so fall back to the item's defaults
+		var/saved_colors = data?[INFO_GREYSCALE]
+		if(saved_colors && (!istext(saved_colors) || !findtext(saved_colors, GLOB.is_greyscale_colors)))
+			data -= INFO_GREYSCALE
+			if(preferences.parent)
+				to_chat(preferences.parent, span_boldnotice("The saved colors for [loadout_item.name] \
+					in your character loadout were invalid and have been reset."))
+		LAZYSET(sanitized_list, real_path, data)
 
 	preferences.loadout_points_spent = total_points_spent /// BANDASTATION ADDITION - Loadout
 

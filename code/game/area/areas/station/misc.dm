@@ -18,11 +18,11 @@
 */
 
 /area/station/escapepodbay
-	name = "\improper Pod Bay"
+	name = "Pod Bay"
 	icon_state = "podbay"
 
 /area/station/asteroid
-	name = "\improper Station Asteroid"
+	name = "Station Asteroid"
 	icon_state = "station_asteroid"
 	always_unpowered = TRUE
 	power_environ = FALSE
@@ -30,6 +30,6 @@
 	power_light = FALSE
 	requires_power = TRUE
 	ambience_index = AMBIENCE_MINING
-	area_flags = UNIQUE_AREA
+	area_flags = NONE
 	outdoors = TRUE
 	allow_shuttle_docking = TRUE

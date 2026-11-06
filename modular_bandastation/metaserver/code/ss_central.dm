@@ -13,7 +13,7 @@ SUBSYSTEM_DEF(central)
 	dependencies = list(
 		/datum/controller/subsystem/http
 	)
-	flags = SS_NO_FIRE
+	ss_flags = SS_NO_FIRE
 	init_stage = INITSTAGE_FIRST
 	var/list/discord_links = list()
 
@@ -100,6 +100,18 @@ SUBSYSTEM_DEF(central)
 	if(player && interview)
 		interview.ui_interact(player)
 
+/datum/controller/subsystem/central/proc/lookup_ckey(discord_id)
+	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/players/discord/[discord_id]"
+	var/datum/http_response/response = SShttp.make_sync_request(RUSTG_HTTP_METHOD_GET, endpoint, "", list())
+	if(response.errored || response.status_code != 200 && response.status_code != 404)
+		stack_trace("Failed to get player by discord: HTTP status code [response.status_code] - [response.error] - [response.body]")
+		return
+	if(response.status_code == 404)
+		return
+
+	var/list/data = json_decode(response.body)
+	return data["ckey"]
+
 /datum/controller/subsystem/central/proc/is_player_discord_linked(ckey)
 	var/datum/persistent_client/pclient = GLOB.persistent_clients_by_ckey[ckey]
 
@@ -113,10 +125,15 @@ SUBSYSTEM_DEF(central)
 
 /// WARNING: only semi async - UNTIL based
 /datum/controller/subsystem/central/proc/is_player_whitelisted(ckey)
+	var/server_type = CONFIG_GET(string/server_type)
+	if(!server_type || server_type == /datum/config_entry/string/server_type::default)
+		// Whitelist is not configured properly, assume player is not whitelisted
+		return FALSE
+
 	if(ckey in GLOB.whitelist)
 		return TRUE
 
-	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/whitelists?server_type=[CONFIG_GET(string/server_type)]&ckey=[ckey]&page=1&page_size=1"
+	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/whitelists?server_type=[server_type]&ckey=[ckey]&page=1&page_size=1"
 	var/datum/http_response/response = SShttp.make_sync_request(RUSTG_HTTP_METHOD_GET, endpoint, "", list())
 	if(response.errored || response.status_code != 200 && response.status_code != 404)
 		stack_trace("Failed to check whitelist: HTTP error - [response.error]")
@@ -185,7 +202,7 @@ SUBSYSTEM_DEF(central)
 	GLOB.whitelist -= ckey
 
 /datum/controller/subsystem/central/proc/update_player_donate_tier_async(client/player)
-	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/donates?ckey=[player.ckey]&active_only=true&page=1&page_size=1"
+	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/donates?ckey=[player.ckey]&active_only=true&page=1&page_size=50"
 	SShttp.create_async_request(RUSTG_HTTP_METHOD_GET, endpoint, "", list(), CALLBACK(src, PROC_REF(update_player_donate_tier_callback), player))
 
 /datum/controller/subsystem/central/proc/update_player_donate_tier_callback(client/player, datum/http_response/response)
@@ -194,17 +211,17 @@ SUBSYSTEM_DEF(central)
 		return
 
 	var/list/data = json_decode(response.body)
-	player.donator_level = max(player.donator_level, get_max_donation_tier_from_response_data(data))
+	player.donator_level = get_max_donation_tier_from_response_data(data)
 
 /datum/controller/subsystem/central/proc/update_player_donate_tier_blocking(client/player)
-	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/donates?ckey=[player.ckey]&active_only=true&page=1&page_size=1"
+	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/donates?ckey=[player.ckey]&active_only=true&page=1&page_size=50"
 	var/datum/http_response/response = SShttp.make_sync_request(RUSTG_HTTP_METHOD_GET, endpoint, "", list())
 	if(response.errored || response.status_code != 200)
 		stack_trace("Failed to get player donate tier: HTTP status code [response.status_code] - [response.error] - [response.body]")
 		return
 
 	var/list/data = json_decode(response.body)
-	player.donator_level = max(player.donator_level, get_max_donation_tier_from_response_data(data))
+	player.donator_level = get_max_donation_tier_from_response_data(data)
 
 /datum/controller/subsystem/central/proc/get_max_donation_tier_from_response_data(list/data)
 	if(!length(data["items"]))
@@ -215,3 +232,106 @@ SUBSYSTEM_DEF(central)
 		tiers += item["tier"]
 
 	return max(tiers)
+
+/datum/controller/subsystem/central/proc/create_ban_request(
+	ckey,
+	admin_ckey,
+	list/roles_to_ban,
+	is_server_ban,
+	reason,
+	duration,
+	interval,
+	severity,
+	player_ip = null,
+	player_cid = null
+)
+	var/endpoint = "[CONFIG_GET(string/ss_central_url)]/bans"
+	var/list/headers = list()
+	headers["Authorization"] = "Bearer [CONFIG_GET(string/ss_central_token)]"
+
+	duration = text2num(duration)
+
+	// convert duration to hours
+	var/duration_hours
+	if(!interval || interval == "MINUTE")
+		duration_hours = duration / 60.0
+	else if(interval == "HOUR")
+		duration_hours = duration
+	else if(interval == "DAY")
+		duration_hours = duration * 24
+	else if(interval == "WEEK")
+		duration_hours = duration * 24 * 7
+	else
+		duration_hours = duration
+
+	// determine job
+	var/list/job = is_server_ban ? null : roles_to_ban
+	var/job_string = null
+	if(job)
+		job_string = jointext(job, ",")
+
+	var/is_permaban = (duration_hours <= 0)
+
+	// backend expects null duration for permabans
+	if(is_permaban)
+		duration_hours = null
+
+	var/bantype
+
+	if(job)
+		if(is_permaban)
+			bantype = "JOB_PERMABAN"
+		else
+			bantype = "JOB_TEMPBAN"
+	else
+		if(is_permaban)
+			bantype = "PERMABAN"
+		else
+			bantype = "TEMPBAN"
+
+	var/list/body = list()
+	body["player_ckey"] = ckey
+	body["admin_ckey"] = admin_ckey
+	body["reason"] = reason
+	body["server_type"] = CONFIG_GET(string/servername)
+	body["duration_hours"] = duration_hours
+	body["bantype"] = bantype
+	body["job"] = job_string
+
+	if(player_ip)
+		body["player_ip"] = player_ip
+	if(player_cid)
+		body["player_cid"] = player_cid
+
+	body["round_id"] = GLOB.round_id
+
+	SShttp.create_async_request(
+		RUSTG_HTTP_METHOD_POST,
+		endpoint,
+		json_encode(body),
+		headers,
+		CALLBACK(src, PROC_REF(create_ban_request_callback), ckey)
+	)
+
+
+/datum/controller/subsystem/central/proc/create_ban_request_callback(ckey, datum/http_response/response)
+	if(response.errored)
+		stack_trace("Failed to log ban: HTTP error - [response.error]")
+		return
+
+	switch(response.status_code)
+		if(201)
+			// successful
+			. = .
+
+		if(404)
+			message_admins("Не удалось залогировать бан: игрок не найден)")
+			return
+
+		if(409)
+			message_admins("Не удалось залогировать бан: бан уже существует)")
+			return
+
+		else
+			stack_trace("Could not log ban: HTTP [response.status_code] - [response.body]")
+			return

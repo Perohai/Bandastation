@@ -1,7 +1,6 @@
 /datum/job/janitor
 	title = JOB_JANITOR
 	description = "Убирайте мусор и кровь. Меняйте лампочки. Подскальзывайте людей."
-	department_head = list(JOB_HEAD_OF_PERSONNEL)
 	faction = FACTION_STATION
 	total_positions = 2
 	spawn_positions = 1
@@ -31,6 +30,7 @@
 	job_flags = STATION_JOB_FLAGS
 
 	job_tone = "slip"
+	tgui_icon = FA_ICON_SOAP
 
 /datum/outfit/job/janitor
 	name = "Janitor"
@@ -38,19 +38,21 @@
 
 	id_trim = /datum/id_trim/job/janitor
 	uniform = /obj/item/clothing/under/rank/civilian/janitor
-	belt = /obj/item/modular_computer/pda/janitor
+	belt = /obj/item/modular_computer/pda/crew/janitor
 	ears = /obj/item/radio/headset/headset_srv
-	skillchips = list(/obj/item/skillchip/job/janitor)
+	skillchips = list(/obj/item/skillchip/job/janitor, /obj/item/skillchip/disposals)
 	backpack_contents = list(/obj/item/access_key)
+
+	wintercoat = /obj/item/clothing/suit/hooded/wintercoat/janitor
 
 /datum/outfit/job/janitor/pre_equip(mob/living/carbon/human/human_equipper, visuals_only)
 	. = ..()
 	if(check_holidays(GARBAGEDAY))
 		backpack_contents += list(/obj/item/gun/ballistic/revolver)
-		r_pocket = /obj/item/ammo_box/a357
+		r_pocket = /obj/item/ammo_box/speedloader/c357
 
 /datum/outfit/job/janitor/get_types_to_preload()
 	. = ..()
 	if(check_holidays(GARBAGEDAY))
 		. += /obj/item/gun/ballistic/revolver
-		. += /obj/item/ammo_box/a357
+		. += /obj/item/ammo_box/speedloader/c357

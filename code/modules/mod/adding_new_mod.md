@@ -192,7 +192,7 @@ As it's a medical module, we'll put it [here](modules/modules_medical.dm). Let's
 
 ```dm
 /obj/item/mod/module/neuron_healer
-	name = "MOD neuron healer module"
+	name = "\improper MOD neuron healer module"
 	desc = "A module made experimentally by DeForest Medical Corporation. On demand it releases waves \
 		that heal neuron damage of everyone nearby, getting their brains to a better state."
 	icon_state = "neuron_healer"
@@ -209,7 +209,7 @@ As we have an usable module, we want to set a cooldown time. All modules are als
 
 ```dm
 /obj/item/mod/module/neuron_healer
-	name = "MOD neuron healer module"
+	name = "\improper MOD neuron healer module"
 	desc = "A module made experimentally by DeForest Medical Corporation. On demand it releases waves \
 		that heal neuron damage of everyone nearby, getting their brains to a better state."
 	icon_state = "neuron_healer"
@@ -235,7 +235,7 @@ After this, we want to put our special code, a basic effect of healing all mobs 
 	for(var/mob/living/carbon/carbon_mob in range(5, src))
 		if(carbon_mob == mod.wearer)
 			continue
-		carbon_mob.adjustOrganLoss(ORGAN_SLOT_BRAIN, -brain_damage_healed)
+		carbon_mob.adjust_organ_loss(ORGAN_SLOT_BRAIN, -brain_damage_healed)
 		mod.wearer.Beam(carbon_mob, icon_state = "plasmabeam", time = 1.5 SECONDS)
 	playsound(src, 'sound/effects/magic.ogg', 100, TRUE)
 	drain_power(use_energy_cost)
@@ -245,7 +245,7 @@ We now have a basic module, we can add it to the techwebs to make it printable i
 
 ```dm
 /obj/item/mod/module/neuron_healer/advanced
-	name = "MOD advanced neuron healer module"
+	name = "\improper MOD advanced neuron healer module"
 	complexity = 0
 	brain_damage_healed = 50
 ```

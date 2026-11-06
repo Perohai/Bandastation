@@ -67,13 +67,34 @@ GLOBAL_DATUM(revolution_handler, /datum/revolution_handler)
 	new_target.update_explanation_text()
 	revs.objectives += new_target
 
+/// BANDASTATION EDIT START - Revolution Overhaul
+	for(var/datum/mind/rev_mind as anything in revs.members)
+		var/datum/antagonist/rev/rev_datum = rev_mind.has_antag_datum(/datum/antagonist/rev)
+		if(rev_datum)
+			rev_datum.objectives |= new_target
+		rev_mind.announce_objectives()
+/// BANDASTATION EDIT END - Revolution Overhaul
+
 /datum/revolution_handler/proc/declare_revs_win()
 	for(var/datum/mind/headrev_mind as anything in revs.ex_headrevs)
 		var/mob/living/real_headrev = headrev_mind.current
 		if(isnull(real_headrev))
 			continue
 		add_memory_in_range(real_headrev, 5, /datum/memory/revolution_rev_victory, protagonist = real_headrev)
+		add_personality_mood_to_viewers(real_headrev, "revwin", list(
+			/datum/personality/nt/loyalist = /datum/mood_event/loyalist_revs_win,
+			/datum/personality/nt/disillusioned = /datum/mood_event/disillusioned_revs_win,
+		), range = 5)
 
+/// BANDASTATION EDIT START - Revolution Overhaul
+	priority_announce(
+			text = "Похоже, восстание одержало победу. Пожалуйста, немедленно прекратите работу и окажите помощь пострадавшим лидерам революции и своим товарищам. \
+				Лидерам революции разрешается вызвать эвакуационный шаттл для возвращения на оперативную базу.",
+			color_override = "red",
+			sender_override = "Оповещение от Синдиката: Viva la Revolution",
+			has_important_message = TRUE,
+	)
+/// BANDASTATION EDIT END - Revolution Overhaul
 	result = REVOLUTION_VICTORY
 
 /datum/revolution_handler/proc/declare_heads_win()
@@ -99,6 +120,10 @@ GLOBAL_DATUM(revolution_handler, /datum/revolution_handler)
 		var/mob/living/head_of_staff = head_tracker.target?.current
 		if(!isnull(head_of_staff))
 			add_memory_in_range(head_of_staff, 5, /datum/memory/revolution_heads_victory, protagonist = head_of_staff)
+			add_personality_mood_to_viewers(head_of_staff, "revlost", list(
+				/datum/personality/nt/loyalist = /datum/mood_event/loyalist_revs_lost,
+				/datum/personality/nt/disillusioned = /datum/mood_event/disillusioned_revs_lost
+			), range = 5)
 
 	priority_announce("Похоже, мятеж подавлен. Пожалуйста, верните себя и своих недееспособных коллег к работе. \
 		Мы дистанционно внесли глав революции в черный список в ваших медицинских записях, чтобы предотвратить нежелательную реанимацию.", null, null, null, "[command_name()]: Отдел мониторинга лояльности")
@@ -107,7 +132,7 @@ GLOBAL_DATUM(revolution_handler, /datum/revolution_handler)
 
 /datum/revolution_handler/proc/check_rev_victory()
 	for(var/datum/objective/mutiny/objective in revs.objectives)
-		if(!(objective.check_completion()))
+		if(!objective.check_completion())
 			return FALSE
 	return TRUE
 
@@ -142,7 +167,7 @@ GLOBAL_DATUM(revolution_handler, /datum/revolution_handler)
 	return objective_complete
 
 /// Checks if someone is valid to be a headrev
-/proc/can_be_headrev(datum/mind/candidate)
+/proc/can_be_headrev(datum/mind/candidate, roundstart = FALSE)
 	var/turf/head_turf = get_turf(candidate.current)
 	if(considered_afk(candidate))
 		return FALSE
@@ -151,6 +176,9 @@ GLOBAL_DATUM(revolution_handler, /datum/revolution_handler)
 	if(!is_station_level(head_turf.z))
 		return FALSE
 	if(candidate.current.is_antag())
+		return FALSE
+	var/client/candidate_client = GET_CLIENT(candidate.current)
+	if(!(ROLE_REV_HEAD in candidate_client.prefs.be_special) && (roundstart || !(ROLE_PROVOCATEUR in candidate_client.prefs.be_special)))
 		return FALSE
 	if(candidate.assigned_role.job_flags & JOB_HEAD_OF_STAFF)
 		return FALSE

@@ -93,8 +93,8 @@
 	. = ..()
 	if(!(machine_stat & NOPOWER))
 		. += span_info("A small display reads:")
-		. += span_tinynoticeital("Current market restock price: [EXAMINE_HINT("[restock_cost] cr")].")
-		. += span_tinynoticeital("Market placement fee: [EXAMINE_HINT("[PLACE_ON_MARKET_COST] cr")].")
+		. += span_tinynoticeital("Current market restock price: [EXAMINE_HINT("[restock_cost][MONEY_SYMBOL]")].")
+		. += span_tinynoticeital("Market placement fee: [EXAMINE_HINT("[PLACE_ON_MARKET_COST][MONEY_SYMBOL]")].")
 		. += span_tinynoticeital("Withholding tax on local items: [EXAMINE_HINT("[MARKET_WITHHOLDING_TAX * 100]%")].")
 
 /obj/machinery/ltsrbt/update_icon_state()
@@ -242,6 +242,8 @@
 	. = ..()
 	if(.)
 		return
+	if(!isnum(params["value"]) || isnan(params["value"]))
+		return
 	switch(action)
 		if("change_name")
 			var/value = params["value"]
@@ -366,11 +368,7 @@
 		receiving.post_purchase_effects(receiving.item)
 
 		use_energy(energy_usage_per_teleport / power_efficiency)
-		var/datum/effect_system/spark_spread/sparks = new
-		sparks.set_up(5, 1, get_turf(src))
-		sparks.attach(receiving.item)
-		sparks.start()
-
+		do_sparks(5, TRUE, src, receiving.item)
 		transmitting = receiving
 		receiving = null
 

@@ -10,6 +10,7 @@
 	pass_flags = PASSTABLE | PASSGRILLE
 	gender = NEUTER
 	faction = list(FACTION_SLIME, FACTION_NEUTRAL)
+	hud_type = /datum/hud/living/slime
 
 	icon_living = "grey-baby"
 	icon_dead = "grey-baby-dead"
@@ -21,12 +22,12 @@
 	maxHealth = 150
 	health = 150
 	mob_biotypes = MOB_SLIME
-	melee_damage_lower = 5
-	melee_damage_upper = 25
+	melee_damage_lower = 7
+	melee_damage_upper = 17
 	wound_bonus = -45
 	can_buckle_to = FALSE
 
-	damage_coeff = list(BRUTE = 1, BURN = -1, TOX = 1, STAMINA = 1, OXY = 1) //Healed by fire
+	physiology = list(BURN = -1) //Healed by fire
 	unsuitable_cold_damage = 15
 	unsuitable_heat_damage = 0
 	maximum_survivable_temperature = INFINITY
@@ -83,8 +84,10 @@
 	///Has a mutator been used on the slime? Only one is allowed
 	var/mutator_used = FALSE
 
-	//The datum that handles the slime colour's core and possible mutations
-	var/datum/slime_type/slime_type
+	// The datum that handles the slime colour's core and possible mutations
+	var/datum/slime_type/slime_type = null
+	// After a slime is initialized, a list of all possible initialized datums of slime_types
+	var/static/list/possible_slime_types = null
 
 	//CORE-CROSSING CODE
 
@@ -108,7 +111,7 @@
 	/// Our reproduction action
 	var/datum/action/innate/slime/reproduce/reproduce_action
 
-/mob/living/basic/slime/Initialize(mapload, new_type=/datum/slime_type/grey, new_life_stage=SLIME_LIFE_STAGE_BABY)
+/mob/living/basic/slime/Initialize(mapload, new_type = /datum/slime_type/grey, new_life_stage = SLIME_LIFE_STAGE_BABY)
 
 	. = ..()
 
@@ -118,11 +121,13 @@
 	reproduce_action = new (src)
 	reproduce_action.Grant(src)
 
-	set_slime_type(new_type)
-	set_life_stage(new_life_stage)
-	update_name()
-	regenerate_icons()
+	if(isnull(possible_slime_types))
+		possible_slime_types = list()
+		for(var/datum/slime_type/slime_type as anything in subtypesof(/datum/slime_type))
+			possible_slime_types[slime_type] = new slime_type
 
+	set_life_stage(new_life_stage, TRUE)
+	set_slime_type(new_type)
 	set_nutrition(SLIME_STARTING_NUTRITION)
 
 	AddComponent(/datum/component/health_scaling_effects, min_health_slowdown = 2)
@@ -143,9 +148,9 @@
 	ai_controller.set_blackboard_key(BB_SLIME_REPRODUCE, reproduce_action)
 
 /mob/living/basic/slime/Destroy()
-
 	QDEL_NULL(evolve_action)
 	QDEL_NULL(reproduce_action)
+	slime_type = null
 
 	return ..()
 
@@ -153,7 +158,7 @@
 /mob/living/basic/slime/random
 
 /mob/living/basic/slime/random/Initialize(mapload, new_colour, new_life_stage)
-	return ..(mapload, pick(subtypesof(/datum/slime_type)), prob(50) ? SLIME_LIFE_STAGE_ADULT : SLIME_LIFE_STAGE_BABY)
+	return ..(mapload, SLIME_TYPE_RANDOM, prob(50) ? SLIME_LIFE_STAGE_ADULT : SLIME_LIFE_STAGE_BABY)
 
 ///Friendly docile subtype
 /mob/living/basic/slime/pet
@@ -178,6 +183,8 @@
 	. = ..()
 	nutrition = min(nutrition, SLIME_MAX_NUTRITION)
 
+/mob/living/basic/slime/get_fullness(only_consumable)
+	return round((nutrition / SLIME_MAX_NUTRITION) * NUTRITION_LEVEL_FAT)
 
 /mob/living/basic/slime/update_name()
 	///Checks if the slime has a generic name, in the format of baby/adult slime (123)
@@ -193,23 +200,17 @@
 	if(slime_type.transparent)
 		alpha = SLIME_TRANSPARENCY_ALPHA
 
+	icon_living = "[slime_type.colour]-[life_stage]"
 	icon_dead = !cores ? "[slime_type.colour]-cut" : "[slime_type.colour]-[life_stage]-dead"
 
 	if(stat != DEAD)
-		icon_state = "[slime_type.colour]-[life_stage]"
+		icon_state = icon_living
 		if(current_mood && current_mood != SLIME_MOOD_NONE && !stat)
 			add_overlay("aslime-[current_mood]")
 	else
 		icon_state = icon_dead
 
 	return ..()
-
-/mob/living/basic/slime/get_status_tab_items()
-	. = ..()
-	if(!hunger_disabled)
-		. += "Nutrition: [nutrition]/[SLIME_MAX_NUTRITION]"
-		. += "Growth: [amount_grown]/[SLIME_EVOLUTION_THRESHOLD]"
-		. += "Power Level: [powerlevel]/[SLIME_MAX_POWER]"
 
 /mob/living/basic/slime/mouse_drop_dragged(atom/target_atom, mob/user)
 	if(isliving(target_atom) && target_atom != src && user == src)
@@ -246,40 +247,34 @@
 		. += span_warning("It seems too overcroweded to properly reproduce!")
 
 ///Changes the slime's current life state
-/mob/living/basic/slime/proc/set_life_stage(new_life_stage = SLIME_LIFE_STAGE_BABY)
+/mob/living/basic/slime/proc/set_life_stage(new_life_stage = SLIME_LIFE_STAGE_BABY, initial = FALSE)
 	life_stage = new_life_stage
+	if(life_stage == SLIME_LIFE_STAGE_ADULT)
+		health /= 0.75
+		maxHealth /= 0.75
+		melee_damage_lower *= 2
+		melee_damage_upper *= 2
+		obj_damage = 15
+		wound_bonus = -90
 
-	switch(life_stage)
-		if(SLIME_LIFE_STAGE_BABY)
-
-			health = initial(health)
-			maxHealth = initial(maxHealth)
-
-			obj_damage = initial(obj_damage)
-			melee_damage_lower = initial(melee_damage_lower)
-			melee_damage_upper = initial(melee_damage_upper)
-			wound_bonus = initial(wound_bonus)
-
-		if(SLIME_LIFE_STAGE_ADULT)
-
-			health = 200
-			maxHealth = 200
-
-			obj_damage = 15
-			melee_damage_lower += 10
-			melee_damage_upper += 10
-			wound_bonus = -90
+	else if(!initial)
+		health *= 0.75
+		maxHealth *= 0.75
+		melee_damage_lower *= 0.5
+		melee_damage_upper *= 0.5
+		obj_damage = initial(obj_damage)
+		wound_bonus = initial(wound_bonus)
 
 	ai_controller.set_blackboard_key(BB_SLIME_LIFE_STAGE, life_stage)
 	update_mob_action_buttons()
 
-///Sets the slime's type, name and its icons
-/mob/living/basic/slime/proc/set_slime_type(new_type)
-	slime_type = new new_type
+/// Sets the slime's type, name and its icons.
+/// If not provided with a type it will instead be random
+/mob/living/basic/slime/proc/set_slime_type(new_type = SLIME_TYPE_RANDOM)
+	if(new_type == SLIME_TYPE_RANDOM)
+		new_type = pick(subtypesof(/datum/slime_type))
 
-///randomizes the colour of a slime
-/mob/living/basic/slime/proc/random_colour()
-	set_slime_type(pick(subtypesof(/datum/slime_type)))
+	slime_type = possible_slime_types[new_type]
 	update_name()
 	regenerate_icons()
 
@@ -306,7 +301,7 @@
 		do_sparks(5, TRUE, borg_target)
 		var/stunprob = our_slime.powerlevel * SLIME_SHOCK_PERCENTAGE_PER_LEVEL + SLIME_BASE_SHOCK_PERCENTAGE
 		if(prob(stunprob) && our_slime.powerlevel >= SLIME_EXTRA_SHOCK_COST)
-			our_slime.powerlevel = clamp(our_slime.powerlevel - SLIME_EXTRA_SHOCK_COST, SLIME_MIN_POWER, SLIME_MAX_POWER)
+			our_slime.adjust_power_level(-SLIME_EXTRA_SHOCK_COST)
 			borg_target.apply_damage(our_slime.powerlevel * rand(6, 10), BRUTE, spread_damage = TRUE, wound_bonus = CANT_WOUND)
 			borg_target.visible_message(span_danger("\The [our_slime] shocks [borg_target]!"), span_userdanger("\The [our_slime] shocks you!"))
 		else
@@ -328,7 +323,7 @@
 		carbon_target.Knockdown(power * 2 SECONDS)
 		carbon_target.set_stutter_if_lower(power * 2 SECONDS)
 		if (prob(stunprob) && our_slime.powerlevel >= SLIME_EXTRA_SHOCK_COST)
-			our_slime.powerlevel = clamp(our_slime.powerlevel - SLIME_EXTRA_SHOCK_COST, SLIME_MIN_POWER, SLIME_MAX_POWER)
+			adjust_power_level(-SLIME_EXTRA_SHOCK_COST)
 			carbon_target.apply_damage(our_slime.powerlevel * rand(6, 10), BURN, spread_damage = TRUE, wound_bonus = CANT_WOUND)
 
 	if(isslime(target))
@@ -347,7 +342,7 @@
 			target_slime.adjust_nutrition(-stolen_nutrition)
 			our_slime.adjust_nutrition(stolen_nutrition)
 		if(target_slime.health > 0)
-			our_slime.adjustBruteLoss(is_adult_slime ? -20 : -10)
+			our_slime.adjust_brute_loss(is_adult_slime ? -20 : -10)
 
 
 ///Spawns a crossed slimecore item

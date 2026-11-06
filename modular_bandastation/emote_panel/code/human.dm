@@ -1,0 +1,221 @@
+/datum/sound_effect/male_sigh
+	file_paths = list(
+		'sound/mobs/humanoids/human/sigh/male_sigh1.ogg',
+		'sound/mobs/humanoids/human/sigh/male_sigh2.ogg',
+		'sound/mobs/humanoids/human/sigh/male_sigh3.ogg',
+		'modular_bandastation/emote_panel/audio/human/male/sigh_male.ogg',
+	)
+
+/datum/sound_effect/female_sigh
+	file_paths = list(
+		'sound/mobs/humanoids/human/sigh/female_sigh1.ogg',
+		'sound/mobs/humanoids/human/sigh/female_sigh2.ogg',
+		'sound/mobs/humanoids/human/sigh/female_sigh3.ogg',
+		'modular_bandastation/emote_panel/audio/human/female/sigh_female.ogg',
+	)
+
+/datum/emote/living/carbon/cry
+	sounds_by_mobtype = list(
+		/mob/living/carbon/human = list(
+			FEMALE = list(
+				'sound/mobs/humanoids/human/cry/female_cry1.ogg',
+				'sound/mobs/humanoids/human/cry/female_cry2.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/cry_female_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/cry_female_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/cry_female_3.ogg',
+			),
+			MALE = list(
+				'sound/mobs/humanoids/human/cry/male_cry1.ogg',
+				'sound/mobs/humanoids/human/cry/male_cry2.ogg',
+				'sound/mobs/humanoids/human/cry/male_cry3.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/cry_male_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/cry_male_2.ogg',
+			),
+		),
+	)
+
+/datum/emote/living/laugh
+	sounds_by_mobtype = list(
+		/mob/living/carbon/human = list(
+			FEMALE = list(
+				'sound/mobs/humanoids/human/laugh/womanlaugh.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/laugh_female_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/laugh_female_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/laugh_female_3.ogg',
+			),
+			MALE = list(
+				'sound/mobs/humanoids/human/laugh/manlaugh1.ogg',
+				'sound/mobs/humanoids/human/laugh/manlaugh2.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/laugh_male_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/laugh_male_2.ogg',
+			),
+		),
+	)
+
+/datum/emote/living/giggle
+	sounds_by_mobtype = list(
+		/mob/living/carbon/human = list(
+			FEMALE = list(
+				'modular_bandastation/emote_panel/audio/human/female/giggle_female_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/giggle_female_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/giggle_female_3.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/giggle_female_4.ogg',
+			),
+			MALE = list(
+				'modular_bandastation/emote_panel/audio/human/male/giggle_male_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/giggle_male_2.ogg',
+			),
+		),
+	)
+// MARK Emotes
+/datum/emote/living/sniffle
+	key = "sniffle"
+	key_third_person = "sniffles"
+	name = "нюхать"
+	message = "нюхает."
+	message_mime = "бесшумно нюхает."
+	message_param = "нюхает %t."
+
+/datum/emote/living/sniffle/get_sound(mob/living/user)
+	if(user.gender == FEMALE)
+		return 'modular_bandastation/emote_panel/audio/human/female/sniff_female.ogg'
+	else
+		return 'modular_bandastation/emote_panel/audio/human/male/sniff_male.ogg'
+
+/datum/emote/living/gasp
+	sounds_by_mobtype = list(
+		/mob/living/carbon/human = list(
+			MALE = list(
+				'sound/mobs/humanoids/human/gasp/gasp_male1.ogg',
+				'sound/mobs/humanoids/human/gasp/gasp_male2.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/gasp_male_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/gasp_male_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/gasp_male_3.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/gasp_male_4.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/gasp_male_5.ogg',
+			),
+			FEMALE = list(
+				'sound/mobs/humanoids/human/gasp/gasp_female1.ogg',
+				'sound/mobs/humanoids/human/gasp/gasp_female2.ogg',
+				'sound/mobs/humanoids/human/gasp/gasp_female3.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/gasp_female_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/gasp_female_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/gasp_female_3.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/gasp_female_4.ogg',
+			),
+		),
+	)
+
+/datum/emote/living/yawn
+	sounds_by_mobtype = list(
+		/mob/living/carbon/human = list(
+			FEMALE = list(
+				'modular_bandastation/emote_panel/audio/human/female/yawn_female_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/yawn_female_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/yawn_female_3.ogg',
+			),
+			MALE = list(
+				'modular_bandastation/emote_panel/audio/human/male/yawn_male_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/yawn_male_2.ogg',
+			),
+		),
+	)
+
+/datum/emote/living/choke
+	sounds_by_mobtype = list(
+		/mob/living/carbon/human = list(
+			FEMALE = list(
+				'modular_bandastation/emote_panel/audio/human/female/choke_female_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/choke_female_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/choke_female_3.ogg',
+			),
+			MALE = list(
+				'modular_bandastation/emote_panel/audio/human/male/choke_male_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/choke_male_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/choke_male_3.ogg',
+			),
+		),
+	)
+
+/datum/emote/living/carbon/whistle
+	sounds_by_mobtype = list(
+		/mob/living/carbon = list(
+			'sound/mobs/humanoids/human/whistle/whistle1.ogg',
+			'modular_bandastation/emote_panel/audio/whistle.ogg',
+		),
+	)
+
+/datum/emote/living/carbon/moan
+	sounds_by_mobtype = list(
+		/mob/living/carbon/human = list(
+			FEMALE = list(
+				'modular_bandastation/emote_panel/audio/human/female/moan_female_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/moan_female_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/female/moan_female_3.ogg',
+			),
+			MALE = list(
+				'modular_bandastation/emote_panel/audio/human/male/moan_male_1.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/moan_male_2.ogg',
+				'modular_bandastation/emote_panel/audio/human/male/moan_male_3.ogg',
+			),
+		),
+	)
+
+/datum/emote/living/dance
+	cooldown = 5 SECONDS
+
+/datum/emote/living/dance/run_emote(mob/living/user, params, type_override, intentional)
+	. = ..()
+	user.spin(cooldown, pick(0.1 SECONDS, 0.2 SECONDS))
+	user.do_jitter_animation(rand(8 SECONDS, 16 SECONDS), cooldown / 4)
+
+/datum/emote/living/evil_laugh
+	key = "laughevil"
+	message = "злорадно смеётся."
+	message_mime = "бесшумно злорадно смеётся!"
+	emote_type = EMOTE_VISIBLE | EMOTE_AUDIBLE
+	vary = TRUE
+
+/datum/emote/living/evil_laugh/can_run_emote(mob/living/user, status_check = TRUE, intentional, params)
+	return ..() && user.can_speak(allow_mimes = TRUE)
+
+/datum/emote/living/evil_laugh/get_sound(mob/living/carbon/human/user)
+	if(!istype(user))
+		return
+	return user.dna.species.get_evil_laugh_sound(user)
+
+/datum/emote/living/cane_tap
+	key = "cane_tap"
+	key_third_person = "стучит тростью"
+	name = "Стучать тростью"
+	message = "стучит тростью по полу."
+	emote_type = EMOTE_VISIBLE | EMOTE_AUDIBLE
+	sound = 'sound/items/modsuit/atrocinator_step.ogg'
+	cooldown = 2 SECONDS
+	var/static/list/cane_typecache = typecacheof(list(/obj/item/cane, /obj/item/melee/baton/nt_cane))
+
+/datum/emote/living/cane_tap/can_run_emote(mob/living/user, status_check = TRUE, intentional, params)
+	if(!..())
+		return FALSE
+	if(!status_check)
+		return TRUE
+	var/active_item = user.get_active_held_item()
+	if(!is_type_in_typecache(active_item, cane_typecache))
+		return FALSE
+	var/turf/user_turf = get_turf(user)
+	return user_turf && !isgroundlessturf(user_turf)
+
+/datum/emote/living/cane_tap/should_play_sound(mob/living/user, intentional = FALSE)
+	return FALSE
+
+/datum/emote/living/cane_tap/run_emote(mob/living/user, params, type_override, intentional)
+	. = ..()
+	addtimer(CALLBACK(src, PROC_REF(play_cane_tap_sound), user, 1), 0.25 SECONDS)
+
+/datum/emote/living/cane_tap/proc/play_cane_tap_sound(mob/living/user, count)
+	if(QDELETED(user))
+		return
+
+	playsound(user, sound, 50, TRUE)
+	if(count < 3)
+		addtimer(CALLBACK(src, PROC_REF(play_cane_tap_sound), user, count + 1), 0.5 SECONDS)

@@ -2,6 +2,7 @@
 
 /obj/structure/sign/departments
 	is_editable = TRUE
+	sign_change_name = "Department Signs"
 
 ///////MEDBAY
 
@@ -105,7 +106,7 @@ MAPPING_DIRECTIONAL_HELPERS(/obj/structure/sign/departments/engineering, 32)
 	desc = "A sign labelling an area where your life-giving air comes from."
 	icon_state = "atmos"
 
-MAPPING_DIRECTIONAL_HELPERS(/obj/structure/sign/departments/engineering, 32)
+MAPPING_DIRECTIONAL_HELPERS(/obj/structure/sign/departments/atmospherics, 32)
 
 ///////SCIENCE
 

@@ -3,15 +3,15 @@
 	description = "Руководите отделом поставок и шахтерами, принимайте \
 		заказы от экипажа."
 	auto_deadmin_role_flags = DEADMIN_POSITION_HEAD
-	department_head = list(JOB_CAPTAIN)
-	head_announce = list(RADIO_CHANNEL_SUPPLY)
+	head_announce = RADIO_CHANNEL_SUPPLY
 	faction = FACTION_STATION
 	total_positions = 1
 	spawn_positions = 1
 	minimal_player_age = 7
 	supervisors = JOB_CAPTAIN_RU
+	exp_requirements = 1200
 	exp_required_type_department = EXP_TYPE_SUPPLY
-	exp_granted_type = EXP_TYPE_CREW
+	exp_granted_type = EXP_TYPE_COMMAND
 	config_tag = "QUARTERMASTER"
 
 	outfit = /datum/outfit/job/quartermaster
@@ -29,7 +29,7 @@
 		/datum/job_department/cargo,
 		/datum/job_department/command,
 		)
-	family_heirlooms = list(/obj/item/stamp, /obj/item/stamp/denied)
+	family_heirlooms = list(/obj/item/stamp/granted, /obj/item/stamp/denied)
 	mail_goodies = list(
 		/obj/item/circuitboard/machine/emitter = 3
 	)
@@ -37,6 +37,7 @@
 	job_flags = STATION_JOB_FLAGS | HEAD_OF_STAFF_JOB_FLAGS
 	voice_of_god_power = 1.4 //Command staff has authority
 	human_authority = JOB_AUTHORITY_NON_HUMANS_ALLOWED
+	tgui_icon = FA_ICON_SACK_DOLLAR
 
 /datum/outfit/job/quartermaster
 	name = "Quartermaster"
@@ -47,7 +48,7 @@
 	id_trim = /datum/id_trim/job/quartermaster
 	id = /obj/item/card/id/advanced/silver
 	uniform = /obj/item/clothing/under/rank/cargo/qm
-	belt = /obj/item/modular_computer/pda/heads/quartermaster
+	belt = /obj/item/modular_computer/pda/crew/heads/quartermaster
 	suit = /obj/item/clothing/suit/jacket/quartermaster
 	ears = /obj/item/radio/headset/heads/qm
 	glasses = /obj/item/clothing/glasses/sunglasses
@@ -55,3 +56,5 @@
 	l_hand = /obj/item/clipboard
 
 	chameleon_extras = /obj/item/stamp/head/qm
+
+	wintercoat = /obj/item/clothing/suit/hooded/wintercoat/cargo/qm

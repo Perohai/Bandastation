@@ -2,7 +2,7 @@
 
 ///Springlock Mechanism - allows your modsuit to activate faster, but reagents are very dangerous.
 /obj/item/mod/module/springlock
-	name = "MOD springlock module"
+	name = "\improper MOD springlock module"
 	desc = "A module that spans the entire size of the MOD unit, sitting under the outer shell. \
 		This mechanical exoskeleton pushes out of the way when the user enters and it helps in booting \
 		up, but was taken out of modern suits because of the springlock's tendency to \"snap\" back \
@@ -67,7 +67,7 @@
 
 	var/turf/wearer_turf = get_turf(src)
 	var/datum/gas_mixture/air = wearer_turf.return_air()
-	if(!(air.gases[/datum/gas/water_vapor] && (air.gases[/datum/gas/water_vapor][MOLES]) >= 5))
+	if(air.moles[/datum/gas/water_vapor] < 5)
 		return //return if there aren't more than 5 Moles of Water Vapor in the air
 	snap_signal()
 
@@ -105,7 +105,7 @@
 
 ///Rave Visor - Gives you a rainbow visor and plays jukebox music to you.
 /obj/item/mod/module/visor/rave
-	name = "MOD rave visor module"
+	name = "\improper MOD rave visor module"
 	desc = "A Super Cool Awesome Visor (SCAV), intended for modular suits."
 	icon_state = "rave_visor"
 	complexity = 1
@@ -136,12 +136,12 @@
 	QDEL_NULL(rave_screen)
 	return ..()
 
-/obj/item/mod/module/visor/rave/on_activation()
+/obj/item/mod/module/visor/rave/on_activation(mob/activator)
 	rave_screen = mod.wearer.add_client_colour(/datum/client_colour/rave, REF(src))
 	rave_screen.update_color(rainbow_order[rave_number])
 	music_player.start_music(mod.wearer)
 
-/obj/item/mod/module/visor/rave/on_deactivation(display_message = TRUE, deleting = FALSE)
+/obj/item/mod/module/visor/rave/on_deactivation(mob/activator, display_message = TRUE, deleting = FALSE)
 	QDEL_NULL(rave_screen)
 	if(isnull(music_player.active_song_sound))
 		return
@@ -188,7 +188,7 @@
 
 ///Tanner - Tans you with spraytan.
 /obj/item/mod/module/tanner
-	name = "MOD tanning module"
+	name = "\improper MOD tanning module"
 	desc = "A tanning module for modular suits. Skin cancer functionality has not been ever proven, \
 		although who knows with the rumors..."
 	icon_state = "tanning"
@@ -199,7 +199,7 @@
 	cooldown_time = 30 SECONDS
 	required_slots = list(ITEM_SLOT_OCLOTHING|ITEM_SLOT_ICLOTHING)
 
-/obj/item/mod/module/tanner/on_use()
+/obj/item/mod/module/tanner/on_use(mob/activator)
 	playsound(src, 'sound/machines/microwave/microwave-end.ogg', 50, TRUE)
 	var/datum/reagents/holder = new()
 	holder.add_reagent(/datum/reagent/spraytan, 10)
@@ -210,7 +210,7 @@
 
 ///Balloon Blower - Blows a balloon.
 /obj/item/mod/module/balloon
-	name = "MOD balloon blower module"
+	name = "\improper MOD balloon blower module"
 	desc = "A strange module invented years ago by some ingenious mimes. It blows balloons."
 	icon_state = "bloon"
 	module_type = MODULE_USABLE
@@ -223,10 +223,10 @@
 	var/blowing_time = 10 SECONDS
 	var/oxygen_damage = 20
 
-/obj/item/mod/module/balloon/on_use()
+/obj/item/mod/module/balloon/on_use(mob/activator)
 	if(!do_after(mod.wearer, blowing_time, target = mod))
 		return FALSE
-	mod.wearer.adjustOxyLoss(oxygen_damage)
+	mod.wearer.adjust_oxy_loss(oxygen_damage)
 	playsound(src, 'sound/items/modsuit/inflate_bloon.ogg', 50, TRUE)
 	var/obj/item/balloon = new balloon_path(get_turf(src))
 	mod.wearer.put_in_hands(balloon)
@@ -234,7 +234,7 @@
 
 ///Paper Dispenser - Dispenses (sometimes burning) paper sheets.
 /obj/item/mod/module/paper_dispenser
-	name = "MOD paper dispenser module"
+	name = "\improper MOD paper dispenser module"
 	desc = "A simple module designed by the bureaucrats of Torch Bay. \
 		It dispenses 'warm, clean, and crisp sheets of paper' onto a nearby table. Usually."
 	icon_state = "paper_maker"
@@ -243,11 +243,11 @@
 	use_energy_cost = DEFAULT_CHARGE_DRAIN * 0.5
 	incompatible_modules = list(/obj/item/mod/module/paper_dispenser)
 	cooldown_time = 5 SECONDS
-	required_slots = list(ITEM_SLOT_GLOVES)
+	required_slots = list(ITEM_SLOT_GLOVES|ITEM_SLOT_NECK)
 	/// The total number of sheets created by this MOD. The more sheets, them more likely they set on fire.
 	var/num_sheets_dispensed = 0
 
-/obj/item/mod/module/paper_dispenser/on_use()
+/obj/item/mod/module/paper_dispenser/on_use(mob/activator)
 	if(!do_after(mod.wearer, 1 SECONDS, target = mod))
 		return FALSE
 
@@ -264,7 +264,7 @@
 
 	// Up to a 30% chance to set the sheet on fire, +2% per sheet made
 	if(prob(min(num_sheets_dispensed * 2, 30)))
-		if(crisp_paper in mod.wearer.held_items)
+		if(mod.wearer.is_holding(crisp_paper))
 			mod.wearer.dropItemToGround(crisp_paper, force = TRUE)
 		crisp_paper.balloon_alert(mod.wearer, UNLINT("PC LOAD LETTER!"))
 		crisp_paper.visible_message(span_warning("[crisp_paper] bursts into flames, it's too crisp!"))
@@ -276,9 +276,9 @@
 
 ///Stamper - Extends a stamp that can switch between accept/deny modes.
 /obj/item/mod/module/stamp
-	name = "MOD stamper module"
+	name = "\improper MOD stamper module"
 	desc = "A module installed into the wrist of the suit, this functions as a high-power stamp, \
-		able to switch between accept and deny modes."
+		able to switch between accept, deny, and void modes."
 	icon_state = "stamp"
 	module_type = MODULE_ACTIVE
 	complexity = 1
@@ -286,23 +286,36 @@
 	device = /obj/item/stamp/mod
 	incompatible_modules = list(/obj/item/mod/module/stamp)
 	cooldown_time = 0.5 SECONDS
-	required_slots = list(ITEM_SLOT_GLOVES)
+	required_slots = list(ITEM_SLOT_GLOVES|ITEM_SLOT_NECK)
 
 /obj/item/stamp/mod
-	name = "MOD electronic stamp"
-	desc = "A high-power stamp, able to switch between accept and deny mode when used."
+	name = "\improper MOD electronic stamp"
+	desc = "A high-power stamp, able to switch between accept, deny, and void modes when used."
+	icon_state = "stamp-ok"
 
 /obj/item/stamp/mod/attack_self(mob/user, modifiers)
-	. = ..()
-	if(icon_state == "stamp-ok")
-		icon_state = "stamp-deny"
-	else
-		icon_state = "stamp-ok"
-	balloon_alert(user, "switched mode")
+
+	var/choices = list()
+	var/icon_states = list()
+	icon_states["Granted"] = "stamp-ok"
+	icon_states["Denied"] = "stamp-deny"
+	icon_states["Void"] = "stamp-void"
+	for(var/possible_icon_state in icon_states)
+		if(!(src.icon_state == icon_states[possible_icon_state]))
+			choices[possible_icon_state] = image(src.icon, icon_states[possible_icon_state])
+	var/chosen_icon_state = show_radial_menu(user, user, choices, custom_check = CALLBACK(src, PROC_REF(check_menu), src, user), require_near = TRUE)
+	if(chosen_icon_state)
+		playsound(src, 'sound/machines/click.ogg', 30, TRUE, -3)
+		src.icon_state = icon_states[chosen_icon_state]
+
+/obj/item/stamp/mod/proc/check_menu(datum/target, mob/user)
+	if(user.incapacitated || !user.is_holding(target))
+		return FALSE
+	return TRUE
 
 ///Atrocinator - Flips your gravity.
 /obj/item/mod/module/atrocinator
-	name = "MOD atrocinator module"
+	name = "\improper MOD atrocinator module"
 	desc = "A mysterious orb that has mysterious effects when inserted in a MODsuit."
 	icon_state = "atrocinator"
 	module_type = MODULE_TOGGLE
@@ -316,30 +329,37 @@
 	/// If you use the module on a planetary turf, you fly up. To the sky.
 	var/you_fucked_up = FALSE
 
-/obj/item/mod/module/atrocinator/on_activation()
+/obj/item/mod/module/atrocinator/on_activation(mob/activator)
+	// Auto-unbuckle anyone being carried to avoid lag issues
+	if(length(mod.wearer.buckled_mobs))
+		mod.wearer.visible_message("As [mod.wearer] flips, [mod.wearer.buckled_mobs[1]] flies off of [mod.wearer.p_their()] back!")
+		mod.wearer.unbuckle_all_mobs()
+
 	playsound(src, 'sound/effects/curse/curseattack.ogg', 50)
 	mod.wearer.AddElement(/datum/element/forced_gravity, NEGATIVE_GRAVITY)
 	RegisterSignal(mod.wearer, COMSIG_MOVABLE_MOVED, PROC_REF(check_upstairs))
 	RegisterSignal(mod.wearer, COMSIG_MOB_SAY, PROC_REF(on_talk))
+	RegisterSignal(mod.wearer, COMSIG_MOVABLE_PREBUCKLE, PROC_REF(on_someone_buckled))
 	ADD_TRAIT(mod.wearer, TRAIT_SILENT_FOOTSTEPS, REF(src))
-	passtable_on(mod.wearer, REF(src))
+	ADD_TRAIT(mod.wearer, TRAIT_PASSTABLE, REF(src))
 	check_upstairs() //todo at some point flip your screen around
 
-/obj/item/mod/module/atrocinator/deactivate(display_message = TRUE, deleting = FALSE)
+/obj/item/mod/module/atrocinator/deactivate(mob/activator, display_message = TRUE, deleting = FALSE)
 	if(you_fucked_up && !deleting)
-		to_chat(mod.wearer, span_danger("It's too late."))
+		to_chat(activator, span_danger("It's too late."))
 		return FALSE
 	return ..()
 
-/obj/item/mod/module/atrocinator/on_deactivation(display_message = TRUE, deleting = FALSE)
+/obj/item/mod/module/atrocinator/on_deactivation(mob/activator, display_message = TRUE, deleting = FALSE)
 	if(!deleting)
 		playsound(src, 'sound/effects/curse/curseattack.ogg', 50)
 	qdel(mod.wearer.RemoveElement(/datum/element/forced_gravity, NEGATIVE_GRAVITY))
 	UnregisterSignal(mod.wearer, COMSIG_MOVABLE_MOVED)
 	UnregisterSignal(mod.wearer, COMSIG_MOB_SAY)
+	UnregisterSignal(mod.wearer, COMSIG_MOVABLE_PREBUCKLE)
 	step_count = 0
 	REMOVE_TRAIT(mod.wearer, TRAIT_SILENT_FOOTSTEPS, REF(src))
-	passtable_off(mod.wearer, REF(src))
+	REMOVE_TRAIT(mod.wearer, TRAIT_PASSTABLE, REF(src))
 	var/turf/open/openspace/current_turf = get_turf(mod.wearer)
 	if(istype(current_turf))
 		current_turf.zFall(mod.wearer, falling_from_move = TRUE)
@@ -348,6 +368,16 @@
 	SIGNAL_HANDLER
 
 	if(you_fucked_up || mod.wearer.has_gravity() > NEGATIVE_GRAVITY)
+		return
+
+	// Prevent infinite loops when being fireman carried - Stack trace if it does
+	if(mod.wearer.buckled)
+		stack_trace("Atrocinator user is buckled despite protections - this shouldn't happen!")
+		return
+
+	// Prevent infinite loops when carrying someone - Stack trace if it does
+	if(length(mod.wearer.buckled_mobs))
+		stack_trace("Atrocinator user is carrying someone despite protections - this shouldn't happen!")
 		return
 
 	var/turf/open/current_turf = get_turf(mod.wearer)
@@ -364,7 +394,7 @@
 		return
 
 	if(!(step_count % 2))
-		playsound(current_turf, 'sound/items/modsuit/atrocinator_step.ogg', 50)
+		playsound(current_turf, 'sound/items/modsuit/atrocinator_step.ogg', 35) // BANDASTATION EDIT: orig volume = 50, less ear damage
 	step_count++
 
 #define FLY_TIME (5 SECONDS)
@@ -384,8 +414,16 @@
 	SIGNAL_HANDLER
 	speech_args[SPEECH_SPANS] |= "upside_down"
 
+/// Prevent someone from being buckled to the wearer while atrocinator is active
+/obj/item/mod/module/atrocinator/proc/on_someone_buckled(datum/source, mob/living/buckled_mob, mob/living/buckler)
+	SIGNAL_HANDLER
+	balloon_alert(buckler, "[buckler == mod.wearer ? "you're" : "they're"] upside down!")
+	return COMPONENT_BLOCK_BUCKLE
+
+
+
 /obj/item/mod/module/recycler/donk/safe
-	name = "MOD foam dart recycler module"
+	name = "\improper MOD foam dart recycler module"
 	desc = "A mod module that collects and repackages fired foam darts into half-sized ammo boxes. \
 		Activate on a nearby turf or storage to unload stored ammo boxes."
 	icon_state = "donk_safe_recycler"

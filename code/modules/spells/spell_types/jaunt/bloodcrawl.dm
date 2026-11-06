@@ -134,7 +134,7 @@
 	UnregisterSignal(jaunt, COMSIG_MOVABLE_MOVED)
 	exit_blood_effect(unjaunter)
 	if(equip_blood_hands && iscarbon(unjaunter))
-		for(var/obj/item/bloodcrawl/blood_hand in unjaunter.held_items)
+		for(var/obj/item/bloodcrawl/blood_hand as anything in unjaunter.get_held_items_of_type(/obj/item/bloodcrawl))
 			unjaunter.temporarilyRemoveItemFromInventory(blood_hand, force = TRUE)
 			qdel(blood_hand)
 	return ..()
@@ -187,7 +187,7 @@
 
 	var/mob/living/carbon/human/victim = coming_with
 
-	if(victim.stat == CONSCIOUS)
+	if(!IS_UNCONSCIOUS_OR_CRIT(victim))
 		jaunt_turf.visible_message(
 			span_warning("[victim] kicks free of [blood] just before entering it!"),
 			blind_message = span_notice("You hear splashing and struggling."),

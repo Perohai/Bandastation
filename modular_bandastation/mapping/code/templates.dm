@@ -1,8 +1,13 @@
 // MARK: General
 /datum/lazy_template/nukie_base
 	map_dir = "_maps/templates/lazy_templates/ss220"
-	map_name = "syndie_cc"
+	map_name = "syndie_cc_small"
 	key = LAZY_TEMPLATE_KEY_NUKIEBASE
+
+/datum/lazy_template/syndie_cc
+	map_dir = "_maps/templates/lazy_templates/ss220"
+	map_name = "syndie_cc"
+	key = LAZY_TEMPLATE_KEY_SYNDIE_CC
 
 // MARK: Shuttles
 /datum/map_template/shuttle/sit
@@ -55,6 +60,14 @@
 	suffix = "basic"
 	name = "Standard Gamma Armory Shuttle"
 
+/datum/map_template/shuttle/gamma/bio
+	suffix = "bio"
+	name = "Biohazard Gamma Armory Shuttle"
+
+/datum/map_template/shuttle/gamma/holy
+	suffix = "holy"
+	name = "Holy Gamma Armory Shuttle"
+
 /datum/map_template/shuttle/gamma/clown
 	suffix = "clown"
 	name = "Clown Gamma Armory Shuttle"
@@ -72,8 +85,19 @@
 	name = "assault pod (Nanotrasen)"
 	prefix = "_maps/shuttles/ss220/"
 
+/datum/map_template/shuttle/emergency/mothsm
+	suffix = "mothsm"
+	name = "Mothroach Supermatter Shuttle"
+	credit_cost = CARGO_CRATE_VALUE * 8
+	description = "Настандартный шаттл, оснащённый реактором на суперматтерии. Радиационная безопасность не гарантируется! Построен инженерами расы Ниан, потому возможно присутствие молетараканов."
+	admin_notes = "Шаттл с СМом. Смешное, но облучает радейкой пассажиров. А ещё там куча молей."
+	occupancy_limit = "30"
+
 // MARK: Shuttles Overrides
 /datum/map_template/shuttle/infiltrator/basic
+	prefix = "_maps/shuttles/ss220/"
+
+/datum/map_template/shuttle/infiltrator/clown
 	prefix = "_maps/shuttles/ss220/"
 
 // MARK: Deathmatch

@@ -3,9 +3,11 @@ GLOBAL_LIST_INIT(vine_mutations_list, init_vine_mutation_list())
 
 /proc/init_vine_mutation_list()
 	var/list/mutation_list = list()
-	init_subtypes(/datum/spacevine_mutation/, mutation_list)
-	for(var/datum/spacevine_mutation/mutation as anything in mutation_list)
+
+	for(var/datum/spacevine_mutation/subtype as anything in valid_subtypesof(/datum/spacevine_mutation))
+		var/datum/spacevine_mutation/mutation = new subtype
 		mutation_list[mutation] = IDEAL_MAX_SEVERITY - mutation.severity // the ideal maximum potency is used for weighting
+
 	return mutation_list
 
 /datum/spacevine_controller
@@ -46,6 +48,7 @@ GLOBAL_LIST_INIT(vine_mutations_list, init_vine_mutation_list())
 
 /datum/spacevine_controller/vv_get_dropdown()
 	. = ..()
+	VV_DROPDOWN_OPTION("", "--- /spacevine_controller ---")
 	VV_DROPDOWN_OPTION(VV_HK_SPACEVINE_PURGE, "Delete Vines")
 
 /datum/spacevine_controller/vv_do_topic(href_list)
@@ -55,8 +58,6 @@ GLOBAL_LIST_INIT(vine_mutations_list, init_vine_mutation_list())
 		return
 
 	if(href_list[VV_HK_SPACEVINE_PURGE])
-		if(!check_rights(NONE))
-			return
 		if(tgui_alert(usr, "Are you sure you want to delete this spacevine cluster?", "Delete Vines", list("Yes", "No")) == "Yes")
 			DeleteVines()
 
@@ -82,7 +83,7 @@ GLOBAL_LIST_INIT(vine_mutations_list, init_vine_mutation_list())
 				break
 	if(parent)
 		vine.mutations |= parent.mutations
-		vine.trait_flags |= parent.trait_flags
+
 		var/parentcolor = parent.atom_colours[FIXED_COLOUR_PRIORITY]
 		vine.add_atom_colour(parentcolor, FIXED_COLOUR_PRIORITY)
 		if(prob(mutativeness))
@@ -124,9 +125,9 @@ GLOBAL_LIST_INIT(vine_mutations_list, init_vine_mutation_list())
 		return
 
 	/// Bonus spread for kudzu that has just started out (ie. with low vine count)
-	var/start_spread_bonus = max(5 - spread_multiplier * (vine_count ** 2) / 400, 0)
+	var/start_spread_bonus = max(20 - spread_multiplier * (vine_count ** 2) / 800, 0) //  BANDASTATION EDIT. ORIGINAL: max(5 - spread_multiplier * (vine_count ** 2) / 400, 0) (BALANCE: buffs the spess vines)
 	/// Base spread rate, depends solely on spread multiplier and vine count
-	var/spread_base = 0.5 * vine_count / spread_multiplier
+	var/spread_base = 1 * vine_count / spread_multiplier //  BANDASTATION EDIT. ORIGINAL: 0.5 * vine_count / spread_multiplier (BALANCE: buffs the spess vines)
 	/// Actual maximum spread rate for this process tick
 	var/spread_max = round(clamp(seconds_per_tick * (spread_base + start_spread_bonus), max(seconds_per_tick * minimum_spread_rate, 1), spread_cap))
 	var/amount_processed = 0
@@ -161,6 +162,6 @@ GLOBAL_LIST_INIT(vine_mutations_list, init_vine_mutation_list())
 /proc/isvineimmune(atom/target)
 	if(isliving(target))
 		var/mob/living/victim = target
-		if((FACTION_VINES in victim.faction) || (FACTION_PLANTS in victim.faction))
+		if(victim.has_faction(FACTION_VINES, FACTION_PLANTS))
 			return TRUE
 	return FALSE

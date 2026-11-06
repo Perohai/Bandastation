@@ -12,11 +12,17 @@ modules = ["den.dmm"]
 [rooms.dig]
 modules = ["dig.dmm"]
 
+[rooms.rock]
+modules = ["rock.dmm"]
+
 [rooms.ice]
 modules = ["ice.dmm"]
 
 [rooms.lavaland_boss]
 modules = ["lavaland_boss.dmm"]
+
+[rooms.maintsafe]
+modules = ["maintsafe.dmm"]
 
 [rooms.mine]
 modules = ["mine.dmm"]

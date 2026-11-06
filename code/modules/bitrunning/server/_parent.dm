@@ -16,6 +16,8 @@
 	var/datum/lazy_template/virtual_domain/generated_domain
 	/// If the current domain was a random selection
 	var/domain_randomized = FALSE
+	/// Whether the domain is finished, so the bitrunners can leave despite glitches
+	var/domain_complete = FALSE
 	/// Prevents multiple user actions. Handled by loading domains and cooldowns
 	var/is_ready = TRUE
 	/// Chance multipled by threat to spawn a glitch
@@ -28,6 +30,8 @@
 	var/list/datum/weakref/spawned_threat_refs = list()
 	/// Scales loot with extra players
 	var/multiplayer_bonus = 1.1
+	/// Extra bonus for every player that nohits the run
+	var/nohit_bonus = 0.8
 	/// The amount of points in the system, used to purchase maps
 	var/points = 0
 	/// Keeps track of the number of times someone has built a hololadder
@@ -75,10 +79,10 @@
 		return
 
 	if(held_item.tool_behaviour == TOOL_SCREWDRIVER)
-		context[SCREENTIP_CONTEXT_LMB] = "[panel_open ? "Close" : "Open"] Panel"
+		context[SCREENTIP_CONTEXT_LMB] = "[panel_open ? "Закрыть" : "Открыть"] панель"
 		return CONTEXTUAL_SCREENTIP_SET
 	else if(held_item.tool_behaviour == TOOL_CROWBAR && panel_open)
-		context[SCREENTIP_CONTEXT_LMB] = "Deconstruct"
+		context[SCREENTIP_CONTEXT_LMB] = "Разбор"
 		return CONTEXTUAL_SCREENTIP_SET
 
 /obj/machinery/quantum_server/examine(mob/user)
@@ -86,9 +90,9 @@
 
 	. += span_infoplain("Может требовать много ресурсов при работе. Обеспечьте достаточное энергоснабжение.")
 
-	. += span_notice("Its maintainance panel can be [EXAMINE_HINT("screwed")] [panel_open ? "close" : "open"].")
+	. += span_notice("Панель технического обслуживания может быть [panel_open ? "закрыта" : "открыта"] [EXAMINE_HINT("с помощью гаечного ключа")].")
 	if(panel_open)
-		. += span_notice("It can be [EXAMINE_HINT("pried")] apart.")
+		. += span_notice("Может быть разобран, если [EXAMINE_HINT("поддеть")] чем-то.")
 
 	var/upgraded = FALSE
 	if(capacitor_coefficient < 1)
@@ -121,7 +125,7 @@
 	threat_prob_max *= 2
 
 	add_overlay(mutable_appearance('icons/obj/machines/bitrunning.dmi', "emag_overlay"))
-	balloon_alert(user, "system jailbroken...")
+	balloon_alert(user, "система взломана...")
 	playsound(src, 'sound/effects/sparks/sparks1.ogg', 35, vary = TRUE)
 
 
@@ -138,41 +142,39 @@
 	if(isnull(generated_domain) || !is_operational)
 		icon_state = base_icon_state
 		return ..()
+	if(panel_open)
+		icon_state = "[base_icon_state]_panel"
+		return ..()
 
 	icon_state = "[base_icon_state]_[is_ready ? "on" : "off"]"
 	return ..()
 
 
-/obj/machinery/quantum_server/attackby(obj/item/weapon, mob/user, list/modifiers, list/attack_modifiers)
-	. = ..()
+/obj/machinery/quantum_server/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	if(!istype(tool, /obj/item/bitrunning_debug))
+		return NONE
 
-	if(!istype(weapon, /obj/item/bitrunning_debug))
-		return
-
+	balloon_alert(user, "*голос хакера* я внутри")
 	obj_flags |= EMAGGED
 	glitch_chance = 0.5
 	capacitor_coefficient = 0.1
 	points = 100
-
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/quantum_server/crowbar_act(mob/living/user, obj/item/crowbar)
-	. = NONE
 	if(!is_ready)
-		balloon_alert(user, "it's scalding hot!")
+		balloon_alert(user, "обжигающе горячо!")
 		return ITEM_INTERACT_FAILURE
 	if(length(avatar_connection_refs))
-		balloon_alert(user, "all clients must disconnect!")
+		balloon_alert(user, "все клиенты должны отключиться!")
 		return ITEM_INTERACT_FAILURE
-	if(default_deconstruction_crowbar(crowbar))
-		return ITEM_INTERACT_SUCCESS
+	return default_deconstruction_crowbar(user, crowbar)
 
 /obj/machinery/quantum_server/screwdriver_act(mob/living/user, obj/item/screwdriver)
-	. = NONE
 	if(!is_ready)
-		balloon_alert(user, "it's scalding hot!")
+		balloon_alert(user, "обжигающе горячо!")
 		return ITEM_INTERACT_FAILURE
-	if(default_deconstruction_screwdriver(user, "[base_icon_state]_panel", base_icon_state, screwdriver))
-		return ITEM_INTERACT_SUCCESS
+	return default_deconstruction_screwdriver(user, screwdriver)
 
 /obj/machinery/quantum_server/RefreshParts()
 	var/capacitor_rating = 1.15
@@ -194,8 +196,8 @@
 	return ..()
 
 /datum/aas_config_entry/bitrunning_QS_ready_announcement
-	name = "Cargo Alert: Bitrunning QS Ready"
+	name = "Карго оповещение: квантовый сервер битрана готов к работе"
 	general_tooltip = "Announces when the quantum server is ready to be used. No variables provided"
 	announcement_lines_map = list(
-		"Message" = "Quantum Server report: Thermal systems within operational parameters. Proceeding to domain configuration."
+		"Message" = "Отчёт квантового сервера: тепловые системы в рабочем состоянии. Переходим к настройке домена."
 	)

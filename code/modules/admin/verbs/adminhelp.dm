@@ -278,7 +278,7 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 		"PLAYERS" = player_count,
 		"ROUND STATE" = round_state,
 		"ROUND ID" = GLOB.round_id,
-		"ROUND TIME" = ROUND_TIME(),
+		"ROUND TIME" = round_timestamp(),
 		"MESSAGE" = message,
 		"ADMINS" = admin_text,
 	)
@@ -339,9 +339,9 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 	// send2chat(new /datum/tgs_message_conent("[initiator_ckey] | [message_content]"), "ahelp", TRUE)
 	var/list/headers = list()
 	headers["Content-Type"] = "application/json"
-	var/datum/http_request/request = new()
+	var/datum/http_request/request = new
 	request.prepare(RUSTG_HTTP_METHOD_POST, webhook, json_encode(webhook_info), headers, "tmp/response.json")
-	request.begin_async()
+	request.fire_and_forget()
 
 /datum/admin_help/Destroy()
 	RemoveActive()
@@ -356,9 +356,9 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 			heard_by_no_admins = FALSE
 			send2adminchat(initiator_ckey, "Ticket #[id]: Answered by [key_name(usr)]")
 
-	ticket_interactions += "[time_stamp()]: [formatted_message]"
+	ticket_interactions += "[server_timestamp()]: [formatted_message]"
 	if (!isnull(player_message))
-		player_interactions += "[time_stamp()]: [player_message]"
+		player_interactions += "[server_timestamp()]: [player_message]"
 
 //Removes the ahelp verb and returns it after 2 minutes
 /datum/admin_help/proc/TimeoutVerb()
@@ -564,11 +564,11 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 	dat += "<h4>Admin Help Ticket #[id]: [LinkedReplyName(ref_src)]</h4>"
 	dat += "<b>State: [ticket_status()]</b>"
 	dat += "[FOURSPACES][TicketHref("Refresh", ref_src)][FOURSPACES][TicketHref("Re-Title", ref_src, "retitle")]"
-	if(state != AHELP_ACTIVE) 
+	if(state != AHELP_ACTIVE)
 		dat += "[FOURSPACES][TicketHref("Reopen", ref_src, "reopen")]"
-	dat += "<br><br>Opened at: [gameTimestamp(wtime = opened_at)] (Approx [DisplayTimeText(world.time - opened_at)] ago)"
+	dat += "<br><br>Opened at: [round_timestamp(wtime = opened_at)] (Approx [DisplayTimeText(world.time - opened_at)] ago)"
 	if(closed_at)
-		dat += "<br>Closed at: [gameTimestamp(wtime = closed_at)] (Approx [DisplayTimeText(world.time - closed_at)] ago)"
+		dat += "<br>Closed at: [round_timestamp(wtime = closed_at)] (Approx [DisplayTimeText(world.time - closed_at)] ago)"
 	dat += "<br><br>"
 	if(initiator)
 		dat += "<b>Actions:</b> [FullMonty(ref_src)]<br>"
@@ -665,10 +665,10 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 			dat += "CLOSED</b>"
 		else
 			dat += "UNKNOWN</b>"
-	dat += "\n[FOURSPACES]<A href='byond://?_src_=holder;[HrefToken(forceGlobal = TRUE)];player_ticket_panel=1'>Refresh</A>"
-	dat += "<br><br>Opened at: [gameTimestamp("hh:mm:ss", opened_at)] (Approx [DisplayTimeText(world.time - opened_at)] ago)"
+	dat += "\n[FOURSPACES]<A href='byond://?_src_=usr;player_ticket_panel=1'>Refresh</A>"
+	dat += "<br><br>Opened at: [round_timestamp("hh:mm:ss", opened_at)] (Approx [DisplayTimeText(world.time - opened_at)] ago)"
 	if(closed_at)
-		dat += "<br>Closed at: [gameTimestamp("hh:mm:ss", closed_at)] (Approx [DisplayTimeText(world.time - closed_at)] ago)"
+		dat += "<br>Closed at: [round_timestamp("hh:mm:ss", closed_at)] (Approx [DisplayTimeText(world.time - closed_at)] ago)"
 	dat += "<br><br>"
 	dat += "<br><b>Log:</b><br><br>"
 	for (var/interaction in player_interactions)
@@ -792,10 +792,8 @@ GLOBAL_DATUM_INIT(admin_help_ui_handler, /datum/admin_help_ui_handler, new)
 
 	new /datum/admin_help(message, user_client, FALSE, urgent)
 
-/client/verb/no_tgui_adminhelp(message as message)
-	set name = "NoTguiAdminhelp"
-	set hidden = TRUE
-
+GAME_VERB_HIDDEN(/client, no_tgui_adminhelp, "NoTguiAdminhelp")
+	VERB_ARG(message, VERB_ARG_TYPE_MESSAGE, VERB_ARG_SOURCE_INPUT)
 	if(adminhelptimerid)
 		return
 
@@ -803,16 +801,21 @@ GLOBAL_DATUM_INIT(admin_help_ui_handler, /datum/admin_help_ui_handler, new)
 
 	GLOB.admin_help_ui_handler.perform_adminhelp(src, message, FALSE)
 
-/client/verb/adminhelp()
-	set category = "Admin"
-	set name = "Adminhelp"
+GAME_VERB(/client, adminhelp, "Adminhelp", "Admin")
+	/* BANDASTATION REMOVAL
 	GLOB.admin_help_ui_handler.ui_interact(mob)
 	to_chat(src, span_boldnotice("Adminhelp failing to open or work? <a href='byond://?src=[REF(src)];tguiless_adminhelp=1'>Click here</a>"))
+	*/
+	// BANDASTATION ADDITION - START
+	if(persistent_client.current_help_ticket)
+		ticket_to_open = persistent_client.current_help_ticket.id
+		GLOB.ticket_manager.ui_interact(mob)
+		return
 
-/client/verb/view_latest_ticket()
-	set category = "Admin"
-	set name = "View Latest Ticket"
+	GLOB.help_ui_handler.ui_interact(mob)
+	// BANDASTATION ADDITION - END
 
+GAME_VERB(/client, view_latest_ticket, "View Latest Ticket", "Admin")
 	if(!current_ticket)
 		// Check if the client had previous tickets, and show the latest one
 		var/list/prev_tickets = list()
@@ -846,6 +849,7 @@ GLOBAL_DATUM_INIT(admin_help_ui_handler, /datum/admin_help_ui_handler, new)
 /// player_message: If the message should be shown in the player ticket panel, fill this out
 /// log_in_blackbox: Whether or not this message with the blackbox system.
 /// If disabled, this message should be logged with a different proc call
+/* BANDASTATION REMOVAL
 /proc/admin_ticket_log(what, message, player_message, log_in_blackbox = TRUE)
 	var/client/mob_client
 	var/mob/Mob = what
@@ -871,7 +875,7 @@ GLOBAL_DATUM_INIT(admin_help_ui_handler, /datum/admin_help_ui_handler, new)
 			if(log_in_blackbox)
 				SSblackbox.LogAhelp(active_admin_help.id, "Interaction", message, what, usr.ckey)
 			return active_admin_help
-
+*/
 //
 // HELPER PROCS
 //
@@ -1077,8 +1081,9 @@ GLOBAL_DATUM_INIT(admin_help_ui_handler, /datum/admin_help_ui_handler, new)
  *
  * Arguments:
  * * msg - the message being scanned
+ * * pinged_admins_permission - permissions admins need to have to be pinged
  */
-/proc/check_asay_links(msg)
+/proc/check_asay_links(msg, pinged_admins_permission = R_NONE)
 	var/list/msglist = splittext(msg, " ") //explode the input msg into a list
 	var/list/pinged_admins = list() // if we ping any admins, store them here so we can ping them after
 	var/modified = FALSE // did we find anything?
@@ -1095,7 +1100,7 @@ GLOBAL_DATUM_INIT(admin_help_ui_handler, /datum/admin_help_ui_handler, new)
 
 				// first we check if it's a ckey of an admin
 				var/client/client_check = GLOB.directory[stripped_word]
-				if(client_check?.holder)
+				if(check_rights_for(client_check, pinged_admins_permission))
 					msglist[i] = "<u>[word]</u>"
 					pinged_admins[stripped_word] = client_check
 					modified = TRUE
@@ -1115,20 +1120,18 @@ GLOBAL_DATUM_INIT(admin_help_ui_handler, /datum/admin_help_ui_handler, new)
 				if(!possible_ticket_id)
 					continue
 
-				var/datum/admin_help/ahelp_check = GLOB.ahelp_tickets?.TicketByID(possible_ticket_id)
-				if(!ahelp_check)
+				var/datum/help_ticket/help_ticket = GLOB.ticket_manager.get_help_ticket_by_id(possible_ticket_id)
+				if(!help_ticket)
 					continue
 
-				var/state_word
-				switch(ahelp_check.state)
-					if(AHELP_ACTIVE)
-						state_word = "Active"
-					if(AHELP_CLOSED)
-						state_word = "Closed"
-					if(AHELP_RESOLVED)
-						state_word = "Resolved"
+				var/static/alist/state_to_state_word = alist(
+					TICKET_OPEN = "Активный",
+					TICKET_CLOSED = "Закрытый",
+					TICKET_RESOLVED = "Решенный",
+				)
+				var/state_word = state_to_state_word[help_ticket.state]
 
-				msglist[i]= "<u><A href='byond://?_src_=holder;[HrefToken(forceGlobal = TRUE)];ahelp=[REF(ahelp_check)];ahelp_action=ticket'>[word] ([state_word] | [ahelp_check.initiator_key_name])</A></u>"
+				msglist[i] = TICKET_OPEN_LINK(possible_ticket_id, "[word] ([state_word] | [help_ticket.initiator])")
 				modified = TRUE
 
 	if(modified)
@@ -1137,6 +1140,26 @@ GLOBAL_DATUM_INIT(admin_help_ui_handler, /datum/admin_help_ui_handler, new)
 		return_list[ASAY_LINK_PINGED_ADMINS_INDEX] = pinged_admins
 		return return_list
 
+// BANDASTATION ADDITION START - Refactor admin related procs
+/proc/notify_linked_in_chat(message, target_permissions)
+	if(!findtext(message, "@") && !findtext(message, "#"))
+		return message
+
+	var/list/link_results = check_asay_links(message, target_permissions)
+	if(!length(link_results))
+		return message
+
+	message = link_results[ASAY_LINK_NEW_MESSAGE_INDEX]
+	link_results[ASAY_LINK_NEW_MESSAGE_INDEX] = null
+	var/list/pinged_admin_clients = link_results[ASAY_LINK_PINGED_ADMINS_INDEX]
+	for(var/iter_ckey in pinged_admin_clients)
+		var/client/iter_admin_client = pinged_admin_clients[iter_ckey]
+
+		window_flash(iter_admin_client)
+		SEND_SOUND(iter_admin_client.mob, sound('sound/misc/asay_ping.ogg'))
+
+	return message
+// BANDASTATION ADDITION END
 
 #undef WEBHOOK_URGENT
 #undef WEBHOOK_NONE

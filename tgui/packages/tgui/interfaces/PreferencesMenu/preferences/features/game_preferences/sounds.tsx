@@ -73,6 +73,25 @@ export const sound_tts: FeatureChoiced = {
   component: FeatureDropdownInput,
 };
 
+export const sound_tts_radio: FeatureChoiced = {
+  name: 'TTS - Включить поверх радио',
+  category: 'Звук',
+  description: `
+    Когда включено, вы будете слышать text-to-speech звуки в игре поверх радио каналов.
+    Когда режим выставлен в "Только радио отделов", text-to-speech звуки поверх радио будут слышны только для каналов отделов, и любых частот которые не являются Общей.
+    Когда выключено, text-to-speech не будет слышно поверх радио.
+  `,
+  component: FeatureDropdownInput,
+};
+
+export const sound_tts_hear_self_radio: FeatureToggle = {
+  name: 'TTS - слышать себя в рации',
+  category: 'Звук',
+  description:
+    'Когда включено, вы будете слышать себя в рации когда говорите в неё.',
+  component: CheckboxInput,
+};
+
 export const sound_tts_volume: Feature<number> = {
   name: 'TTS - громкость',
   category: 'Звук',
@@ -80,17 +99,25 @@ export const sound_tts_volume: Feature<number> = {
   component: FeatureSliderInput,
 };
 
-export const sound_tts_volume_radio: Feature<number> = {
-  name: 'TTS - громкость рации',
-  category: 'Звук',
-  description: 'Громкость text-to-speech для рации.',
-  component: FeatureSliderInput,
-};
-
 export const sound_tts_volume_announcement: Feature<number> = {
   name: 'TTS - громкость оповещений',
   category: 'Звук',
   description: 'Громкость text-to-speech для оповещений.',
+  component: FeatureSliderInput,
+};
+
+export const sound_tts_volume_telepathy: Feature<number> = {
+  name: 'TTS - громкость телепатической речи',
+  category: 'Звук',
+  description: 'Громкость text-to-speech для телепатии (хайвмайнд генокрадов, телепатия ревенанта и тд).',
+  component: FeatureSliderInput,
+};
+
+export const sound_tts_radio_volume: Feature<number> = {
+  name: 'TTS - громкость рации',
+  category: 'Звук',
+  description:
+    'Громкость text-to-speech для рации. Громкость независима от обычной громкости text-to-speech.',
   component: FeatureSliderInput,
 };
 

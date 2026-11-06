@@ -296,11 +296,10 @@ GLOBAL_DATUM_INIT(steal_item_handler, /datum/objective_item_handler, new())
 	steal_hint = "Оружие самообороны, стандартное для всех глав отделов, за исключением главы службы безопасности. Редко находится не при владельце."
 
 /datum/objective_item/steal/traitor/telebaton/check_special_completion(obj/item/thing)
-	return thing.type == /obj/item/melee/baton/telescopic
+	return !istype(thing, /obj/item/melee/baton/telescopic/contractor_baton)
 
 /obj/item/melee/baton/telescopic/add_stealing_item_objective()
-	if(type == /obj/item/melee/baton/telescopic)
-		return add_item_to_steal(src, /obj/item/melee/baton/telescopic)
+	return add_item_to_steal(src, /obj/item/melee/baton/telescopic)
 
 /datum/objective_item/steal/traitor/cargo_budget
 	name = "бюджетную карта снабжения"
@@ -316,7 +315,7 @@ GLOBAL_DATUM_INIT(steal_item_handler, /datum/objective_item_handler, new())
 	return add_item_to_steal(src, /obj/item/card/id/departmental_budget/car)
 
 /datum/objective_item/steal/traitor/captain_modsuit
-	name = "капитанский МОД-костюм магнат"
+	name = "капитанский МОД-костюм «Магнат»"
 	targetitem = /obj/item/mod/control/pre_equipped/magnate
 	excludefromjob = list(JOB_CAPTAIN)
 	exists_on_map = TRUE
@@ -342,7 +341,7 @@ GLOBAL_DATUM_INIT(steal_item_handler, /datum/objective_item_handler, new())
 	exists_on_map = TRUE
 	difficulty = 4
 	steal_hint = "Запасная ID-карта самого главного на этой станции. \
-		Если поблизости нет официального капитана, вы можете найти её на груди исполняющего обязанности капитана - одного из глав отдела."
+		Если поблизости нет официального капитана, вы можете найти её на поясе исполняющего обязанности капитана - одного из глав отдела."
 
 /obj/item/card/id/advanced/gold/captains_spare/add_stealing_item_objective()
 	return add_item_to_steal(src, /obj/item/card/id/advanced/gold/captains_spare)
@@ -363,17 +362,17 @@ GLOBAL_DATUM_INIT(steal_item_handler, /datum/objective_item_handler, new())
 	return add_item_to_steal(src, /obj/item/gun/energy/laser/captain)
 
 /datum/objective_item/steal/hoslaser
-	name = "персональное лазерное оружие главы службы безопасности"
+	name = "персональное оружие главы службы безопасности"
 	targetitem = /obj/item/gun/energy/e_gun/hos
 	excludefromjob = list(JOB_HEAD_OF_SECURITY)
 	item_owner = list(JOB_HEAD_OF_SECURITY)
 	exists_on_map = TRUE
 	difficulty = 4
-	steal_hint = "Уникальное трехрежимное лазерное оружие главы службы безопасности. \
+	steal_hint = "Уникальное оружие главы службы безопасности. \
 		Всегда находится при нём, если он жив, но в противном случае может быть найден в его шкафчике."
 
-/obj/item/gun/energy/e_gun/hos/add_stealing_item_objective()
-	return add_item_to_steal(src, /obj/item/gun/energy/e_gun/hos)
+/obj/item/choice_beacon/weapon/hos/add_stealing_item_objective() //SS220 BANDASTATION EDIT - Original: /obj/item/gun/energy/e_gun/hos/add_stealing_item_objective()
+	return add_item_to_steal(src, /obj/item/choice_beacon/weapon/hos) //SS220 BANDASTATION EDIT - Original:		return add_item_to_steal(src, /obj/item/gun/energy/e_gun/hos)
 
 /datum/objective_item/steal/compactshotty
 	name = "персональный компактный дробовик смотрителя"
@@ -402,15 +401,15 @@ GLOBAL_DATUM_INIT(steal_item_handler, /datum/objective_item_handler, new())
 
 /datum/objective_item/steal/jetpack
 	name = "реактивный ранец капитана"
-	targetitem = /obj/item/tank/jetpack/oxygen/captain
+	targetitem = /obj/item/tank/jetpack/captain
 	excludefromjob = list(JOB_CAPTAIN)
 	item_owner = list(JOB_CAPTAIN)
 	exists_on_map = TRUE
 	difficulty = 3
 	steal_hint = "Специальный жёлтый реактивный ранец может быть найден в блоке хранения костюмов в каюте капитана."
 
-/obj/item/tank/jetpack/oxygen/captain/add_stealing_item_objective()
-	return add_item_to_steal(src, /obj/item/tank/jetpack/oxygen/captain)
+/obj/item/tank/jetpack/captain/add_stealing_item_objective()
+	return add_item_to_steal(src, /obj/item/tank/jetpack/captain)
 
 /datum/objective_item/steal/magboots
 	name = "продвинутые магнитные ботинки главного инженера"
@@ -520,16 +519,16 @@ GLOBAL_DATUM_INIT(steal_item_handler, /datum/objective_item_handler, new())
 	..()
 
 /datum/objective_item/steal/hdd_extraction
-	name = "исходный код Project Goon с мэйнфрейма главного сервера исследований и разработок"
-	targetitem = /obj/item/computer_disk/hdd_theft
+	name = "серверный жёсткий диск с мейнфрейма главного сервера научно-исследовательского отдела"
+	targetitem = /obj/item/disk/computer/hdd_theft
 	excludefromjob = list(JOB_RESEARCH_DIRECTOR, JOB_SCIENTIST, JOB_ROBOTICIST, JOB_GENETICIST)
 	item_owner = list(JOB_RESEARCH_DIRECTOR, JOB_SCIENTIST)
 	exists_on_map = TRUE
 	difficulty = 4
-	steal_hint = "Жесткий диск из мастер-сервера исследовательского отдела. Находится в серверной отдела исследований и разработок."
+	steal_hint = "Жесткий диск из мастер-сервера исследовательского отдела. Находится в серверной научно-исследовательского отдела."
 
-/obj/item/computer_disk/hdd_theft/add_stealing_item_objective()
-	return add_item_to_steal(src, /obj/item/computer_disk/hdd_theft)
+/obj/item/disk/computer/hdd_theft/add_stealing_item_objective()
+	return add_item_to_steal(src, /obj/item/disk/computer/hdd_theft)
 
 /datum/objective_item/steal/hdd_extraction/New()
 	special_equipment += /obj/item/paper/guides/antag/hdd_extraction
@@ -608,7 +607,7 @@ GLOBAL_DATUM_INIT(steal_item_handler, /datum/objective_item_handler, new())
 	excludefromjob = list(JOB_CHIEF_ENGINEER, JOB_STATION_ENGINEER, JOB_ATMOSPHERIC_TECHNICIAN)
 	exists_on_map = TRUE
 	difficulty = 4
-	steal_hint = "Черный ящик данных станции, доступный исключительно в телекоммуникационной."
+	steal_hint = "Чёрный ящик данных станции, доступный исключительно в телекоммуникационной."
 	destruction_method = "Слишком крепкий, чтобы его можно было уничтожить обычными средствами - его нужно стереть в порошок с помощью суперматерии или сжечь в крематории церкви."
 
 /obj/item/blackbox/add_stealing_item_objective()
@@ -910,6 +909,17 @@ GLOBAL_DATUM_INIT(steal_item_handler, /datum/objective_item_handler, new())
 
 /obj/item/mod/control/pre_equipped/rescue/add_stealing_item_objective()
 	return add_item_to_steal(src, /obj/item/mod/control/pre_equipped/rescue)
+
+/datum/objective_item/steal/spy/cmo_defib
+	name = "экспериментальный компактный дефибриллятор главного врача"
+	targetitem = /obj/item/defibrillator/compact/loaded/cmo
+	excludefromjob = list(JOB_CHIEF_MEDICAL_OFFICER)
+	exists_on_map = TRUE
+	difficulty = 2
+	steal_hint = "Экспериментальный компактный дефибриллятор, который обычно находится где-то рядом с главным врачом, когда начинают скапливаться трупы.."
+
+/obj/item/defibrillator/compact/loaded/cmo/add_stealing_item_objective()
+	return add_item_to_steal(src, /obj/item/defibrillator/compact/loaded/cmo)
 
 /datum/objective_item/steal/spy/hos_modsuit
 	name = "МОД-костюм главы службы безопасности"

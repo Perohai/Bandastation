@@ -1,14 +1,14 @@
 /datum/action/cooldown/spell/aoe/wave_of_desperation
-	name = "Wave Of Desperation"
-	desc = "Снимает связки, отталкивает и сбивает с ног находящихся рядом людей, а также накладывает на них некоторые эффекты Хватки Мансуса. \
-		Не может быть применено, если вы не скованы, а стресс лишает вас сознания на 12 секунд!"
+	name = "Волна Отчаяния"
+	desc = "Снимает оковы, отталкивает и сбивает с ног находящихся рядом людей, а также накладывает на них некоторые эффекты «Хватки Мансуса». \
+		Не может быть применено, если вы скованы. (Фокусировка не требуется)!"
 	background_icon_state = "bg_heretic"
 	overlay_icon_state = "bg_heretic_border"
 	button_icon = 'icons/mob/actions/actions_ecult.dmi'
 	button_icon_state = "uncuff"
 	sound = 'sound/effects/magic/swap.ogg'
 
-	school = SCHOOL_FORBIDDEN
+	school = SCHOOL_EVOCATION
 	cooldown_time = 5 MINUTES
 
 	invocation = "F'K 'FF."
@@ -18,7 +18,7 @@
 	aoe_radius = 3
 
 /datum/action/cooldown/spell/aoe/wave_of_desperation/is_valid_target(mob/living/carbon/cast_on)
-	return ..() && istype(cast_on) && (cast_on.handcuffed || cast_on.legcuffed)
+	return ..() && istype(cast_on) && length(cast_on.get_all_attached_restraints())
 
 // Before the cast, we do some small AOE damage around the caster
 /datum/action/cooldown/spell/aoe/wave_of_desperation/before_cast(mob/living/carbon/cast_on)
@@ -26,12 +26,9 @@
 	if(. & SPELL_CANCEL_CAST)
 		return
 
-	if(cast_on.handcuffed)
-		cast_on.visible_message(span_danger("[capitalize(cast_on.handcuffed.declent_ru(NOMINATIVE))], сковывающие [cast_on.declent_ru(GENITIVE)], разбиваются!"))
-		QDEL_NULL(cast_on.handcuffed)
-	if(cast_on.legcuffed)
-		cast_on.visible_message(span_danger("[capitalize(cast_on.legcuffed.declent_ru(NOMINATIVE))], сковывающие [cast_on.declent_ru(GENITIVE)], разбиваются!"))
-		QDEL_NULL(cast_on.legcuffed)
+	for(var/obj/item/restraint in cast_on.get_all_attached_restraints())
+		cast_on.visible_message(span_danger("[capitalize(restraint.declent_ru(NOMINATIVE))], сковывающие [cast_on.declent_ru(GENITIVE)], разбиваются!"))
+		qdel(restraint)
 
 	cast_on.apply_status_effect(/datum/status_effect/heretic_lastresort)
 	new /obj/effect/temp_visual/knockblast(get_turf(cast_on))

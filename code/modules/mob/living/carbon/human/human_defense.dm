@@ -1,4 +1,4 @@
-/mob/living/carbon/human/getarmor(def_zone, type)
+/mob/living/carbon/human/get_worn_armor_value(def_zone, damage_type)
 	var/armorval = 0
 	var/organnum = 0
 
@@ -6,68 +6,61 @@
 		if(isbodypart(def_zone))
 			var/obj/item/bodypart/bp = def_zone
 			if(bp)
-				return check_armor(def_zone, type)
+				return get_worn_bodypart_armor_value(def_zone, damage_type)
 		var/obj/item/bodypart/affecting = get_bodypart(check_zone(def_zone))
 		if(affecting)
-			return check_armor(affecting, type)
+			return get_worn_bodypart_armor_value(affecting, damage_type)
 		//If a specific bodypart is targeted, check how that bodypart is protected and return the value.
 
 	//If you don't specify a bodypart, it checks ALL your bodyparts for protection, and averages out the values
-	for(var/X in bodyparts)
-		var/obj/item/bodypart/BP = X
-		armorval += check_armor(BP, type)
+	for(var/obj/item/bodypart/part as anything in get_bodyparts())
+		armorval += get_worn_bodypart_armor_value(part, damage_type)
 		organnum++
 	return (armorval/max(organnum, 1))
 
-
-/mob/living/carbon/human/proc/check_armor(obj/item/bodypart/def_zone, damage_type)
+/mob/living/carbon/human/proc/get_worn_bodypart_armor_value(obj/item/bodypart/def_zone, damage_type)
 	if(!damage_type)
 		return 0
-	var/protection = 100
+	var/unblocked_damage = 100
 	var/list/covering_clothing = list(head, wear_mask, wear_suit, w_uniform, back, gloves, shoes, belt, s_store, glasses, ears, wear_id, wear_neck) //Everything but pockets. Pockets are l_store and r_store. (if pockets were allowed, putting something armored, gloves or hats for example, would double up on the armor)
 	for(var/obj/item/clothing/clothing_item in covering_clothing)
 		if(clothing_item.body_parts_covered & def_zone.body_part)
-			protection *= (100 - min(clothing_item.get_armor_rating(damage_type), 100)) * 0.01
-	protection *= (100 - min(physiology.armor.get_rating(damage_type), 100)) * 0.01
-	return 100 - protection
+			unblocked_damage *= (100 - min(clothing_item.get_armor_rating(damage_type), 100)) * 0.01
+	return 100 - unblocked_damage
 
 ///Get all the clothing on a specific body part
 /mob/living/carbon/human/proc/get_clothing_on_part(obj/item/bodypart/def_zone)
 	var/list/covering_part = list()
-	var/list/body_parts = list(head, wear_mask, wear_suit, w_uniform, back, gloves, shoes, belt, s_store, glasses, ears, wear_id, wear_neck) //Everything but pockets. Pockets are l_store and r_store. (if pockets were allowed, putting something armored, gloves or hats for example, would double up on the armor)
-	for(var/bp in body_parts)
-		if(!bp)
-			continue
-		if(bp && istype(bp , /obj/item/clothing))
-			var/obj/item/clothing/C = bp
-			if(C.body_parts_covered & def_zone.body_part)
-				covering_part += C
+	for(var/obj/item/clothing/equipped in get_equipped_items(INCLUDE_ABSTRACT))
+		if(equipped.body_parts_covered & def_zone.body_part)
+			covering_part += equipped
 	return covering_part
 
-/mob/living/carbon/human/bullet_act(obj/projectile/bullet, def_zone, piercing_hit = FALSE)
-	if(bullet.firer == src && bullet.original == src) //can't block or reflect when shooting yourself
+/mob/living/carbon/human/projectile_hit(obj/projectile/hitting_projectile, def_zone, piercing_hit, blocked)
+	if(hitting_projectile.firer == src && hitting_projectile.original == src) //can't block or reflect when shooting yourself
 		return ..()
 
-	if(bullet.reflectable)
-		if(check_reflect(def_zone)) // Checks if you've passed a reflection% check
-			visible_message(
-				span_danger("[capitalize(bullet.declent_ru(NOMINATIVE))] отражается от [declent_ru(GENITIVE)]!"),
-				span_userdanger("[capitalize(bullet.declent_ru(NOMINATIVE))] отражается от [declent_ru(GENITIVE)]!"),
-			)
-			// Finds and plays the block_sound of item which reflected
-			for(var/obj/item/held_item in held_items)
-				if(held_item.IsReflect(def_zone))
-					playsound(src, held_item.block_sound, BLOCK_SOUND_VOLUME, TRUE)
-			// Find a turf near or on the original location to bounce to
-			if(!isturf(loc)) //Open canopy mech (ripley) check. if we're inside something and still got hit
-				return loc.projectile_hit(bullet, def_zone, piercing_hit)
-			bullet.reflect(src)
-			return BULLET_ACT_FORCE_PIERCE // complete projectile permutation
+	// The projectile cannot be reflected or you failed to pass a reflection% check
+	if (!hitting_projectile.reflectable || !check_reflect(def_zone))
+		return ..()
 
+	visible_message(
+		span_danger("[capitalize(hitting_projectile.declent_ru(NOMINATIVE))] отражается от [declent_ru(GENITIVE)]!"),
+		span_userdanger("[capitalize(hitting_projectile.declent_ru(NOMINATIVE))] отражается от [declent_ru(GENITIVE)]!"),
+	)
+	// Finds and plays the block_sound of item which reflected
+	for(var/obj/item/held_item as anything in get_held_items())
+		if(held_item.IsReflect(def_zone))
+			playsound(src, held_item.block_sound, BLOCK_SOUND_VOLUME, TRUE)
+	// Find a turf near or on the original location to bounce to
+	if(!isturf(loc)) // Open canopy mech (ripley) check. if we're inside something and still got hit
+		return loc.projectile_hit(hitting_projectile, def_zone, piercing_hit, blocked)
+	hitting_projectile.reflect(src)
+	return BULLET_ACT_FORCE_PIERCE // complete projectile permutation
+
+/mob/living/carbon/human/bullet_act(obj/projectile/bullet, def_zone, piercing_hit, blocked)
 	if(check_block(bullet, bullet.damage, "[bullet.declent_ru(ACCUSATIVE)]", PROJECTILE_ATTACK, bullet.armour_penetration, bullet.damage_type))
-		bullet.on_hit(src, 100, def_zone, piercing_hit)
-		return BULLET_ACT_HIT
-
+		return ..(bullet, def_zone, piercing_hit, 100)
 	return ..()
 
 ///Reflection checks for anything in your l_hand, r_hand, or wear_suit based on the reflection chance of the object
@@ -78,8 +71,8 @@
 	if(head)
 		if(head.IsReflect(def_zone))
 			return TRUE
-	for(var/obj/item/I in held_items)
-		if(I.IsReflect(def_zone))
+	for(var/obj/item/item as anything in get_held_items())
+		if(item.IsReflect(def_zone))
 			return TRUE
 	return FALSE
 
@@ -89,13 +82,13 @@
 		return SUCCESSFUL_BLOCK
 
 	var/block_chance_modifier = round(damage / -3)
-	for(var/obj/item/worn_thing in get_equipped_items(INCLUDE_HELD))
+	for(var/obj/item/worn_thing as anything in get_equipped_items(INCLUDE_PROSTHETICS|INCLUDE_ABSTRACT) | get_active_handset_items())
 		// Things that are supposed to be worn, being held = cannot block
 		if(isclothing(worn_thing))
-			if(worn_thing in held_items)
+			if(is_holding(worn_thing))
 				continue
 		// Things that are supposed to be held, being worn = cannot block
-		else if(!(worn_thing in held_items))
+		else if(!is_holding(worn_thing))
 			continue
 
 		var/final_block_chance = worn_thing.block_chance - (clamp((armour_penetration - worn_thing.armour_penetration) / 2, 0, 100)) + block_chance_modifier
@@ -144,8 +137,8 @@
 	if(!HAS_TRAIT(src, TRAIT_BRAWLING_KNOCKDOWN_BLOCKED))
 		Knockdown(SHOVE_KNOCKDOWN_COLLATERAL, daze_amount = 3 SECONDS)
 	target.visible_message(span_danger("[capitalize(shover.declent_ru(NOMINATIVE))] толкает [target.declent_ru(ACCUSATIVE)] в [declent_ru(ACCUSATIVE)]!"),
-		span_userdanger("Вы врезаетесь в [declent_ru(ACCUSATIVE)] из-за толчка [shover.declent_ru(GENITIVE)]!"), span_hear("Вы слышите агрессивное шарканье с последующим громким стуком!"), COMBAT_MESSAGE_RANGE, src)
-	to_chat(src, span_danger("Вы толкаете [target.declent_ru(ACCUSATIVE)] в [declent_ru(ACCUSATIVE)]!"))
+		span_userdanger("Вы врезаетесь в [declent_ru(ACCUSATIVE)] из-за толчка [shover.declent_ru(GENITIVE)]!"), span_hear("Вы слышите агрессивное шарканье с последующим громким стуком!"), COMBAT_MESSAGE_RANGE, list(shover))
+	to_chat(shover, span_danger("Вы толкаете [target.declent_ru(ACCUSATIVE)] в [declent_ru(ACCUSATIVE)]!"))
 	log_combat(shover, target, "shoved", addition = "into [name][weapon ? " with [weapon]" : ""]")
 	return COMSIG_LIVING_SHOVE_HANDLED
 
@@ -209,7 +202,7 @@
 		else if(!HAS_TRAIT(src, TRAIT_INCAPACITATED))
 			playsound(loc, 'sound/items/weapons/pierce.ogg', 25, TRUE, -1)
 			var/shovetarget = get_edge_target_turf(user, get_dir(user, get_step_away(src, user)))
-			adjustStaminaLoss(35)
+			adjust_stamina_loss(35)
 			throw_at(shovetarget, 4, 2, user, force = MOVE_FORCE_OVERPOWERING)
 			log_combat(user, src, "shoved")
 			visible_message(span_danger("[capitalize(user.declent_ru(NOMINATIVE))] сбивает с ног [declent_ru(ACCUSATIVE)]!"), \
@@ -256,28 +249,32 @@
 	if(check_block(worm, damage, "[worm.declent_ru(ACCUSATIVE)]", attack_type = UNARMED_ATTACK))
 		return FALSE
 	if(stat != DEAD)
-		worm.amount_grown = min(worm.amount_grown + damage, worm.max_grown)
+		worm.amount_grown = min(worm.amount_grown + damage, XENOMORPH_MAX_GROWTH)
 		var/obj/item/bodypart/affecting = get_bodypart(get_random_valid_zone(worm.zone_selected))
 		var/armor_block = run_armor_check(affecting, MELEE)
 		apply_damage(damage, BRUTE, affecting, armor_block)
 
 /mob/living/carbon/human/ex_act(severity, target, origin)
-	if(HAS_TRAIT(src, TRAIT_BOMBIMMUNE))
-		return FALSE
-
 	. = ..()
 	if (!. || !severity || QDELETED(src))
 		return FALSE
+
+	var/bomb_armor = getarmor(null, BOMB)
 	var/brute_loss = 0
 	var/burn_loss = 0
-	var/bomb_armor = getarmor(null, BOMB)
+	var/soundbang_intensity = SOUNDBANG_NORMAL
+	var/ear_damage = 0
+	var/deafen_duration = 0
+	var/max_wounds = 0
+	var/wound_prob = 0
+	var/clothes_damage = 0
+	var/knockdown_duration = 0 SECONDS
+	var/unconscious_duration = 0 SECONDS
+	var/dismember_prob = 33 // chance of a wound becoming dismemberment
+	var/list/wound_severities = list(WOUND_SEVERITY_MODERATE, WOUND_SEVERITY_SEVERE, WOUND_SEVERITY_CRITICAL)
 
-//200 max knockdown for EXPLODE_HEAVY
-//160 max knockdown for EXPLODE_LIGHT
-
-	var/obj/item/organ/ears/ears = get_organ_slot(ORGAN_SLOT_EARS)
-	switch (severity)
-		if (EXPLODE_DEVASTATE)
+	switch(severity)
+		if(EXPLODE_DEVASTATE)
 			if(bomb_armor < EXPLODE_GIB_THRESHOLD) //gibs the mob if their bomb armor is lower than EXPLODE_GIB_THRESHOLD
 				for(var/thing in contents)
 					switch(severity)
@@ -291,62 +288,67 @@
 				gib(DROP_ALL_REMAINS)
 				return TRUE
 			else
-				brute_loss = 500
+				brute_loss = 300
+				burn_loss = 300
+				soundbang_intensity = SOUNDBANG_OVERWHELMING
+				ear_damage = 60
+				deafen_duration = 360 SECONDS
+				max_wounds = 5
+				wound_prob = 75
+				dismember_prob = 50
+				wound_severities -= WOUND_SEVERITY_MODERATE
 				var/atom/throw_target = get_edge_target_turf(src, get_dir(src, get_step_away(src, src)))
 				throw_at(throw_target, 200, 4)
-				damage_clothes(400 - bomb_armor, BRUTE, BOMB)
-
-		if (EXPLODE_HEAVY)
+				clothes_damage = 400
+				knockdown_duration = 20 SECONDS
+				unconscious_duration = 3 SECONDS
+		if(EXPLODE_HEAVY)
+			max_wounds = 3
+			wound_prob = 40
 			brute_loss = 60
 			burn_loss = 60
-			if(bomb_armor)
-				brute_loss = 30*(2 - round(bomb_armor*0.01, 0.05))
-				burn_loss = brute_loss //damage gets reduced from 120 to up to 60 combined brute+burn
-			damage_clothes(200 - bomb_armor, BRUTE, BOMB)
-			if (ears && !HAS_TRAIT_FROM_ONLY(src, TRAIT_DEAF, EAR_DAMAGE))
-				ears.adjustEarDamage(30, 120)
-			Unconscious(20) //short amount of time for follow up attacks against elusive enemies like wizards
-			Knockdown(200 - (bomb_armor * 1.6)) //between ~4 and ~20 seconds of knockdown depending on bomb armor
-
+			soundbang_intensity = SOUNDBANG_MASSIVE
+			ear_damage = 30
+			deafen_duration = 240 SECONDS
+			clothes_damage = 200
+			knockdown_duration = 20 SECONDS
+			unconscious_duration = 2 SECONDS
 		if(EXPLODE_LIGHT)
+			max_wounds = 2
+			wound_prob = 30
+			wound_severities -= WOUND_SEVERITY_CRITICAL
 			brute_loss = 30
-			if(bomb_armor)
-				brute_loss = 15*(2 - round(bomb_armor*0.01, 0.05))
-			damage_clothes(max(50 - bomb_armor, 0), BRUTE, BOMB)
-			if (ears && !HAS_TRAIT_FROM_ONLY(src, TRAIT_DEAF, EAR_DAMAGE))
-				ears.adjustEarDamage(15,60)
-			Knockdown(160 - (bomb_armor * 1.6)) //100 bomb armor will prevent knockdown altogether
+			soundbang_intensity = SOUNDBANG_STRONG
+			ear_damage = 15
+			deafen_duration = 120 SECONDS
+			clothes_damage = 50
+			knockdown_duration = 16 SECONDS
 
-	take_overall_damage(brute_loss,burn_loss)
-
-	//attempt to dismember bodyparts
-	if(severity >= EXPLODE_HEAVY || !bomb_armor)
-		var/max_limb_loss = 0
-		var/probability = 0
-		switch(severity)
-			if(EXPLODE_NONE)
-				max_limb_loss = 1
-				probability = 20
-			if(EXPLODE_LIGHT)
-				max_limb_loss = 2
-				probability = 30
-			if(EXPLODE_HEAVY)
-				max_limb_loss = 3
-				probability = 40
-			if(EXPLODE_DEVASTATE)
-				max_limb_loss = 4
-				probability = 50
-		for(var/X in bodyparts)
-			var/obj/item/bodypart/BP = X
-			if(prob(probability) && !prob(getarmor(BP, BOMB)) && BP.body_zone != BODY_ZONE_HEAD && BP.body_zone != BODY_ZONE_CHEST)
-				BP.receive_damage(INFINITY, wound_bonus = CANT_WOUND) //Capped by proc
-				BP.dismember()
-				max_limb_loss--
-				if(!max_limb_loss)
-					break
-
+	Unconscious(unconscious_duration) // do this first, before wounds, so we DONT get wound text
+	var/list/all_bodyparts = get_bodyparts()
+	for(var/obj/item/bodypart/BP as anything in all_bodyparts)
+		var/bp_bomb_armor = getarmor(BP.body_zone, BOMB)
+		var/bomb_multi = clamp(bp_bomb_armor/166.6, 0, 1) // scales linearly up to 0.6 at 100 armor
+		apply_damage(round(brute_loss / all_bodyparts.len, DAMAGE_PRECISION), BRUTE, (bomb_multi * 100), wound_bonus = CANT_WOUND)
+		apply_damage(round(burn_loss  / all_bodyparts.len, DAMAGE_PRECISION), BURN, (bomb_multi * 100), wound_bonus = CANT_WOUND)
+		// damage split among body parts leaves wounding extremely unlikely so instead we do our own wounds
+		if(prob(wound_prob * (1 - bomb_multi))) // chance to do anything at all
+			if(prob(dismember_prob) && BP.body_zone != BODY_ZONE_HEAD && BP.body_zone != BODY_ZONE_CHEST && (severity >= EXPLODE_HEAVY || !bp_bomb_armor)) // chance to dismember instead of wound
+				if(!prob((bomb_armor - 50) * 2)) // bomb armor has a second chance to stop dismemberment if it's over 50
+					// only apply damage if the dismember works otherwise nodismember makes you extremely fragile to explosions
+					if(BP.dismember())
+						BP.receive_damage(INFINITY, wound_bonus = CANT_WOUND) // capped by proc
+			else if(!prob(getarmor(BP.body_zone, WOUND))) // time to roll for wounds
+				var/wound_type = pick_weight(list(WOUND_SLASH = 1, WOUND_BLUNT = 2, WOUND_BURN = 2))
+				var/wound_power = pick(wound_severities)
+				cause_wound_of_type_and_severity(wound_type, BP, WOUND_SEVERITY_MODERATE, wound_power, severity_pick_mode = WOUND_PICK_HIGHEST_SEVERITY)
+			max_wounds--
+			if(!max_wounds)
+				break
+	Knockdown(knockdown_duration - (bomb_armor * 1.6))
+	damage_clothes(max(clothes_damage - bomb_armor, 0), BRUTE, BOMB)
+	soundbang_act(soundbang_intensity, 0, ear_damage, deafen_duration, ignore_deafness = TRUE, send_sound = FALSE)
 	return TRUE
-
 
 /mob/living/carbon/human/blob_act(obj/structure/blob/B)
 	if(stat == DEAD)
@@ -375,8 +377,6 @@
 	else if(gloves)
 		siemens_coeff *= gloves.siemens_coefficient
 
-	siemens_coeff *= physiology.siemens_coeff
-	siemens_coeff *= dna.species.siemens_coeff
 	. = ..()
 	//Don't go further if the shock was blocked/too weak.
 	if(!.)
@@ -388,12 +388,12 @@
 		//If they can't, they're missing their heart and this would runtime
 		if(undergoing_cardiac_arrest() && can_heartattack() && (shock_damage * siemens_coeff >= 1) && prob(25))
 			var/obj/item/organ/heart/heart = get_organ_slot(ORGAN_SLOT_HEART)
-			if(heart.Restart() && stat == CONSCIOUS)
+			if(heart.Restart() && !IS_UNCONSCIOUS_OR_CRIT(src))
 				to_chat(src, span_notice("Вы чувстуете, как ваше сердце снова бьется!"))
 	if (!(flags & SHOCK_NO_HUMAN_ANIM))
 		electrocution_animation(4 SECONDS)
 
-/mob/living/carbon/human/acid_act(acidpwr, acid_volume, bodyzone_hit) //todo: update this to utilize check_obscured_slots() //and make sure it's check_obscured_slots(TRUE) to stop aciding through visors etc
+/mob/living/carbon/human/acid_act(acidpwr, acid_volume, bodyzone_hit) //todo: update this to utilize obscured_slots //and make sure it's check_obscured_slots(TRUE) to stop aciding through visors etc
 	var/list/damaged = list()
 	var/list/inventory_items_to_kill = list()
 	var/acidity = acidpwr * min(acid_volume*0.005, 0.1)
@@ -513,7 +513,7 @@
 			emote("scream")
 			set_facial_hairstyle("Shaved", update = FALSE)
 			set_hairstyle("Bald") //This calls update_body_parts()
-			ADD_TRAIT(src, TRAIT_DISFIGURED, TRAIT_GENERIC)
+			ADD_TRAIT(affecting, TRAIT_DISFIGURED, TRAIT_GENERIC)
 
 		apply_damage(acidity * damage_mod, BRUTE, affecting)
 		apply_damage(acidity * damage_mod * 2, BURN, affecting)
@@ -526,9 +526,9 @@
 		if(belt)
 			inventory_items_to_kill += belt
 
-		inventory_items_to_kill += held_items
+		inventory_items_to_kill += get_held_items()
 
-	for(var/obj/item/inventory_item in inventory_items_to_kill)
+	for(var/obj/item/inventory_item as anything in inventory_items_to_kill)
 		inventory_item.acid_act(acidpwr, acid_volume)
 	return TRUE
 
@@ -554,7 +554,7 @@
 	return ..()
 
 /mob/living/carbon/human/check_self_for_injuries()
-	if(stat >= UNCONSCIOUS)
+	if(IS_UNCONSCIOUS(src))
 		return
 	var/list/combined_msg = list()
 
@@ -562,10 +562,12 @@
 
 	combined_msg += span_notice("<b>Вы осматриваете себя на предмет ранений.</b>")
 
-	var/list/missing = get_all_limbs()
 
-	for(var/obj/item/bodypart/body_part as anything in bodyparts)
-		missing -= body_part.body_zone
+	for(var/part_zone, body_part_untyped in get_bodyparts_by_zones())
+		var/obj/item/bodypart/body_part = body_part_untyped
+		if(isnull(body_part) || IS_STUMP(body_part))
+			combined_msg += span_boldannounce("&rdsh; Your [parse_zone(body_part?.body_zone || part_zone)] is missing!")
+			continue
 		if(body_part.bodypart_flags & BODYPART_PSEUDOPART) //don't show injury text for fake bodyparts; ie chainsaw arms or synthetic armblades
 			continue
 
@@ -573,10 +575,7 @@
 		if(bodypart_report)
 			combined_msg += "[span_notice("&rdsh;")] [bodypart_report]"
 
-	for(var/t in missing)
-		combined_msg += span_boldannounce("&rdsh; У вас отсутствует [parse_zone(t)]!")
-
-	var/tox = getToxLoss() + (disgust / 5) + (HAS_TRAIT(src, TRAIT_SELF_AWARE) ? 0 : (rand(-3, 0) * 5))
+	var/tox = get_tox_loss() + (disgust / 5) + (HAS_TRAIT(src, TRAIT_SELF_AWARE) ? 0 : (rand(-3, 0) * 5))
 	switch(tox)
 		if(10 to 20)
 			combined_msg += span_danger("Вы чувствуете недомогание.")
@@ -585,7 +584,8 @@
 		if(40 to INFINITY)
 			combined_msg += span_danger("Вы чувствуете себя очень плохо!")
 
-	var/oxy = getOxyLoss() + (losebreath * 4) + (blood_volume < BLOOD_VOLUME_NORMAL ? ((BLOOD_VOLUME_NORMAL - blood_volume) * 0.1) : 0) + (HAS_TRAIT(src, TRAIT_SELF_AWARE) ? 0 : (rand(-3, 0) * 5))
+	var/cached_blood_volume = HAS_TRAIT(src, TRAIT_NOBLOOD) ? BLOOD_VOLUME_NORMAL : get_blood_volume(apply_modifiers = TRUE)
+	var/oxy = get_oxy_loss() + (losebreath * 4) + (cached_blood_volume < BLOOD_VOLUME_NORMAL ? ((BLOOD_VOLUME_NORMAL - cached_blood_volume) * 0.1) : 0) + (HAS_TRAIT(src, TRAIT_SELF_AWARE) ? 0 : (rand(-3, 0) * 5))
 	switch(oxy)
 		if(10 to 20)
 			combined_msg += span_danger("У вас кружится голова.")
@@ -594,8 +594,8 @@
 		if(40 to INFINITY)
 			combined_msg += span_danger("Вам кажется, что вы вот-вот потеряете сознание!")
 
-	if(getStaminaLoss())
-		if(getStaminaLoss() > 30)
+	if(get_stamina_loss())
+		if(get_stamina_loss() > 30)
 			combined_msg += span_info("Вы абсолютно обессилены.")
 		else
 			combined_msg += span_info("Вы чувствуете усталость")
@@ -673,29 +673,28 @@
 
 /mob/living/carbon/human/proc/burn_clothing(seconds_per_tick, stacks)
 	var/list/burning_items = list()
-	var/covered = check_covered_slots()
 	//HEAD//
 
-	if(glasses && !(covered & ITEM_SLOT_EYES))
+	if(glasses && !(covered_slots & HIDEEYES))
 		burning_items += glasses
-	if(wear_mask && !(covered & ITEM_SLOT_MASK))
+	if(wear_mask && !(covered_slots & HIDEMASK))
 		burning_items += wear_mask
-	if(wear_neck && !(covered & ITEM_SLOT_NECK))
+	if(wear_neck && !(covered_slots & HIDENECK))
 		burning_items += wear_neck
-	if(ears && !(covered & ITEM_SLOT_EARS))
+	if(ears && !(covered_slots & HIDEEARS))
 		burning_items += ears
 	if(head)
 		burning_items += head
 
 	//CHEST//
-	if(w_uniform && !(covered & ITEM_SLOT_ICLOTHING))
+	if(w_uniform && !(covered_slots & HIDEJUMPSUIT))
 		burning_items += w_uniform
 	if(wear_suit)
 		burning_items += wear_suit
 
 	//ARMS & HANDS//
 	var/obj/item/clothing/arm_clothes = null
-	if(gloves && !(covered & ITEM_SLOT_GLOVES))
+	if(gloves && !(covered_slots & HIDEGLOVES))
 		arm_clothes = gloves
 	else if(wear_suit && ((wear_suit.body_parts_covered & HANDS) || (wear_suit.body_parts_covered & ARMS)))
 		arm_clothes = wear_suit
@@ -706,7 +705,7 @@
 
 	//LEGS & FEET//
 	var/obj/item/clothing/leg_clothes = null
-	if(shoes && !(covered & ITEM_SLOT_FEET))
+	if(shoes && !(covered_slots & HIDESHOES))
 		leg_clothes = shoes
 	else if(wear_suit && ((wear_suit.body_parts_covered & FEET) || (wear_suit.body_parts_covered & LEGS)))
 		leg_clothes = wear_suit
@@ -716,10 +715,10 @@
 		burning_items |= leg_clothes
 
 	if (!gloves || (!(gloves.resistance_flags & FIRE_PROOF) && (gloves.resistance_flags & FLAMMABLE)))
-		for(var/obj/item/burnable_item in held_items)
+		for(var/obj/item/burnable_item as anything in get_held_items())
 			burning_items |= burnable_item
 
-	for(var/obj/item/burning in burning_items)
+	for(var/obj/item/burning as anything in burning_items)
 		burning.fire_act((stacks * 25 * seconds_per_tick)) //damage taken is reduced to 2% of this value by fire_act()
 
 /mob/living/carbon/human/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
@@ -729,3 +728,46 @@
 	if (HAS_TRAIT(src, TRAIT_IGNORE_FIRE_PROTECTION))
 		no_protection = TRUE
 	fire_handler.harm_human(seconds_per_tick, no_protection)
+
+/mob/living/carbon/human/expose_reagents(list/reagents, datum/reagents/source, methods, volume_modifier, show_message)
+	if(external || internal)
+		methods &= ~INHALE
+		if(methods == NONE)
+			return
+	return ..()
+
+
+/mob/living/carbon/human/is_mouth_covered(check_flags = ALL)
+	if((check_flags & ITEM_SLOT_HEAD) && head && (head.flags_cover & HEADCOVERSMOUTH))
+		return head
+	if((check_flags & ITEM_SLOT_MASK) && wear_mask && (wear_mask.flags_cover & MASKCOVERSMOUTH))
+		return wear_mask
+	return null
+
+/mob/living/carbon/human/is_eyes_covered(check_flags = ALL)
+	if((check_flags & ITEM_SLOT_HEAD) && head && (head.flags_cover & HEADCOVERSEYES))
+		return head
+	if((check_flags & ITEM_SLOT_MASK) && wear_mask && (wear_mask.flags_cover & MASKCOVERSEYES))
+		return wear_mask
+	if((check_flags & ITEM_SLOT_EYES) && glasses && (glasses.flags_cover & GLASSESCOVERSEYES))
+		return glasses
+	return null
+
+/mob/living/carbon/human/is_pepper_proof(check_flags = ALL)
+	. = ..()
+	if (.)
+		return
+	if((check_flags & ITEM_SLOT_HEAD) && head && (head.flags_cover & PEPPERPROOF))
+		return head
+	if((check_flags & ITEM_SLOT_MASK) && wear_mask && (wear_mask.flags_cover & PEPPERPROOF))
+		return wear_mask
+
+/mob/living/carbon/human/get_eye_protection()
+	. = ..()
+	for (var/obj/item/clothing/clothing in get_equipped_items())
+		. += clothing.flash_protect
+
+/mob/living/carbon/human/get_emp_protection()
+	. = ..()
+	for(var/obj/item/clothing/each_clothing in get_equipped_items())
+		. += each_clothing.emp_protection

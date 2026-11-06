@@ -11,89 +11,19 @@
 	can_weld_shut = FALSE
 
 /obj/structure/closet/crate/necropolis/tendril
-	desc = "It's watching you suspiciously. You need a skeleton key to open it."
+	desc = "It's watching you suspiciously."
 	integrity_failure = 0 //prevents bust_open from firing
-	/// var to check if it got opened by a key
-	var/spawned_loot = FALSE
+	/// What random loot spawner our chest uses
+	var/loot_to_spawn = /obj/effect/spawner/random/mining_loot
 
-/obj/structure/closet/crate/necropolis/tendril/attackby(obj/item/item, mob/user, list/modifiers, list/attack_modifiers)
-	if(!istype(item, /obj/item/skeleton_key) || spawned_loot)
-		return ..()
-	var/loot = rand(1,21)
-	var/mod
-	switch(loot)
-		if(1)
-			new /obj/item/shared_storage/red(src)
-		if(2)
-			new /obj/item/soulstone/anybody/mining(src)
-		if(3)
-			new /obj/item/organ/cyberimp/arm/toolkit/shard/katana(src)
-		if(4)
-			new /obj/item/clothing/glasses/godeye(src)
-		if(5)
-			new /obj/item/reagent_containers/cup/bottle/potion/flight(src)
-		if(6)
-			new /obj/item/clothing/gloves/gauntlets(src)
-		if(7)
-			mod = rand(1,4)
-			switch(mod)
-				if(1)
-					new /obj/item/disk/design_disk/modkit_disc/resonator_blast(src)
-				if(2)
-					new /obj/item/disk/design_disk/modkit_disc/rapid_repeater(src)
-				if(3)
-					new /obj/item/disk/design_disk/modkit_disc/mob_and_turf_aoe(src)
-				if(4)
-					new /obj/item/disk/design_disk/modkit_disc/bounty(src)
-		if(8)
-			new /obj/item/rod_of_asclepius(src)
-		if(9)
-			new /obj/item/organ/heart/cursed/wizard(src)
-		if(10)
-			new /obj/item/ship_in_a_bottle(src)
-		if(11)
-			new /obj/item/clothing/suit/hooded/berserker(src)
-		if(12)
-			new /obj/item/jacobs_ladder(src)
-		if(13)
-			new /obj/item/guardian_creator/miner(src)
-		if(14)
-			new /obj/item/warp_cube/red(src)
-		if(15)
-			new /obj/item/wisp_lantern(src)
-		if(16)
-			new /obj/item/immortality_talisman(src)
-		if(17)
-			new /obj/item/book/granter/action/spell/summonitem(src)
-		if(18)
-			new /obj/item/book_of_babel(src)
-		if(19)
-			new /obj/item/borg/upgrade/modkit/lifesteal(src)
-			new /obj/item/bedsheet/cult(src)
-		if(20)
-			new /obj/item/clothing/neck/necklace/memento_mori(src)
-		if(21)
-			new /obj/item/clothing/gloves/fingerless/punch_mitts(src)
-			new /obj/item/clothing/head/cowboy(src)
-	if(!contents.len)
-		to_chat(user, span_warning("[src] makes a clunking sound as you try to open it. You feel compelled to let the gods know! (Please open an adminhelp and try again!)"))
-		CRASH("Failed to generate loot. loot number: [loot][mod ? "subloot: [mod]" : null]")
-	spawned_loot = TRUE
-	qdel(item)
-	to_chat(user, span_notice("You disable the magic lock, revealing the loot."))
-
-/obj/structure/closet/crate/necropolis/tendril/before_open(mob/living/user, force)
-	. = ..()
-	if(!.)
-		return FALSE
-
-	if(!broken && !force && !spawned_loot)
-		balloon_alert(user, "its locked!")
-		return FALSE
-
-	return TRUE
+/obj/structure/closet/crate/necropolis/tendril/PopulateContents()
+	new loot_to_spawn(src)
 
 //Megafauna chests
+
+/obj/structure/closet/crate/necropolis/tendril/demonic
+	name = "demonic chest"
+	loot_to_spawn = /obj/effect/spawner/random/mining_loot/demonic
 
 /obj/structure/closet/crate/necropolis/dragon
 	name = "dragon chest"
@@ -145,8 +75,8 @@
 /obj/structure/closet/crate/necropolis/colossus
 	name = "colossus chest"
 
-/obj/structure/closet/crate/necropolis/colossus/bullet_act(obj/projectile/proj)
-	if(istype(proj, /obj/projectile/colossus))
+/obj/structure/closet/crate/necropolis/colossus/projectile_hit(obj/projectile/hitting_projectile, def_zone, piercing_hit, blocked)
+	if(istype(hitting_projectile, /obj/projectile/colossus))
 		return BULLET_ACT_FORCE_PIERCE
 	return ..()
 
@@ -178,10 +108,3 @@
 			new /obj/item/wisp_lantern(src)
 		if(3)
 			new /obj/item/prisoncube(src)
-
-/obj/item/skeleton_key
-	name = "skeleton key"
-	desc = "An artifact usually found in the hands of the natives of lavaland, which NT now holds a monopoly on."
-	icon = 'icons/obj/mining_zones/artefacts.dmi'
-	icon_state = "skeleton_key"
-	w_class = WEIGHT_CLASS_SMALL

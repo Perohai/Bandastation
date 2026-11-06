@@ -19,6 +19,13 @@ export const see_chat_non_mob: FeatureToggle = {
   component: CheckboxInput,
 };
 
+export const chat_on_ghosts: FeatureToggle = {
+  name: 'Рунчат: включить для призраков',
+  category: 'Рунчат',
+  description: 'Текст сообщений будет появляться над призраками.',
+  component: CheckboxInput,
+};
+
 export const see_rc_emotes: FeatureToggle = {
   name: 'Рунчат: включить для эмоций',
   category: 'Рунчат',

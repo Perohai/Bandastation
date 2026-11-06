@@ -14,7 +14,7 @@ export type PaperContext = {
   // ui_data
   held_item_details?: WritingImplement;
   advanced_html_user: boolean;
-  replacements: PaperReplacement[];
+  replacements?: PaperReplacement[];
 };
 
 export type PaperInput = {
@@ -47,6 +47,7 @@ export type WritingImplement = {
   color: string;
   font: string;
   stamp_class: string;
+  stamp_icon: string;
   stamp_icon_state: string;
   use_bold: boolean;
 }>;

@@ -1,14 +1,12 @@
-/mob/living/silicon/ai/verb/ai_cryo()
-	set name = "AI Unload"
-	set desc = "Перемещает текущий ИИ на сервер хранения, освобождая место для другого."
-	set category = "AI Commands"
-
+GAME_VERB_DESC(/mob/living/silicon/ai, ai_cryo, "AI Unload", "Перемещает текущий ИИ на сервер хранения, освобождая место для другого.", "AI Commands")
 	if(incapacitated)
 		return
 
 	if(tgui_alert(usr, "Вы точно хотите выгрузиться из ядра ИИ и покинуть раунд?.", "Выгрузиться на сервер хранения", list("Да", "Нет")) != "Да")
 		return
 
+	if(mind)
+		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_MIND_ENTERED_CRYO, mind)
 	ghostize(FALSE)
 	minor_announce("Станционный ИИ был отключён от внутренних систем и был перемещён на хранение. Производится подготовка для загрузки нового ИИ.", "Станционный ИИ")
 	new /obj/structure/ai_core/latejoin_inactive(loc)

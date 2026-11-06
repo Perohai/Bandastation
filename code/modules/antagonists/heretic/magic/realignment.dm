@@ -1,8 +1,8 @@
 // Realignment. It's like Fleshmend but solely for stamina damage and stuns. Sec meta
 /datum/action/cooldown/spell/realignment
-	name = "Realignment"
-	desc = "Выровняйте себя, быстро восстанавливая стамину и уменьшая любые оглушения и сбивания с ног. \
-		Вы не можете атаковать во время выравнивания. Можно применять несколько раз подряд, но каждое применение удлиняет перезярядку."
+	name = "Реорганизация"
+	desc = "Реорганизуетесь, быстро восстанавливая выносливость и уменьшая любые оглушения и сбивания с ног. \
+		Вы не можете атаковать во время реорганизации. Можно применять несколько раз подряд, но каждое применение удлиняет перезарядку."
 	background_icon_state = "bg_heretic"
 	overlay_icon_state = "bg_heretic_border"
 	button_icon = 'icons/hud/implants.dmi'
@@ -57,7 +57,7 @@
 	///Traits to add/remove
 	var/list/realignment_traits = list(TRAIT_BATON_RESISTANCE, TRAIT_PACIFISM)
 
-/datum/status_effect/realignment/get_examine_text()
+/datum/status_effect/realignment/get_examine_text(mob/examiner)
 	return span_notice("[owner.p_Theyre()] glowing a soft white.")
 
 /datum/status_effect/realignment/on_apply()
@@ -73,10 +73,10 @@
 	owner.remove_filter(id)
 
 /datum/status_effect/realignment/tick(seconds_between_ticks)
-	owner.adjustStaminaLoss(-10)
+	owner.adjust_stamina_loss(-10)
 	owner.AdjustAllImmobility(-1 SECONDS)
 
 /atom/movable/screen/alert/status_effect/realignment
-	name = "Realignment"
-	desc = "Вы выравниваете себя. Вы не можете атаковать, но быстро восстанавливаете стамину."
+	name = "Реорганизация"
+	desc = "Вы не можете атаковать, но быстро восстанавливаете выносливость."
 	icon_state = "realignment"

@@ -449,13 +449,17 @@ GLOBAL_LIST(admin_objective_list) //Prefilled admin assignable objective list
 		if(!considered_alive(M, enforce_human = FALSE) || !SSshuttle.emergency.shuttle_areas[get_area(M.current)])
 			return FALSE
 	return SSshuttle.emergency.elimination_hijack(filter_by_human = FALSE, solo_hijack = TRUE)
-
+//BANDASTATION EDIT START - Rework Malf objectives
 /datum/objective/block
 	name = "no organics on shuttle"
-	explanation_text = "Не позволяйте разумным органическим формам жизни сбежать на шаттле живыми."
+	explanation_text = "Не позволяйте разумным органическим формам жизни сбежать на шаттле живыми. \
+	Захват шаттла эвакуации синтетиками неплохая идея. \
+	Успешное использование устройства судного дня - тоже вариант."
 	martyr_compatible = 1
 
 /datum/objective/block/check_completion()
+	if(GLOB.station_was_nuked)
+		return TRUE
 	if(SSshuttle.emergency.mode != SHUTTLE_ENDGAME)
 		return TRUE
 	for(var/mob/living/player in GLOB.player_list)
@@ -463,22 +467,7 @@ GLOBAL_LIST(admin_objective_list) //Prefilled admin assignable objective list
 			if(get_area(player) in SSshuttle.emergency.shuttle_areas)
 				return FALSE
 	return TRUE
-
-/datum/objective/purge
-	name = "no mutants on shuttle"
-	explanation_text = "Убедитесь, что на борту эвакуационного шаттла нет разумных видов гуманоидов, не являющихся людьми."
-	martyr_compatible = TRUE
-
-/datum/objective/purge/check_completion()
-	if(SSshuttle.emergency.mode != SHUTTLE_ENDGAME)
-		return TRUE
-	for(var/mob/living/player in GLOB.player_list)
-		if((get_area(player) in SSshuttle.emergency.shuttle_areas) && player.mind && player.stat != DEAD && ishuman(player))
-			var/mob/living/carbon/human/H = player
-			if(H.dna.species.id != SPECIES_HUMAN)
-				return FALSE
-	return TRUE
-
+// BANDASTATION EDIT END
 /datum/objective/robot_army
 	name = "robot army"
 	explanation_text = "Синхронизируйте с собой как минимум восемь активных киборгов."
@@ -649,7 +638,7 @@ GLOBAL_LIST_EMPTY(possible_items)
 	if(item)
 		targetinfo = item
 		steal_target = targetinfo.targetitem
-		explanation_text = "Украдите [declent_ru_initial(steal_target::name, ACCUSATIVE, targetinfo.name)]"
+		explanation_text = "Украдите [targetinfo.name]"
 		give_special_equipment(targetinfo.special_equipment)
 		return steal_target
 	else
@@ -717,28 +706,28 @@ GLOBAL_LIST_EMPTY(possible_items)
 
 /datum/objective/capture/check_completion()//Basically runs through all the mobs in the area to determine how much they are worth.
 	var/captured_amount = 0
-	var/area/centcom/central_command_areas/holding/A = GLOB.areas_by_type[/area/centcom/central_command_areas/holding]
-	for(var/mob/living/carbon/human/M in A)//Humans.
-		if(ismonkey(M))
+	var/area/centcom/central_command_areas/holding/area = GLOB.areas_by_type[/area/centcom/central_command_areas/holding]
+	for(var/mob/living/carbon/human/mob in area)//Humans.
+		if(HAS_TRAIT(mob, TRAIT_LESSER_HUMANOID))
 			captured_amount+=0.1
 			continue
-		if(M.stat == DEAD)//Dead folks are worth less.
+		if(mob.stat == DEAD)//Dead folks are worth less.
 			captured_amount+=0.5
 			continue
 		captured_amount+=1
-	for(var/mob/living/carbon/alien/larva/M in A)//Larva are important for research.
-		if(M.stat == DEAD)
+	for(var/mob/living/carbon/alien/larva/mob in area)//Larva are important for research.
+		if(mob.stat == DEAD)
 			captured_amount+=0.5
 			continue
 		captured_amount+=1
-	for(var/mob/living/carbon/alien/adult/M in A)//Aliens are worth twice as much as humans.
-		if(isalienqueen(M))//Queens are worth three times as much as humans.
-			if(M.stat == DEAD)
+	for(var/mob/living/carbon/alien/adult/mob in area)//Aliens are worth twice as much as humans.
+		if(isalienqueen(mob))//Queens are worth three times as much as humans.
+			if(mob.stat == DEAD)
 				captured_amount+=1.5
 			else
 				captured_amount+=3
 			continue
-		if(M.stat == DEAD)
+		if(mob.stat == DEAD)
 			captured_amount+=1
 			continue
 		captured_amount+=2
@@ -867,10 +856,14 @@ GLOBAL_LIST_EMPTY(possible_items)
 	martyr_compatible = TRUE
 
 /datum/objective/destroy/find_target(dupe_search_range, list/blacklist)
-	var/list/possible_targets = active_ais(TRUE)
-	possible_targets -= blacklist
-	var/mob/living/silicon/ai/target_ai = pick(possible_targets)
-	target = target_ai.mind
+	// BANDASTATION EDIT START: blacklists contain minds, while active_ais returns bodies.
+	var/list/possible_targets = list()
+	for(var/mob/living/silicon/ai/candidate as anything in active_ais(TRUE))
+		if(!(candidate.mind in blacklist))
+			possible_targets += candidate
+	var/mob/living/silicon/ai/target_ai = DEFAULTPICK(possible_targets, null)
+	target = target_ai?.mind
+	// BANDASTATION EDIT END
 	update_explanation_text()
 	return target
 

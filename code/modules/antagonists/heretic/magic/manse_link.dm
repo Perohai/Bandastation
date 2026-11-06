@@ -1,7 +1,7 @@
 /datum/action/cooldown/spell/pointed/manse_link
-	name = "Manse Link"
+	name = "Связь Мансуса"
 	desc = "Это заклинание позволяет вам пронзать реальность и соединять разумы друг с другом с помощью \
-		связи Мансуса. Все разумы, подключенные к вашей связи Мансуса, смогут незаметно общаться на больших расстояниях."
+		связи Мансуса. Все разумы, подключённые к вашей связи Мансуса, смогут незаметно общаться на больших расстояниях."
 	background_icon_state = "bg_heretic"
 	overlay_icon_state = "bg_heretic_border"
 	button_icon = 'icons/mob/actions/actions_ecult.dmi'
@@ -55,7 +55,7 @@
 	to_chat(owner, span_notice("Вы начинаете соединять сознание [linkee.declent_ru(GENITIVE)] со своим..."))
 	to_chat(linkee, span_warning("Вы чувствуете, что ваш разум куда-то тянут... соединяют... переплетают с самой тканью реальности..."))
 
-	if(!do_after(owner, link_time, linkee, hidden = TRUE))
+	if(!do_after(owner, link_time, linkee, cog_icon = null))
 		to_chat(owner, span_warning("Вам не удается связать себя с разумом [linkee.declent_ru(GENITIVE)]."))
 		to_chat(linkee, span_warning("Чужое присутствие покидает ваш разум."))
 		return FALSE

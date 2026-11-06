@@ -35,6 +35,14 @@ export const tgui_lock: FeatureToggle = {
   component: CheckboxInput,
 };
 
+export const tgui_unlimited_windows: FeatureToggle = {
+  name: 'TGUI - Снять ограничение на количество окон',
+  category: 'Интерфейс',
+  description:
+    'Отключает ограничение на количество окон TGUI. Открытие более 5 окон может значительно снизить производительность на компьютерах с низкой производительностью.',
+  component: CheckboxInput,
+};
+
 export const ui_scale: FeatureToggle = {
   name: 'TGUI - Масштабирование интерфейсов',
   category: 'Интерфейс',

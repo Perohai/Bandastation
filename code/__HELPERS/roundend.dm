@@ -220,6 +220,8 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 
 	var/speed_round = (STATION_TIME_PASSED() <= 10 MINUTES)
 
+	if(isnull(reboot_hud))
+		reboot_hud = new()
 	for(var/client/C in GLOB.clients)
 		if(!C?.credits)
 			C?.RollCredits()
@@ -227,6 +229,7 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 			C?.playtitlemusic(volume_multiplier = 0.5)
 		if(speed_round && was_forced != ADMIN_FORCE_END_ROUND)
 			C?.give_award(/datum/award/achievement/misc/speed_round, C?.mob)
+		C?.screen += reboot_hud
 		HandleRandomHardcoreScore(C)
 
 	var/popcount = gather_roundend_feedback()
@@ -250,6 +253,8 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 		send2chat(new /datum/tgs_message_content("[GLOB.round_id ? "Раунд [GLOB.round_id]" : "Раунд только что"] закончился."), channel_tag)
 	send2adminchat("Server", "Round just ended.")
 
+	send_round_end_webhook() // BANDASATION ADD
+
 	if(length(CONFIG_GET(keyed_list/cross_server)))
 		send_news_report()
 
@@ -257,6 +262,7 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 
 	handle_hearts()
 	set_observer_default_invisibility(0, span_warning("Раунд закончился! Вы теперь видны для живых."))
+	INVOKE_ASYNC(SSvote, TYPE_PROC_REF(/datum/controller/subsystem/vote, initiate_vote), /datum/vote/map_vote, vote_initiator_name = "Map Rotation", forced = TRUE) // BANDASTATION ADD - move to roundend
 
 	CHECK_TICK
 
@@ -289,11 +295,14 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 	//stop collecting feedback during grifftime
 	SSblackbox.Seal()
 
-	world.TgsTriggerEvent("tg-Roundend", wait_for_completion = TRUE)
+	TriggerRoundEndTgsEvent()
 
 	sleep(5 SECONDS)
 	ready_for_reboot = TRUE
 	standard_reboot()
+
+/datum/controller/subsystem/ticker/proc/TriggerRoundEndTgsEvent()
+	world.TgsTriggerEvent("tg-Roundend", wait_for_completion = TRUE)
 
 /datum/controller/subsystem/ticker/proc/standard_reboot()
 	if(ready_for_reboot)
@@ -523,32 +532,41 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 	for(var/venue_path in SSrestaurant.all_venues)
 		var/datum/venue/venue = SSrestaurant.all_venues[venue_path]
 		tourist_income += venue.total_income
-		parts += "[venue] обслужил [venue.customers_served] гостей и заработал [venue.total_income] кредитов.<br>"
-	parts += "В общем заработав [tourist_income] кредитов[tourist_income ? "!" : "..."]<br>"
-	log_econ("В конце раунда обслуживание заработало: [tourist_income] кредитов.")
+		parts += "[venue] обслужил [venue.customers_served] гостей и заработал [venue.total_income][MONEY_NAME].<br>"
+	parts += "В общем заработав [tourist_income][MONEY_NAME][tourist_income ? "!" : "..."]<br>"
+	log_econ("В конце раунда обслуживание заработало: [tourist_income][MONEY_NAME].")
+
+	// Award service achievements based on tourist income
+	switch(tourist_income)
+		if(1 to 2000)
+			award_service(/datum/award/achievement/jobs/service_bad)
+		if(2001 to 4999)
+			award_service(/datum/award/achievement/jobs/service_okay)
+		if(5000 to INFINITY)
+			award_service(/datum/award/achievement/jobs/service_good)
+
 	switch(tourist_income)
 		if(0)
 			parts += "[span_redtext("Обслуживание не заработало кредитов...")]<br>"
 		if(1 to 2000)
 			parts += "[span_redtext("Центральное командование недовольно. Отдел обслуживания, вы однозначно можете работать лучше, чем в эту смену.")]<br>"
-			award_service(/datum/award/achievement/jobs/service_bad)
 		if(2001 to 4999)
 			parts += "[span_greentext("Центральное командование довольно работой отдела обслуживания за эту смену.")]<br>"
-			award_service(/datum/award/achievement/jobs/service_okay)
 		else
 			parts += "<span class='reallybig greentext'>Центральное командование впечатлено проделанной работой отделом обслуживания! Вот это команда!</span><br>"
-			award_service(/datum/award/achievement/jobs/service_good)
 
 	parts += "<b>Общая статистика:</b><br>"
-	parts += "В эту смену экипаж собрал [station_vault] кредитов.<br>"
+	parts += "В эту смену экипаж собрал [station_vault][MONEY_NAME].<br>"
 	if(total_players > 0)
-		parts += "В среднем было собрано [station_vault/total_players] кредитов.<br>"
-		log_econ("Roundend credit total: [station_vault] credits. Average Credits: [station_vault/total_players]")
+		parts += "В среднем было собрано [station_vault/total_players][MONEY_NAME].<br>"
+		log_econ("Roundend credits total: [station_vault][MONEY_NAME]. Average: [station_vault/total_players][MONEY_NAME_CAPITALIZED]")
 	if(mr_moneybags)
-		parts += "Самым богатым членом экипажа в конце смены был <b>[mr_moneybags.account_holder] с [mr_moneybags.account_balance]</b> кредитов!</div>"
+		parts += "Самым богатым членом экипажа в конце смены был <b>[mr_moneybags.account_holder] с [mr_moneybags.account_balance]</b>[MONEY_SYMBOL]!</div>"
 	else
 		parts += "Каким-то образом, никто не смог заработать кредитов за эту смену...</div>"
-	return parts
+	SSblackbox.record_feedback("amount", "mail_opened", SSeconomy.mail_opened)
+	parts += "Экипаж доставил и вскрыл [SSeconomy.mail_opened] почтовые отправления[(SSeconomy.mail_opened > 1) ? "!" : "..."]<br>"
+	return parts.Join()
 
 /**
  * Awards the service department an achievement and updates the chef and bartender's highscore for tourists served.
@@ -666,7 +684,10 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 	show_to_observers = FALSE
 
 /datum/action/report/Trigger(mob/clicker, trigger_flags)
-	if(owner && GLOB.common_report && SSticker.current_state == GAME_STATE_FINISHED)
+	. = ..()
+	if(!.)
+		return
+	if(GLOB.common_report && SSticker.current_state == GAME_STATE_FINISHED)
 		SSticker.show_roundend_report(owner.client)
 
 /datum/action/report/IsAvailable(feedback = FALSE)
@@ -742,3 +763,11 @@ GLOBAL_LIST_INIT(achievements_unlocked, list())
 	var/winner_key
 	///The name of the area we earned this cheevo in
 	var/award_location
+
+/atom/movable/screen/reboot_timer
+	screen_loc = "CENTER:-140,TOP:-42"
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	maptext_width = 340
+	maptext_height = 64
+	maptext = ""
+	layer = SCREENTIP_LAYER //This is basically an extra screentip
