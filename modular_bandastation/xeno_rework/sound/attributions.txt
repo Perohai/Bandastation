@@ -1,0 +1,27 @@
+Imported through BandaStation PR #1969 (Perohai / Artfish):
+https://github.com/ss220club/BandaStation/pull/1969
+Original modpack credits: Artfish, Paxilmaniac.
+
+alien_footstep_large1.ogg, alien_footstep_large2.ogg,
+alien_footstep_large3.ogg, alien_hiss.ogg, alien_queen_screech.ogg,
+alien_roar1.ogg, alien_roar2.ogg, alien_spitacid.ogg,
+alien_spitacid2.ogg, alien_tail_swipe.ogg, bloodyslice.ogg
+
+The following supplied files were checked byte-for-byte against upstream:
+
+alien_resin_move1.ogg, alien_resin_move2.ogg:
+  CM-SS13, commit 535d773610984b04554c6e06a5f5ec7a6e3e23e0
+  https://github.com/cmss13-devs/cmss13/tree/535d773610984b04554c6e06a5f5ec7a6e3e23e0/sound/effects
+  Upstream attribution: https://github.com/cmss13-devs/cmss13/blob/535d773610984b04554c6e06a5f5ec7a6e3e23e0/sound/ATTRIBUTION.txt
+
+pounce.ogg:
+  TGMC, sound/voice/alien/pounce.ogg
+spin.ogg:
+  TGMC, sound/effects/spin.ogg
+  Commit df1917855472062520be96d592f88e3973efefbe
+  https://github.com/tgstation/TerraGov-Marine-Corps/tree/df1917855472062520be96d592f88e3973efefbe/sound
+
+Imported audio retains its upstream license and licensing exceptions.
+This file does not relicense audio. See the source repositories' README/license
+and attribution files; TGMC and CM include noncommercial asset exceptions.
+No new audio was generated for this change.

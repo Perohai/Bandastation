@@ -1,0 +1,26 @@
+New original artwork — created for BandaStation xeno_rework with OpenAI image_gen,
+2026-11-11, at the user's request. No third-party reference images were supplied.
+Game atlas packing, nearest-neighbor scaling and DMI metadata: Codex.
+Distributed under the repository's default artwork license, CC BY-SA 3.0:
+https://creativecommons.org/licenses/by-sa/3.0/
+
+Files:
+  source/fruits.png -> resin_fruits.dmi, fruit_inhands.dmi
+  source/actions.png -> new_actions.dmi
+  source/combat.png -> combat_actions.dmi
+  source/effects.png -> xeno_effects.dmi, xeno_auras.dmi
+
+Imported artwork:
+  big_xenos.dmi, xeno_actions.dmi, resin_door.dmi
+  Source: https://github.com/ss220club/BandaStation/pull/1969
+  PR author: Perohai (Artfish).
+  Original modpack credits: Artfish, Paxilmaniac.
+  resin_door.dmi was moved into this module without changing its pixels.
+  Imported assets retain their source licenses and attribution; they are not
+  newly generated artwork or relicensed by this change.
+
+Existing /tg/ handcuff sprites are referenced directly from the repository;
+they are not copied into the new atlases.
+
+Rebuild the new DMI files from their source atlases:
+  python modular_bandastation/xeno_rework/tools/pack_sprites.py

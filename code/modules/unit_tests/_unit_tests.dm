@@ -383,6 +383,9 @@
 #include "find_reference_sanity.dm"
 #endif
 
+// BANDASTATION ADDITION - xeno_rework tests need the unit test assertion macros.
+#include "../../../modular_bandastation/xeno_rework/code/unit_tests.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
