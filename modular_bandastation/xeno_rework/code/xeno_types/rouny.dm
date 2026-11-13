@@ -1,5 +1,5 @@
-/// banda MODULE banda_XENO_REDO
 
+/** Невысокий чужой с гладким красным хитином, явно следующий теореме «красный значит быстрый» и почти всегда передвигающийся на четырёх лапах. */
 /mob/living/carbon/alien/adult/banda/runner
 	name = "alien runner"
 	desc = "Невысокий чужой с гладким красным хитином, явно следующий теореме «красный значит быстрый» и почти всегда передвигающийся на четырёх лапах."
@@ -10,6 +10,7 @@
 
 	/// Holds the ability to be granted to the runner later
 	var/datum/action/cooldown/alien/banda/pounce_runner/pounce_ability
+	/// Owned runner evasion action, deleted with the mob.
 	var/datum/action/cooldown/alien/banda/evade/evade_ability
 
 	melee_damage_lower = 10
@@ -52,8 +53,8 @@
 
 /mob/living/carbon/alien/adult/banda/runner/bullet_act(obj/projectile/hitting_projectile, def_zone, piercing_hit = FALSE)
 	if(evade_ability)
-		var/datum/action/cooldown/alien/banda/evade/E = evade_ability
-		var/evade_result = E.on_projectile_hit(hitting_projectile)
+		var/datum/action/cooldown/alien/banda/evade/evasion = evade_ability
+		var/evade_result = evasion.on_projectile_hit(hitting_projectile)
 		if(evade_result != BULLET_ACT_HIT)
 			return evade_result
 

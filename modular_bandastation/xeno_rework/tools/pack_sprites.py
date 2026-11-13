@@ -85,9 +85,6 @@ def main():
         ("intox_high", [effects[2]], 1), ("intox_critical", [effects[3]], 1),
         ("acid_pool", effects[4:8], 1),
     ])
-    auras = cells("effects", 64)
-    write_dmi("xeno_auras.dmi", 64, [("shield", auras[8:10], 1), ("empower", auras[10:12], 1)])
-
     hand_states = []
     for index, name in enumerate(fruit_names):
         fruit = fruit_cells[index * 2 + 1].resize((14, 14), Image.Resampling.NEAREST)

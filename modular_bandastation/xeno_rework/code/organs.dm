@@ -23,6 +23,7 @@
 
 	/// Tracks when each mob in the stomach started resisting (world.time).
 	var/list/resist_times = list()
+	/// Per-victim resistance callbacks, cancelled when occupants leave.
 	var/list/resist_timers = list()
 
 /// Returns the acid damage dealt to contents (none in this case).
@@ -131,6 +132,7 @@
 		to_chat(attacker, span_warning("Вы не можете напрямую атаковать ксеноморфа из желудка! Используйте клавиши движения для сопротивления."))
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 
+/** Block weapon firing from a swallowed occupant. */
 /obj/item/organ/stomach/alien_banda/proc/block_gunfire(mob/living/source)
 	SIGNAL_HANDLER
 	if(source in stomach_contents)
@@ -200,6 +202,7 @@
 	resist_timers -= victim
 	resist_times -= victim
 
+/** Release a swallowed occupant after its resistance delay. */
 /obj/item/organ/stomach/alien_banda/proc/finish_resistance(mob/living/victim)
 	if(QDELETED(victim) || !(victim in stomach_contents) || IS_UNCONSCIOUS_OR_CRIT(victim))
 		return

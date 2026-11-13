@@ -8,7 +8,7 @@ Files:
   source/fruits.png -> resin_fruits.dmi, fruit_inhands.dmi
   source/actions.png -> new_actions.dmi
   source/combat.png -> combat_actions.dmi
-  source/effects.png -> xeno_effects.dmi, xeno_auras.dmi
+  source/effects.png -> xeno_effects.dmi
 
 Imported artwork:
   big_xenos.dmi, xeno_actions.dmi, resin_door.dmi
@@ -22,5 +22,27 @@ Imported artwork:
 Existing /tg/ handcuff sprites are referenced directly from the repository;
 they are not copied into the new atlases.
 
+Buff auras use native BYOND drop-shadow filters following the mob silhouette.
+The former ring atlas is no longer used or generated.
+
 Rebuild the new DMI files from their source atlases:
   python modular_bandastation/xeno_rework/tools/pack_sprites.py
+
+TGMC final-caste assets (not covered by the generated artwork license above):
+  Origin: tgstation/TerraGov-Marine-Corps, TGMC contributors.
+  Revision: df1917855472062520be96d592f88e3973efefbe
+  https://github.com/tgstation/TerraGov-Marine-Corps/tree/df1917855472062520be96d592f88e3973efefbe/icons/Xeno
+  tgmc/{crusher,boiler,hunter}_castes.dmi: original icons/Xeno/castes/<name>.dmi.
+  tgmc/{crusher,boiler,hunter}_actions.dmi: original icons/Xeno/actions/<name>.dmi.
+  Original files are preserved byte-for-byte.
+  *_adapted.dmi: renamed states, static adult states, transparent canvas padding;
+  no repainting. Dead frames also serve as husked frames.
+  Rebuild: python modular_bandastation/xeno_rework/tools/adapt_tgmc_icons.py
+
+  Retain upstream asset restrictions; these files are NOT relicensed as CC BY-SA.
+  Upstream README lists artwork under CC BY-NC and some action icons under
+  CC BY-NC-SA. Its license section links version 4.0, while its bundled license
+  texts are named LICENSE-CC-BY-NC-3.0 and LICENSE-CC-BY-NC-SA-3.0; both source
+  texts are retained in tgmc/. Per-asset exceptions and upstream attribution
+  remain applicable. Source license section:
+  https://github.com/tgstation/TerraGov-Marine-Corps#licensing

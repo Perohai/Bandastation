@@ -1,3 +1,4 @@
+/** Stacked intoxication which can be removed by resisting or washing. */
 /datum/status_effect/stacking/xeno_intoxication
 	id = "xeno_intoxication"
 	status_type = STATUS_EFFECT_REFRESH
@@ -6,7 +7,9 @@
 	stack_decay = 0
 	consumed_on_threshold = FALSE
 	on_remove_on_mob_delete = TRUE
+	/// Owned visual representation of intoxication stacks.
 	var/mutable_appearance/stack_display
+	/// Alternating visibility of the critical intoxication warning.
 	var/blink = FALSE
 
 /datum/status_effect/stacking/xeno_intoxication/can_have_status()
@@ -33,6 +36,7 @@
 	if(!QDELETED(src))
 		update_display()
 
+/** Rebuild the intoxication warning for the current stack count. */
 /datum/status_effect/stacking/xeno_intoxication/proc/update_display()
 	stack_display.icon_state = stacks >= 20 ? "intox_critical" : stacks >= 15 ? "intox_high" : stacks >= 10 ? "intox_medium" : "intox_low"
 	stack_display.maptext = MAPTEXT("<center><font color='#89ff40'>[stacks]</font></center>")
@@ -48,10 +52,12 @@
 		blink = !blink
 		update_display()
 
+/** Clear intoxication when the victim resists. */
 /datum/status_effect/stacking/xeno_intoxication/proc/clear_intoxication(datum/source)
 	SIGNAL_HANDLER
 	qdel(src)
 
+/** Remove intoxication on direct exposure to water. */
 /datum/status_effect/stacking/xeno_intoxication/proc/wash_intoxication(datum/source, list/reagents, datum/reagents/holder, methods)
 	SIGNAL_HANDLER
 	if(!(methods & (TOUCH|VAPOR)))
@@ -59,6 +65,7 @@
 	if(locate(/datum/reagent/water) in reagents)
 		qdel(src)
 
+/** Append the owned intoxication display during overlay rebuilds. */
 /datum/status_effect/stacking/xeno_intoxication/proc/append_overlay(datum/source, list/overlays)
 	SIGNAL_HANDLER
 	overlays += stack_display
@@ -69,6 +76,7 @@
 	QDEL_NULL(stack_display)
 	return ..()
 
+/** Наносит 5 ожогового урона и добавляет 5 стаков интоксикации. */
 /datum/action/cooldown/alien/banda/toxic_spit
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toxic_spit"
@@ -90,6 +98,7 @@
 	StartCooldown()
 	return TRUE
 
+/** Spit projectile which applies intoxication on an unblocked hostile hit. */
 /obj/projectile/neurotoxin/banda/intoxicating
 	damage = 5
 	damage_type = BURN
@@ -100,6 +109,7 @@
 		var/mob/living/victim = target
 		victim.apply_status_effect(/datum/status_effect/stacking/xeno_intoxication, 5)
 
+/** Следующие три удара в течение четырёх секунд добавляют по 5 стаков интоксикации. */
 /datum/action/cooldown/alien/banda/toxic_claws
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toxic_claws"
@@ -111,14 +121,17 @@
 /datum/action/cooldown/alien/banda/toxic_claws/Activate()
 	var/mob/living/xeno = owner
 	xeno.apply_status_effect(/datum/status_effect/xeno_toxic_claws)
+	playsound(owner, 'modular_bandastation/xeno_rework/sound/alien_hiss.ogg', 55, TRUE)
 	StartCooldown()
 	return TRUE
 
+/** Tracks the remaining empowered toxic claw hits. */
 /datum/status_effect/xeno_toxic_claws
 	id = "xeno_toxic_claws"
 	duration = 4 SECONDS
 	status_type = STATUS_EFFECT_REPLACE
 	alert_type = null
+	/// Remaining empowered claw hits before expiration.
 	var/hits_remaining = 3
 
 /mob/living/carbon/alien/adult/banda/spitter/resolve_unarmed_attack(atom/attack_target, list/modifiers)
@@ -131,9 +144,11 @@
 	if(!claws || isalien(victim) || victim.get_brute_loss() + victim.get_fire_loss() <= old_damage)
 		return
 	victim.apply_status_effect(/datum/status_effect/stacking/xeno_intoxication, 5)
-	if(--claws.hits_remaining <= 0)
+	claws.hits_remaining--
+	if(claws.hits_remaining <= 0)
 		qdel(claws)
 
+/** Снимает 30% интоксикации, опрокидывает цель и восстанавливает здоровье и плазму. */
 /datum/action/cooldown/alien/banda/toxic_sting
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toxic_sting"
@@ -150,6 +165,8 @@
 		return FALSE
 	var/stacks = intoxication.stacks
 	owner.changeNext_move(CLICK_CD_MELEE)
+	owner.do_attack_animation(victim, ATTACK_EFFECT_CLAW)
+	playsound(victim, 'modular_bandastation/xeno_rework/sound/bloodyslice.ogg', 60, TRUE)
 	intoxication.add_stacks(-max(1, round(stacks * 0.3)))
 	victim.apply_damage(stacks * 1.2, BRUTE)
 	// The document's examples are 15 stacks = 0.5s and 30 stacks = 2s.
@@ -161,6 +178,7 @@
 		xeno.apply_status_effect(/datum/status_effect/xeno_sting_armor)
 	return TRUE
 
+/** Temporary speed and armour benefit after consuming intoxication. */
 /datum/armor/xeno_sting
 	melee = 10
 	bullet = 10
@@ -171,6 +189,7 @@
 	fire = 10
 	acid = 10
 
+/** Armour modifier associated with a successful toxic sting. */
 /datum/status_effect/xeno_sting_armor
 	id = "xeno_sting_armor"
 	duration = 10 SECONDS

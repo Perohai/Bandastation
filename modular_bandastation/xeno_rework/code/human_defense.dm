@@ -1,24 +1,10 @@
-/// banda MODULE banda_XENO_REDO
-
-/mob/living/carbon/human/attack_alien(mob/living/carbon/alien/adult/user, list/modifiers)
-	. = ..()
-	if(!.)
-		return
-
-	if(LAZYACCESS(modifiers, RIGHT_CLICK)) //Always drop item in hand, if no item, get stun instead.
+/// Apply reworked attacks after the native attack_alien has validated blocks and pacifism.
+/mob/living/carbon/human/proc/attack_banda_alien(mob/living/carbon/alien/adult/banda/user, list/modifiers)
+	if(LAZYACCESS(modifiers, RIGHT_CLICK))
 		var/obj/item/mob_held_item = get_active_held_item()
 		var/disarm_damage = rand(user.melee_damage_lower * 1.5, user.melee_damage_upper * 1.5)
 
 		if(mob_held_item)
-
-			if(check_block(user, damage = 0, attack_text = "[user.name]"))
-				playsound(loc, 'sound/items/weapons/parry.ogg', 25, TRUE, -1) //Audio feedback to the fact you just got blocked
-				apply_damage(disarm_damage / 2, STAMINA)
-				visible_message(span_danger("[user] пытается дотронуться до [src]!"), \
-					span_danger("[user] пытается дотронуться до вас!"), span_hear("Вы слышите свистящий звук!"), null, user)
-				to_chat(user, span_warning("Вы пытаетесь дотронуться до [src]!"))
-				return FALSE
-
 			playsound(loc, 'sound/items/weapons/thudswoosh.ogg', 25, TRUE, -1) //The sounds of these are changed so the xenos can actually hear they are being non-lethal
 			Knockdown(3 SECONDS)
 			apply_damage(disarm_damage, STAMINA)
@@ -47,7 +33,7 @@
 		if(!affecting)
 			affecting = get_bodypart(BODY_ZONE_CHEST)
 
-		var/armor_block = run_armor_check(affecting, MELEE,"","",10)
+		var/armor_block = run_armor_check(affecting, MELEE, "", "", 10)
 
 		playsound(loc, 'sound/items/weapons/slice.ogg', 25, TRUE, -1)
 		visible_message(span_danger("[user] наносит когтями удар по [src]!"), \
@@ -59,3 +45,4 @@
 			return TRUE
 
 		apply_damage(damage, BRUTE, affecting, armor_block)
+		return TRUE

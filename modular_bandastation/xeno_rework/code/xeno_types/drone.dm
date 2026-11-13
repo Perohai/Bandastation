@@ -1,5 +1,5 @@
-/// banda MODULE banda_XENO_REDO
 
+/** Настолько обычный, насколько может быть чужой с бронированным черным хитином и огромными когтями. */
 /mob/living/carbon/alien/adult/banda/drone
 	name = "alien drone"
 	desc = "Настолько обычный, насколько может быть чужой с бронированным черным хитином и огромными когтями."
@@ -32,5 +32,3 @@
 
 /mob/living/carbon/alien/adult/banda/drone/add_tts_component()
 	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/annah)
-
-

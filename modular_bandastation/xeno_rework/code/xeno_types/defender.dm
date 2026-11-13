@@ -1,5 +1,5 @@
-/// banda MODULE banda_XENO_REDO
 
+/** Тяжелый на вид чужой с хвостом, похожим на ядро тарана — получить удар таким было бы больно. */
 /mob/living/carbon/alien/adult/banda/defender
 	name = "alien defender"
 	desc = "Тяжелый на вид чужой с хвостом, похожим на ядро тарана — получить удар таким было бы больно."
@@ -24,22 +24,35 @@
 
 	/// ---------- state ----------
 	var/fortified = FALSE
+	/// Defender base icon state.
 	var/defender_base_icon_state = "aliendefender"
+	/// Defender fortify icon state.
 	var/defender_fortify_icon_state = "defender_fortify"
 
 	/// ---------- configurable balance ----------
 	var/defender_fortify_cooldown = 5 SECONDS
+	/// Defender fortify anchor.
 	var/defender_fortify_anchor = FALSE
+	/// Defender fortify move resist.
 	var/defender_fortify_move_resist = MOVE_FORCE_OVERPOWERING
+	/// Defender fortify grant stun immunity.
 	var/defender_fortify_grant_stun_immunity = FALSE
 
+	/// Defender tail sweep plasma cost.
 	var/defender_tail_sweep_plasma_cost = 10
+	/// Defender tail sweep cooldown.
 	var/defender_tail_sweep_cooldown = 10 SECONDS
+	/// Defender tail sweep brute.
 	var/defender_tail_sweep_brute = 10
+	/// Defender tail sweep radius.
 	var/defender_tail_sweep_radius = 1
+	/// Defender tail sweep throw range.
 	var/defender_tail_sweep_throw_range = 2
+	/// Defender tail sweep throw speed.
 	var/defender_tail_sweep_throw_speed = 2
+	/// Defender tail sweep knockdown.
 	var/defender_tail_sweep_knockdown = 1 SECONDS
+	/// Defender tail sweep small item weight class.
 	var/defender_tail_sweep_small_item_weight_class = WEIGHT_CLASS_SMALL
 
 
@@ -64,6 +77,7 @@
 	if(fortified && !IS_UNCONSCIOUS_OR_CRIT(src) && !IsParalyzed() && body_position != LYING_DOWN)
 		icon_state = defender_fortify_icon_state
 
+/** Apply Defender fortification and its temporary defensive modifiers. */
 /mob/living/carbon/alien/adult/banda/defender/proc/enter_fortify()
 	if(fortified)
 		return
@@ -87,17 +101,20 @@
 	)
 	playsound(src, 'sound/effects/stonedoor_openclose.ogg', 30, TRUE)
 
+/** Temporary armour profile used by Defender fortification. */
 /datum/armor/xeno_fortify
 	bullet = 50
 	laser = 50
 	energy = 50
 	bomb = 65
 
+/** Reject knockdown while the Defender remains fortified. */
 /mob/living/carbon/alien/adult/banda/defender/proc/block_fortified_knockdown(datum/source, amount, ignore_canstun)
 	SIGNAL_HANDLER
 	if(fortified && !ignore_canstun)
 		return COMPONENT_NO_STUN
 
+/** Remove fortification and restore movement and defensive traits. */
 /mob/living/carbon/alien/adult/banda/defender/proc/exit_fortify(silent = FALSE)
 	if(!fortified)
 		return

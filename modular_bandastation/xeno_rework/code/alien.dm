@@ -1,4 +1,6 @@
+/** Alien-owned resin construction selection. */
 /mob/living/carbon/alien
+	/// Structure chosen by the resin building action.
 	var/obj/structure/selected_resin_structure = null
 
 /mob/living/carbon/alien/adult/banda/queen/Initialize(mapload)
@@ -13,4 +15,3 @@
 		sound_range = 7, \
 		ignore_walls = TRUE, \
 		sound_play_chance = 100)
-

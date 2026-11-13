@@ -1,5 +1,5 @@
-/// banda MODULE banda_XENO_REDO
 
+/** Исполинская тварь с устрашающей аурой. Пора действовать, а не глазеть. */
 /mob/living/carbon/alien/adult/banda/queen
 	name = "alien queen"
 	desc = "Исполинская тварь с устрашающей аурой. Пора действовать, а не глазеть."
@@ -43,6 +43,7 @@
 /mob/living/carbon/alien/adult/banda/queen/alien_talk(message, list/spans = list(), list/message_mods = list(), shown_name = name, big_voice = TRUE)
 	..(message, spans, message_mods, shown_name, TRUE)
 
+/** Organ granting the Queen's ranged neurotoxin action. */
 /obj/item/organ/alien/neurotoxin/queen
 	name = "neurotoxin gland"
 	icon_state = "neurotox"
@@ -67,11 +68,13 @@
 
 	return ..()
 
+/** Create the Queen shriek visual around the current mob. */
 /mob/living/carbon/alien/adult/banda/proc/create_shriekwave()
 	remove_overlay(HALO_LAYER)
 	overlays_standing[HALO_LAYER] = image("icon" = 'modular_bandastation/xeno_rework/icons/big_xenos.dmi', "icon_state" = "shriek_waves") //Ehh, suit layer's not being used.
 	apply_overlay(HALO_LAYER)
 	addtimer(CALLBACK(src, PROC_REF(remove_shriekwave)), 3 SECONDS)
 
+/** Remove the Queen shriek visual after its animation. */
 /mob/living/carbon/alien/adult/banda/proc/remove_shriekwave()
 	remove_overlay(HALO_LAYER)

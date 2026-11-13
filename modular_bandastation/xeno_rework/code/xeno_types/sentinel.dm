@@ -1,5 +1,5 @@
-/// banda MODULE banda_XENO_REDO
 
+/** Чужой, который был бы неприметным, если бы не яркая окраска и видимые кислотные железы, покрывающие его тело. */
 /mob/living/carbon/alien/adult/banda/sentinel
 	name = "alien sentinel"
 	desc = "Чужой, который был бы неприметным, если бы не яркая окраска и видимые кислотные железы, покрывающие его тело."
@@ -33,6 +33,7 @@
 /mob/living/carbon/alien/adult/banda/sentinel/add_tts_component()
 	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/tracer)
 
+/** Organ granting the Sentinel's spit, volley and short acid spray. */
 /obj/item/organ/alien/neurotoxin/sentinel
 	name = "neurotoxin gland"
 	icon_state = "neurotox"

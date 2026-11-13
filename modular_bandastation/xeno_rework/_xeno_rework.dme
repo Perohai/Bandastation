@@ -1,6 +1,7 @@
 #include "_xeno_rework.dm"
 
 #include "code/defines/traits.dm"
+#include "code/defines/evacuation.dm"
 #include "code/base_xeno.dm"
 #include "code/human_defense.dm"
 #include "code/xeno_types/larva.dm"
@@ -11,6 +12,12 @@
 #include "code/acid_abilities.dm"
 #include "code/ravager_abilities.dm"
 #include "code/alien.dm"
+#include "code/hive_status.dm"
+#include "code/evacuation.dm"
+#include "code/final_castes.dm"
+#include "code/crusher.dm"
+#include "code/boiler.dm"
+#include "code/hunter.dm"
 #include "code/queen_walk.dm"
 #include "code/resin_door.dm"
 
@@ -23,4 +30,3 @@
 #include "code/xeno_types/sentinel.dm"
 #include "code/xeno_types/spitter.dm"
 #include "code/xeno_types/warrior.dm"
-

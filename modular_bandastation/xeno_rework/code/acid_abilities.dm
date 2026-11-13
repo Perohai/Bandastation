@@ -1,3 +1,4 @@
+/** Выплёвывает нейротоксин. Режим кислоты наносит ожоговый урон. */
 /datum/action/cooldown/alien/banda/spit
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "neuro_spit"
@@ -6,7 +7,9 @@
 	plasma_cost = 40
 	click_to_activate = TRUE
 	unset_after_click = FALSE
+	/// Whether spit uses acid instead of neurotoxin.
 	var/acid_mode = FALSE
+	/// Projectile subtype selected when acid mode is active.
 	var/acid_projectile = /obj/projectile/neurotoxin/banda/acid/standard
 
 /datum/action/cooldown/alien/banda/spit/Activate(atom/target)
@@ -20,9 +23,11 @@
 	playsound(owner, 'modular_bandastation/xeno_rework/sound/alien_spitacid.ogg', 70, TRUE)
 	return TRUE
 
+/** Praetorian spit selects its caste-specific acid projectile. */
 /datum/action/cooldown/alien/banda/spit/praetorian
 	acid_projectile = /obj/projectile/neurotoxin/banda/acid/standard/praetorian
 
+/** Stamina-damaging neurotoxin without the upstream paralysis payload. */
 /obj/projectile/neurotoxin/banda
 	name = "neurotoxin spit"
 	damage = 30
@@ -30,17 +35,21 @@
 	damage_type = STAMINA
 	armor_flag = BIO
 
+/** Burn-damaging acid projectile family. */
 /obj/projectile/neurotoxin/banda/acid
 	name = "acid spit"
 	icon_state = "toxin"
 	damage_type = BURN
 
+/** Standard direct acid spit. */
 /obj/projectile/neurotoxin/banda/acid/standard
 	damage = 15
 
+/** Lower-damage acid spit for the Praetorian gland. */
 /obj/projectile/neurotoxin/banda/acid/standard/praetorian
 	damage = 10
 
+/** Переключает между нейротоксином за 40 плазмы и кислотой за 100 плазмы. */
 /datum/action/cooldown/alien/banda/toggle_spit
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toggle_spit"
@@ -58,6 +67,7 @@
 	spit.build_all_button_icons(UPDATE_BUTTON_STATUS)
 	return TRUE
 
+/** После короткой подготовки выпускает три кислотных снаряда, оставляющих лужи на две секунды. */
 /datum/action/cooldown/alien/banda/acid_volley
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "acid_volley"
@@ -66,6 +76,7 @@
 	plasma_cost = 280
 	cooldown_time = 15 SECONDS
 	click_to_activate = TRUE
+	/// Guards overlapping channelled activations.
 	var/preparing = FALSE
 
 /datum/action/cooldown/alien/banda/acid_volley/Activate(atom/target)
@@ -73,6 +84,7 @@
 	if(preparing || !isturf(owner.loc) || !location || owner.z != location.z || get_dist(owner, location) > 7)
 		return FALSE
 	preparing = TRUE
+	playsound(owner, 'sound/effects/bubbles/bubbles.ogg', 40, TRUE)
 	var/ready = do_after(owner, 0.5 SECONDS, target = location)
 	preparing = FALSE
 	if(!ready || QDELETED(src) || QDELETED(owner) || !IsAvailable() || !isturf(owner.loc) || owner.z != location.z || get_dist(owner, location) > 7)
@@ -80,14 +92,18 @@
 	var/obj/item/ammo_casing/xeno_acid_volley/casing = new(owner.loc)
 	casing.fire_casing(location, owner, null, null, null, BODY_ZONE_CHEST, 0, owner)
 	qdel(casing)
+	playsound(owner, 'modular_bandastation/xeno_rework/sound/alien_spitacid.ogg', 75, TRUE)
+	owner.do_attack_animation(location)
 	StartCooldown()
 	return TRUE
 
+/** Three-projectile casing used by the scattered acid volley. */
 /obj/item/ammo_casing/xeno_acid_volley
 	projectile_type = /obj/projectile/neurotoxin/banda/acid/pool
 	pellets = 3
-	variance = 20
+	variance = 8
 
+/** Acid projectile which leaves a short-lived pool on impact or expiry. */
 /obj/projectile/neurotoxin/banda/acid/pool
 	damage = 10
 	range = 7
@@ -103,14 +119,16 @@
 		new /obj/effect/xeno_acid_pool(loc)
 	return ..()
 
+/** Покрывает кислотой до трёх клеток в направлении курсора, сбивая врагов с ног и гася огонь на союзниках. */
 /datum/action/cooldown/alien/banda/acid_spray
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "acid_line"
 	name = "Кислотный спрей"
-	desc = "Покрывает семь клеток перед собой кислотой, сбивающей врагов с ног и гасящей огонь на союзниках."
+	desc = "Покрывает кислотой до трёх клеток в направлении курсора, сбивая врагов с ног и гася огонь на союзниках."
 	plasma_cost = 300
 	cooldown_time = 40 SECONDS
 	click_to_activate = TRUE
+	/// Whether spray covers a second column beside its cursor line.
 	var/cone = FALSE
 
 /datum/action/cooldown/alien/banda/acid_spray/Activate(atom/target)
@@ -118,20 +136,26 @@
 	if(!isturf(owner.loc) || !target_turf || owner.z != target_turf.z || target_turf == owner.loc)
 		return FALSE
 	var/direction = get_dir(owner, target_turf)
-	if(cone)
-		var/turf/center = get_turf(owner)
-		for(var/row in 1 to 5)
-			center = get_step(center, direction)
-			if(!center || isclosedturf(center))
-				break
-			for(var/side in -1 to 1)
-				var/turf/location = side ? get_step(center, turn(direction, side * 90)) : center
-				spray_tile(location)
-	else
-		var/turf/destination = get_ranged_target_turf(owner, direction, 7)
-		for(var/turf/location as anything in get_line(owner, destination))
-			if(location != owner.loc && !spray_tile(location))
-				break
+	var/list/centers = get_line(get_turf(owner), target_turf)
+	centers -= get_turf(owner)
+	if(length(centers) > 3)
+		centers.Cut(4)
+	if(!length(centers))
+		return FALSE
+	var/turf/previous_center = get_turf(owner)
+	for(var/turf/center as anything in centers)
+		var/row_direction = get_dir(previous_center, center) || direction
+		if(cone)
+			// Keep the two-column spray to the cursor-facing side of its center line.
+			for(var/side in 0 to 1)
+				var/turf/location = side ? get_step(center, turn(row_direction, -90)) : center
+				if(!spray_tile(location))
+					break
+		else if(!spray_tile(center))
+			break
+		previous_center = center
+	playsound(owner, 'modular_bandastation/xeno_rework/sound/alien_spitacid2.ogg', 75, TRUE)
+	owner.do_attack_animation(target_turf)
 	StartCooldown()
 	return TRUE
 
@@ -142,27 +166,32 @@
 	for(var/turf/path_tile as anything in get_line(owner, location))
 		if(isclosedturf(path_tile))
 			return FALSE
-		for(var/obj/structure/blocker in path_tile)
+		for(var/obj/blocker in path_tile)
 			if(blocker.density)
 				return FALSE
 	new /obj/effect/xeno_acid_pool/spray(location)
 	return TRUE
 
+/** Покрывает узкую область шириной две и длиной до трёх клеток по направлению курсора. Кислота опрокидывает и обжигает врагов. */
 /datum/action/cooldown/alien/banda/acid_spray/cone
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "acid_cone"
-	desc = "Покрывает область 3×5 клеток кислотой, опрокидывающей и обжигающей врагов."
+	desc = "Покрывает узкую область шириной две и длиной до трёх клеток по направлению курсора. Кислота опрокидывает и обжигает врагов."
 	cooldown_time = 60 SECONDS
 	cone = TRUE
 
+/** Timed acid pool with location exposure and frame-independent damage. */
 /obj/effect/xeno_acid_pool
 	name = "xenomorph acid"
 	icon = 'modular_bandastation/xeno_rework/icons/xeno_effects.dmi'
 	icon_state = "acid_pool"
 	anchored = TRUE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	/// Lifetime before this temporary effect is deleted.
 	var/lifetime = 2 SECONDS
+	/// Knockdown duration applied to hostile entrants.
 	var/knockdown_time = 0
+	/// Location signals routed by the connect_loc element.
 	var/static/list/loc_connections = list(COMSIG_ATOM_ENTERED = PROC_REF(on_entered))
 
 /obj/effect/xeno_acid_pool/Initialize(mapload)
@@ -179,11 +208,13 @@
 	for(var/mob/living/victim in loc)
 		affect(victim, seconds_per_tick)
 
+/** Apply the pool to a living entrant without sleeping in the location signal. */
 /obj/effect/xeno_acid_pool/proc/on_entered(datum/source, atom/movable/arrived)
 	SIGNAL_HANDLER
 	if(isliving(arrived))
 		affect(arrived, 0)
 
+/** Apply this pool effect using elapsed seconds rather than processing frequency. */
 /obj/effect/xeno_acid_pool/proc/affect(mob/living/victim, seconds_per_tick)
 	if(isalien(victim))
 		victim.extinguish_mob()
@@ -192,6 +223,7 @@
 	if(knockdown_time)
 		victim.Knockdown(knockdown_time)
 
+/** Persistent spray pool which repeatedly knocks down exposed enemies. */
 /obj/effect/xeno_acid_pool/spray
 	lifetime = 5 SECONDS
 	knockdown_time = 0.5 SECONDS

@@ -1,3 +1,4 @@
+/** A thick resin secretion that can be parted by xenomorphs. */
 /obj/structure/alien/resin/door
 	name = "resin door"
 	desc = "A thick resin secretion that can be parted by xenomorphs."
@@ -17,7 +18,7 @@
 	var/state_open = FALSE
 	/// Whether the door is currently operating (opening/closing).
 	var/is_operating = FALSE
-	/// Delay before attempting to close the door automatically (in seconds).
+	/// Delay before attempting to close the door automatically.
 	var/close_delay = 3 SECONDS
 	/// Sound played when the door opens.
 	var/open_sound = 'modular_bandastation/xeno_rework/sound/alien_resin_move1.ogg'
@@ -33,15 +34,11 @@
 	var/list/vertical_sides = list(1, 2, 3, 5, 6, 7, 9, 10, 11, 21, 23, 38, 39, 55, 63, 74, 75, 137, 139, 203, 207, 223, 239, 255)
 	/// List of smoothing junction numbers for horizontal door states
 	var/list/horizontal_sides = list(0, 4, 8, 12, 13, 14, 15, 29, 31, 46, 47, 78, 79, 95, 110, 111, 127, 141, 143, 157, 159, 175, 191)
+	/// Location signals routed by the connect_loc element.
 	var/static/list/loc_connections = list(COMSIG_ATOM_EXITED = PROC_REF(on_exited))
 
-	/// Duration of animations in ticks, based on .dmi
-	var/list/anim_lengths = list(
-		"resinopening" = 3,
-		"resinclosing" = 3,
-		"resinopening-side" = 3,
-		"resinclosing-side" = 3
-	)
+	/// Matches all six DMI frames and the normal airlock opening/closing animation.
+	var/operation_time = 0.6 SECONDS
 
 /// Initializes the door, updating its icon and air properties.
 /obj/structure/alien/resin/door/Initialize(mapload)
@@ -64,9 +61,9 @@
 
 /// Updates air properties when the door moves.
 /obj/structure/alien/resin/door/Move()
-	var/turf/T = loc
+	var/turf/location = loc
 	. = ..()
-	move_update_air(T)
+	move_update_air(location)
 	update_icon()
 
 /// Handles hand attacks to operate the door.
@@ -92,9 +89,9 @@
 		return
 	if (!iscarbon(user))
 		return
-	var/mob/living/carbon/C = user
-	if (C.get_organ_slot(ORGAN_SLOT_XENO_HIVENODE))
-		if (!C.handcuffed)
+	var/mob/living/carbon/carbon_user = user
+	if (carbon_user.get_organ_slot(ORGAN_SLOT_XENO_HIVENODE))
+		if (!carbon_user.handcuffed)
 			operate(bumped_open)
 		return
 	to_chat(user, span_notice("Your lack of connection to the hive prevents the resin door from opening."))
@@ -134,10 +131,8 @@
 	// Play sound.
 	playsound(loc, is_closing ? close_sound : open_sound, 50, TRUE)
 
-	var/duration = src.anim_lengths[anim_state] || 6
-
 	// Schedule update after animation.
-	addtimer(CALLBACK(src, PROC_REF(operate_update), bumped_open), duration)
+	addtimer(CALLBACK(src, PROC_REF(operate_update), bumped_open), operation_time)
 
 /// Updates door state, physics, and icon after animation.
 /obj/structure/alien/resin/door/proc/operate_update(bumped_open)
@@ -190,6 +185,7 @@
 		return
 	operate()
 
+/** Close the resin doorway after a living occupant leaves it. */
 /obj/structure/alien/resin/door/proc/on_exited(datum/source, atom/movable/gone, direction)
 	SIGNAL_HANDLER
 	if(state_open && isliving(gone))

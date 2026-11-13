@@ -1,5 +1,5 @@
-/// banda MODULE banda_XENO_REDO
 
+/** Довольно массивный чужой с выраженными кислотными железами, из его рта капает... то ли токсин, то ли кислота. */
 /mob/living/carbon/alien/adult/banda/spitter
 	name = "alien spitter"
 	desc = "Довольно массивный чужой с выраженными кислотными железами, из его рта капает... то ли токсин, то ли кислота."
@@ -33,6 +33,7 @@
 /mob/living/carbon/alien/adult/banda/spitter/add_tts_component()
 	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/janna)
 
+/** Organ granting the Spitter-specific toxic combat abilities. */
 /obj/item/organ/alien/neurotoxin/spitter
 	actions_types = list(
 		/datum/action/cooldown/alien/banda/toxic_spit,

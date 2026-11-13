@@ -1,5 +1,5 @@
-///  MODULE _XENO_REDO
 
+/** Common physiology, evolution and held-item rendering for Banda castes. */
 /mob/living/carbon/alien/adult/banda
 	abstract_type = /mob/living/carbon/alien/adult/banda
 	name = "rare bugged alien"
@@ -18,7 +18,12 @@
 	var/alt_inhands_file = 'modular_bandastation/xeno_rework/icons/big_xenos.dmi'
 	/// Setting this will give a xeno generic_evolve set to evolve them into this type
 	var/evolution_tier = 1
+	/// Normal evolution branch, independent of the evacuation finale.
 	var/next_evolution
+	/// Optional branch unlocked only during the evacuation finale.
+	var/final_evolution
+	/// Donor hand sprite layout for imported castes without tg item overlays.
+	var/inhand_caste
 	/// Keeps track of if a xeno has evolved recently, if so then we prevent them from evolving until that time is up
 	var/has_evolved_recently = FALSE
 	/// How long xenos should be unable to evolve after recently evolving
@@ -33,9 +38,19 @@
 	var/sprite_scale = 0.9
 	/// visual offset to re-center the sprite after scaling
 	var/sprite_pixel_y_offset = -4
+	/// Per-mob hive roster UI source, deleted with the mob.
+	var/datum/xeno_rework_hive_status/hive_status_panel
+
+/mob/living/carbon/alien/adult/banda/Destroy()
+	QDEL_NULL(hive_status_panel)
+	return ..()
 
 /mob/living/carbon/alien/adult/banda/Initialize(mapload)
 	. = ..()
+	if(!GLOB.xeno_evacuation)
+		GLOB.xeno_evacuation = new
+	GLOB.xeno_evacuation.queue_population_check()
+	GLOB.xeno_evacuation.RegisterSignals(src, list(COMSIG_MOVABLE_Z_CHANGED, COMSIG_LIVING_REVIVE), TYPE_PROC_REF(/datum/xeno_evacuation, queue_population_check))
 
 	update_xeno_sprite_scale()
 
@@ -44,7 +59,7 @@
 	addtimer(CALLBACK(src, PROC_REF(patch_seethrough_for_xeno)), 0)
 
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/sleepytime)
-	if(next_evolution)
+	if(next_evolution || final_evolution)
 		GRANT_ACTION(/datum/action/cooldown/alien/banda/generic_evolve)
 
 	pixel_x = -16
@@ -52,19 +67,21 @@
 	ADD_TRAIT(src, TRAIT_XENO_HEAL_AURA, TRAIT_XENO_INNATE)
 	ADD_TRAIT(src, TRAIT_SLEEPIMMUNE, TRAIT_XENO_INNATE)
 
+/** Keep the silhouette component from inheriting oversized sprite transforms. */
 /mob/living/carbon/alien/adult/banda/proc/patch_seethrough_for_xeno()
-	var/datum/component/seethrough_mob/C = GetComponent(/datum/component/seethrough_mob)
-	if(!C)
+	var/datum/component/seethrough_mob/seethrough = GetComponent(/datum/component/seethrough_mob)
+	if(!seethrough)
 		return
 
-	if(C.render_source_atom)
-		C.render_source_atom.appearance_flags |= RESET_TRANSFORM
+	if(seethrough.render_source_atom)
+		seethrough.render_source_atom.appearance_flags |= RESET_TRANSFORM
 
 //Transform for better size select
+/** Apply the caste sprite scale while preserving its tile alignment. */
 /mob/living/carbon/alien/adult/banda/proc/update_xeno_sprite_scale()
-	var/matrix/M = matrix()
-	M.Scale(sprite_scale, sprite_scale)
-	transform = M
+	var/matrix/sprite_transform = matrix()
+	sprite_transform.Scale(sprite_scale, sprite_scale)
+	transform = sprite_transform
 	pixel_y = initial(pixel_y) + sprite_pixel_y_offset
 
 /// Called when a larva or xeno evolves, adds a configurable timer on evolving again to the xeno
@@ -80,6 +97,7 @@
 		return
 	has_evolved_recently = FALSE
 
+/** Common action gate for temporarily disabled xeno abilities. */
 /datum/action/cooldown/alien/banda
 	button_icon = 'modular_bandastation/xeno_rework/icons/xeno_actions.dmi'
 	/// Some xeno abilities block other abilities from being used, this allows them to get around that in cases where it is needed
@@ -97,15 +115,19 @@
 	if(!istype(owner_alien) || owner_alien.unable_to_use_abilities)
 		return FALSE
 
+/** Movement bonus for light castes. */
 /datum/movespeed_modifier/alien_quick
 	multiplicative_slowdown = -0.5
 
+/** Small movement penalty for slower caste movement modes. */
 /datum/movespeed_modifier/alien_slow
 	multiplicative_slowdown = 0.5
 
+/** Movement penalty for heavy combat castes. */
 /datum/movespeed_modifier/alien_heavy
 	multiplicative_slowdown = 1
 
+/** Movement penalty for oversized royal castes. */
 /datum/movespeed_modifier/alien_big
 	multiplicative_slowdown = 2
 
@@ -119,7 +141,7 @@
 		var/itm_state = l_hand.inhand_icon_state
 		if(!itm_state)
 			itm_state = l_hand.icon_state
-		var/mutable_appearance/l_hand_item = mutable_appearance(istype(l_hand, /obj/item/xeno_fruit) ? l_hand.lefthand_file : alt_inhands_file, "[itm_state][caste]_l", -HANDS_LAYER)
+		var/mutable_appearance/l_hand_item = mutable_appearance(istype(l_hand, /obj/item/xeno_fruit) ? l_hand.lefthand_file : alt_inhands_file, "[itm_state][inhand_caste || caste]_l", -HANDS_LAYER)
 		if(l_hand.blocks_emissive != EMISSIVE_BLOCK_NONE)
 			l_hand_item.overlays += emissive_blocker(l_hand_item.icon, l_hand_item.icon_state, src, alpha = l_hand_item.alpha)
 		hands += l_hand_item
@@ -129,7 +151,7 @@
 		var/itm_state = r_hand.inhand_icon_state
 		if(!itm_state)
 			itm_state = r_hand.icon_state
-		var/mutable_appearance/r_hand_item = mutable_appearance(istype(r_hand, /obj/item/xeno_fruit) ? r_hand.righthand_file : alt_inhands_file, "[itm_state][caste]_r", -HANDS_LAYER)
+		var/mutable_appearance/r_hand_item = mutable_appearance(istype(r_hand, /obj/item/xeno_fruit) ? r_hand.righthand_file : alt_inhands_file, "[itm_state][inhand_caste || caste]_r", -HANDS_LAYER)
 		if(r_hand.blocks_emissive != EMISSIVE_BLOCK_NONE)
 			r_hand_item.overlays += emissive_blocker(r_hand_item.icon, r_hand_item.icon_state, src, alpha = r_hand_item.alpha)
 		hands += r_hand_item
@@ -149,6 +171,7 @@
 	overlays_standing[HANDCUFF_LAYER] = cuffs
 	apply_overlay(HANDCUFF_LAYER)
 
+/** Return the installed vessel capacity, or minus one if no vessel exists. */
 /mob/living/carbon/proc/get_max_plasma()
 	var/obj/item/organ/alien/plasmavessel/vessel = get_organ_by_type(/obj/item/organ/alien/plasmavessel)
 	if(!vessel)
