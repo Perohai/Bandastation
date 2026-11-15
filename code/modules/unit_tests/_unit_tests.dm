@@ -385,6 +385,8 @@
 
 // BANDASTATION ADDITION - xeno_rework tests need the unit test assertion macros.
 #include "../../../modular_bandastation/xeno_rework/code/unit_tests.dm"
+// BANDASTATION ADDITION - integrated hive economy tests.
+#include "../../../modular_bandastation/xeno_rework/code/hive_unit_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

@@ -46,3 +46,26 @@ TGMC final-caste assets (not covered by the generated artwork license above):
   texts are retained in tgmc/. Per-asset exceptions and upstream attribution
   remain applicable. Source license section:
   https://github.com/tgstation/TerraGov-Marine-Corps#licensing
+
+Hive expansion artwork, 2026-11-14:
+  source/brood_{microdrone,scout,carrier}.png -> brood/*.dmi
+  Replacement coarse, high-contrast pixel sprite sheets created with the built-in
+  OpenAI image_gen at the user's explicit request. No third-party reference image
+  was supplied for these replacement sheets. Exact prompts: source/brood_prompts.txt.
+  Core source/hive_core.png -> brood/hive_core.dmi was generated earlier using
+  big_xenos.dmi as a style reference (Perohai / Artfish attribution above).
+  Packing: nearest-neighbor scaling, transparent padding and DMI states by Codex.
+  Distributed under the repository artwork license, CC BY-SA 3.0.
+  Sleep and dead states share static frames; the core has four pulse frames.
+
+TGMC folding barricade artwork (equipment and weapon imports removed):
+  Origin: https://github.com/tgstation/TerraGov-Marine-Corps, TGMC contributors.
+  Source: icons/Marine/barricades.dmi in the local TGMC-master source archive.
+  The archive has no Git metadata; exact revision unknown.
+  Byte-for-byte original: fortifications/source/barricades.dmi, identified by
+  fortifications/source/SHA256SUMS.txt. Adapted atlas retains folding_0..3 pixels.
+  No repainting; these assets retain TGMC restrictions, NOT CC BY-SA relicensing.
+  Upstream README links CC BY-NC 4.0 / CC BY-NC-SA 4.0, but bundled texts are 3.0;
+  both source texts remain in fortifications/source/. Per-asset exceptions apply:
+  https://github.com/tgstation/TerraGov-Marine-Corps#licensing
+  Rebuild: python modular_bandastation/xeno_rework/tools/pack_expansion_assets.py

@@ -10,7 +10,7 @@
 	var/static/list/structures = list(
 		"resin wall" = /obj/structure/alien/resin/wall,
 		"resin membrane" = /obj/structure/alien/resin/membrane,
-		"resin nest" = /obj/structure/bed/nest,
+		"resin nest" = /obj/structure/bed/nest/banda,
 		"resin door" = /obj/structure/alien/resin/door,
 	)
 
@@ -46,6 +46,7 @@
 		/obj/structure/alien/resin/wall,
 		/obj/structure/alien/resin/membrane,
 		/obj/structure/bed/nest,
+		/obj/structure/bed/nest/banda,
 		/obj/structure/alien/resin/door,
 	)
 
@@ -70,7 +71,8 @@
 	var/turf/location = get_turf(target)
 	if(!IsAvailable() || !can_build(location, structure_type))
 		return FALSE
-	if(!do_after(owner, build_time, target = location, extra_checks = CALLBACK(src, PROC_REF(can_build), location, structure_type)))
+	var/duration = build_time * (istype(owner, /mob/living/carbon/alien/adult/banda) && GLOB.xeno_hive?.purchased["construction"] ? 0.5 : 1)
+	if(!do_after(owner, duration, target = location, extra_checks = CALLBACK(src, PROC_REF(can_build), location, structure_type)))
 		return FALSE
 	if(QDELETED(src) || QDELETED(owner) || !IsAvailable() || !can_build(location, structure_type))
 		return FALSE
@@ -812,25 +814,37 @@
 	if(!IsAvailable())
 		return FALSE
 	var/mob/living/carbon/alien/adult/banda/evolver = owner
-	if(!evolver.can_evolve())
+	var/list/options = evolver.get_evolution_options()
+	var/evolution_type = evolver.get_evolution_type()
+	if(length(options) > 1)
+		var/list/choices = list()
+		for(var/mob/living/carbon/alien/adult/banda/caste_type as anything in options)
+			choices[initial(caste_type.name)] = caste_type
+		var/choice = tgui_input_list(evolver, "Выберите направление эволюции", "Эволюция", choices)
+		if(QDELETED(src) || QDELETED(evolver) || owner != evolver || !IsAvailable() || !(choice in choices))
+			return FALSE
+		evolution_type = choices[choice]
+	if(!evolver.can_evolve(evolution_type))
 		evolver.balloon_alert(evolver, "высшая каста уже существует")
 		return FALSE
-	var/evolution_type = evolver.get_evolution_type()
 	var/new_xeno = new evolution_type(evolver.loc)
 	playsound(new_xeno, 'sound/mobs/non-humanoids/alien/alien_explode.ogg', 60, TRUE)
 	evolver.alien_evolve(new_xeno)
 	return TRUE
 
-/// T3 combat castes share one slot; queens have their own single slot.
-/mob/living/carbon/alien/adult/banda/proc/can_evolve()
-	var/evolution_target = get_evolution_type()
+/// Each T3 and purchased specialization has its own simultaneous limit.
+/mob/living/carbon/alien/adult/banda/proc/can_evolve(evolution_target)
+	if(!evolution_target)
+		evolution_target = get_evolution_type()
 	if(!ispath(evolution_target, /mob/living/carbon/alien/adult/banda) || !isturf(loc) || has_evolved_recently)
+		return FALSE
+	if(!(evolution_target in get_evolution_options()))
 		return FALSE
 	var/obj/item/organ/alien/hivenode/node = get_organ_slot(ORGAN_SLOT_XENO_HIVENODE)
 	if(!node || node.recent_queen_death)
 		return FALSE
 	if(ispath(evolution_target, /mob/living/carbon/alien/adult/banda/final_caste))
-		return GLOB.xeno_evacuation?.active && !GLOB.xeno_evacuation.resolved
+		return GLOB.xeno_hive.slot_available(evolution_target)
 	if(evolution_target == /mob/living/carbon/alien/adult/banda/queen)
 		for(var/mob/living/carbon/alien/other in GLOB.alive_mob_list)
 			if(istype(other, /mob/living/carbon/alien/adult/banda/queen) || istype(other, /mob/living/carbon/alien/adult/royal/queen))
@@ -838,7 +852,5 @@
 		return TRUE
 	var/mob/living/carbon/alien/adult/banda/evolution_type = evolution_target
 	if(initial(evolution_type.evolution_tier) == 3)
-		for(var/mob/living/carbon/alien/adult/banda/other in GLOB.alive_mob_list)
-			if(other.evolution_tier == 3)
-				return FALSE
+		return GLOB.xeno_hive.slot_available(evolution_target)
 	return TRUE

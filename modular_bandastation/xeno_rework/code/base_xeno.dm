@@ -18,9 +18,9 @@
 	var/alt_inhands_file = 'modular_bandastation/xeno_rework/icons/big_xenos.dmi'
 	/// Setting this will give a xeno generic_evolve set to evolve them into this type
 	var/evolution_tier = 1
-	/// Normal evolution branch, independent of the evacuation finale.
+	/// Normal evolution branch, retained alongside purchased specializations.
 	var/next_evolution
-	/// Optional branch unlocked only during the evacuation finale.
+	/// Optional branch unlocked by the matching hive purchase.
 	var/final_evolution
 	/// Donor hand sprite layout for imported castes without tg item overlays.
 	var/inhand_caste
@@ -47,6 +47,8 @@
 
 /mob/living/carbon/alien/adult/banda/Initialize(mapload)
 	. = ..()
+	var/datum/xeno_hive/hive = get_xeno_hive()
+	hive.add_member(src)
 	if(!GLOB.xeno_evacuation)
 		GLOB.xeno_evacuation = new
 	GLOB.xeno_evacuation.queue_population_check()

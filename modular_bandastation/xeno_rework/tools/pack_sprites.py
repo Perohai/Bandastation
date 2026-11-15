@@ -19,19 +19,20 @@ def cells(name, size=32, columns=4, rows=3):
     ]
 
 
-def write_dmi(name, size, states):
+def write_dmi(name, size, states, *, height=None, delay=2):
+    height = height or size
     count = sum(len(frames) for _, frames, _ in states)
     columns = min(8, count)
-    image = Image.new("RGBA", (columns * size, math.ceil(count / columns) * size))
-    description = ["# BEGIN DMI", "version = 4.0", f"\twidth = {size}", f"\theight = {size}"]
+    image = Image.new("RGBA", (columns * size, math.ceil(count / columns) * height))
+    description = ["# BEGIN DMI", "version = 4.0", f"\twidth = {size}", f"\theight = {height}"]
     index = 0
     for state, frames, directions in states:
         animation_frames = len(frames) // directions
         description += [f'state = "{state}"', f"\tdirs = {directions}", f"\tframes = {animation_frames}"]
         if animation_frames > 1:
-            description += ["\tdelay = " + ",".join(["2"] * animation_frames), "\tloop = 0"]
+            description += ["\tdelay = " + ",".join([str(delay)] * animation_frames), "\tloop = 0"]
         for frame in frames:
-            image.paste(frame, ((index % columns) * size, (index // columns) * size))
+            image.paste(frame, ((index % columns) * size, (index // columns) * height))
             index += 1
     description.append("# END DMI")
     metadata = PngImagePlugin.PngInfo()

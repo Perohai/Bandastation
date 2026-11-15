@@ -1,4 +1,5 @@
 #include "defines/evacuation.dm"
+#include "fortifications/unit_tests.dm"
 
 /datum/unit_test/xeno_rework_melee/Run()
 	var/mob/living/carbon/alien/adult/banda/sentinel/xeno = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
@@ -143,7 +144,10 @@
 	TEST_ASSERT(spitter.can_evolve(), "An existing sentinel must not block another T2 evolution")
 	TEST_ASSERT(sentinel.can_evolve(), "Vacant T3 slot should permit evolution")
 	var/mob/living/carbon/alien/adult/banda/warrior/warrior = allocate(/mob/living/carbon/alien/adult/banda/warrior)
-	TEST_ASSERT(!sentinel.can_evolve(), "Warrior must occupy the same T3 slot as praetorian")
+	TEST_ASSERT(sentinel.can_evolve(), "Warrior must not occupy the independent Praetorian slot")
+	var/mob/living/carbon/alien/adult/banda/praetorian/praetorian = allocate(/mob/living/carbon/alien/adult/banda/praetorian)
+	TEST_ASSERT(!sentinel.can_evolve(), "An existing Praetorian did not occupy its slot")
+	qdel(praetorian)
 	qdel(warrior)
 	TEST_ASSERT(sentinel.can_evolve(), "Deleting a T3 must free its slot")
 	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human/consistent)
@@ -580,6 +584,9 @@
 	TEST_ASSERT(no_survivors_lost, "A shuttle without living defenders awarded a crew victory")
 	TEST_ASSERT_EQUAL(ert_slots, 3, "The shuttle did not receive exactly three ERT roles")
 	TEST_ASSERT(ert_aboard, "ERT roles were placed outside the shuttle")
+/datum/unit_test/xeno_rework_final_evolution
+	parent_type = /datum/unit_test/xeno_rework_hive
+
 /datum/unit_test/xeno_rework_final_evolution/Run()
 	var/mob/living/carbon/alien/adult/banda/warrior/warrior = allocate(/mob/living/carbon/alien/adult/banda/warrior)
 	var/mob/living/carbon/alien/adult/banda/sentinel/sentinel = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
@@ -588,8 +595,8 @@
 	GLOB.xeno_evacuation.active = FALSE
 	var/normal_branch = sentinel.get_evolution_type()
 	var/locked_branch = warrior.get_evolution_type()
-	GLOB.xeno_evacuation.active = TRUE
-	GLOB.xeno_evacuation.resolved = FALSE
+	hive.purchased["crusher"] = 1
+	hive.purchased["boiler"] = 1
 	var/final_warrior = warrior.get_evolution_type()
 	var/final_sentinel = sentinel.get_evolution_type()
 	var/can_evolve = warrior.can_evolve()
@@ -602,7 +609,7 @@
 	TEST_ASSERT_EQUAL(final_warrior, /mob/living/carbon/alien/adult/banda/final_caste/crusher, "Warrior did not unlock Crusher")
 	TEST_ASSERT_EQUAL(final_sentinel, /mob/living/carbon/alien/adult/banda/final_caste/boiler, "Sentinel did not unlock Boiler")
 	TEST_ASSERT(can_evolve, "The old T3 slot limit blocked a final evolution")
-	TEST_ASSERT_NULL(closed_branch, "Evolution remained unlocked after the finale resolved")
+	TEST_ASSERT_EQUAL(closed_branch, final_warrior, "Resolving the finale removed a purchased caste")
 
 /datum/unit_test/xeno_rework_final_combat/Run()
 	var/mob/living/carbon/alien/adult/banda/final_caste/crusher/crusher = allocate(/mob/living/carbon/alien/adult/banda/final_caste/crusher)

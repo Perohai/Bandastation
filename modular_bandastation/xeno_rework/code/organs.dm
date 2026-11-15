@@ -67,11 +67,10 @@
 	clear_resistance(source)
 	return ..()
 
-/// Handles the death of a mob inside the stomach, digesting corpses.
+/// Transport never processes bodies: the hive must secure them in a nest.
 /obj/item/organ/stomach/alien_banda/content_died(mob/living/source)
 	if (QDELETED(src))
 		return
-	// Can fully digest corpses
 	clear_resistance(source)
 	UnregisterSignal(source, list(
 		COMSIG_LIVING_DEATH,
@@ -82,7 +81,6 @@
 		COMSIG_MOB_TRYING_TO_FIRE_GUN
 	))
 	source.remove_status_effect(/datum/status_effect/temporary_blindness, "alien_stomach")
-	qdel(source)
 
 /// Registers signals when the stomach is inserted into a mob.
 /obj/item/organ/stomach/alien_banda/on_mob_insert(mob/living/carbon/stomach_owner, special, movement_flags)

@@ -160,7 +160,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 
 /** Revalidate the live adjacent xeno, console ownership and defense phase. */
 /datum/xeno_evacuation/proc/can_hack(mob/living/carbon/alien/adult/banda/xeno, obj/machinery/computer/emergency_shuttle/console)
-	return active && defending && !resolved && !QDELETED(xeno) && !QDELETED(console) && !xeno.incapacitated && isturf(xeno.loc) && xeno.Adjacent(console) && SSshuttle.emergency?.mode == SHUTTLE_DOCKED && (get_area(console) in SSshuttle.emergency.shuttle_areas) && world.time < defense_deadline
+	return active && defending && !resolved && istype(xeno) && !QDELETED(xeno) && !QDELETED(console) && !xeno.incapacitated && isturf(xeno.loc) && xeno.Adjacent(console) && SSshuttle.emergency?.mode == SHUTTLE_DOCKED && (get_area(console) in SSshuttle.emergency.shuttle_areas) && world.time < defense_deadline
 
 /** Channel one shared navigation stage and resolve a completed takeover. */
 /datum/xeno_evacuation/proc/hack(mob/living/carbon/alien/adult/banda/xeno, obj/machinery/computer/emergency_shuttle/console)
@@ -225,6 +225,11 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 		remaining--
 		if(!remaining)
 			notify_ghosts("Три места ЕРТ для обороны эвакуационного шаттла доступны в меню ролей.", source = spawner, header = "Оборона шаттла", notify_flags = NOTIFY_CATEGORY_NOFLASH)
+			break
+
+	for(var/turf/location as anything in shuttle.return_turfs())
+		if((get_area(location) in shuttle.shuttle_areas) && isfloorturf(location) && !location.is_blocked_turf())
+			new /obj/structure/closet/crate/field_fortifications(location)
 			break
 
 /** Delete unused ERT roles and release their weak references. */

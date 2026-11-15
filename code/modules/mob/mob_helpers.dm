@@ -281,6 +281,7 @@
  * * ghost_sound: sound to play
  * * ignore_key: Ignore keys if they're in the GLOB.poll_ignore list
  * * notify_volume: How loud the sound should be to spook the user
+ * * recipients: Optional prefiltered observers; callers check eligibility. // BANDASTATION ADDITION - hive roles.
  */
 /proc/notify_ghosts(
 	message,
@@ -293,6 +294,7 @@
 	ignore_key,
 	notify_flags = NOTIFY_CATEGORY_DEFAULT,
 	notify_volume = 100,
+	list/recipients, // BANDASTATION ADDITION - optional audience for filtered hive role notifications.
 )
 
 	if(notify_flags & GHOST_NOTIFY_IGNORE_MAPLOAD && SSatoms.initialized != INITIALIZATION_INNEW_REGULAR) //don't notify for objects created during a map load
@@ -306,7 +308,7 @@
 		alert_overlay.layer = FLOAT_LAYER
 		alert_overlay.plane = FLOAT_PLANE
 
-	for(var/mob/dead/observer/ghost in GLOB.player_list)
+	for(var/mob/dead/observer/ghost in (recipients || GLOB.player_list)) // BANDASTATION EDIT - synchronous dispatch to an optional prefiltered audience.
 		if(!(notify_flags & GHOST_NOTIFY_NOTIFY_SUICIDERS) && HAS_TRAIT(ghost, TRAIT_SUICIDED))
 			continue
 		if(ignore_key && (ghost.ckey in GLOB.poll_ignore[ignore_key]))

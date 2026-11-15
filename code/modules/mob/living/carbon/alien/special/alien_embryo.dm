@@ -107,6 +107,10 @@
 /obj/item/organ/body_egg/alien_embryo/proc/on_poll_concluded(gib_on_success, mob/dead/observer/ghost)
 	if(QDELETED(owner))
 		return
+	// BANDASTATION ADDITION START - xeno_rework preserves prey bodies after birth.
+	if(ghost && banda_birth(ghost))
+		return
+	// BANDASTATION ADDITION END
 
 	if(isnull(ghost))
 		bursting = FALSE
