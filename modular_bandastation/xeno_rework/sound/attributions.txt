@@ -24,4 +24,8 @@ spin.ogg:
 Imported audio retains its upstream license and licensing exceptions.
 This file does not relicense audio. See the source repositories' README/license
 and attribution files; TGMC and CM include noncommercial asset exceptions.
-No new audio was generated for this change.
+hunter_silence.ogg: original procedurally synthesized non-vocal hiss, Codex,
+2026-11-16, at the user's request. No Dota 2 recording or third-party audio.
+Distributed under the repository default artwork license CC BY-SA 3.0.
+Reproduce with FFmpeg (white noise, bandpass, rapid attack, decay and short echo):
+ffmpeg -f lavfi -i anoisesrc=d=0.85:c=white:r=44100:a=0.7 -af "highpass=f=1400,lowpass=f=8500,afade=t=in:d=0.008,afade=t=out:st=0.06:d=0.79,aecho=0.8:0.35:45:0.2" -c:a libvorbis -q:a 5 hunter_silence.ogg

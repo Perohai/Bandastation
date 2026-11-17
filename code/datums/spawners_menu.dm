@@ -70,7 +70,10 @@
 	var/list/spawnerlist = list()
 
 	if (group_name in GLOB.mob_spawners)
-		spawnerlist = GLOB.mob_spawners[group_name]
+		// BANDASTATION EDIT START - filtering unavailable roles must not erase the shared registry.
+		var/list/registered_spawners = GLOB.mob_spawners[group_name]
+		spawnerlist = registered_spawners.Copy()
+		// BANDASTATION EDIT END
 		if(!length(spawnerlist))
 			return
 		for(var/obj/effect/mob_spawn/ghost_role/current_spawner as anything in spawnerlist)

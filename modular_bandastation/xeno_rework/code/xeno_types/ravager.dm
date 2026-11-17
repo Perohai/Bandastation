@@ -5,10 +5,11 @@
 	desc = "Чужой с ярко-красным, словно разъярённым, хитином и устрашающими клинковыми когтями вместо обычных рук. Острый хвост выглядит так, будто удар им будет крайне болезненным."
 	caste = "ravager"
 	mob_size = MOB_SIZE_LARGE
-	evolution_tier = 3
+	evolution_tier = 4
 	maxHealth = 300
 	health = 300
 	icon_state = "alienravager"
+	hud_sprite_height = 57
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 
@@ -20,7 +21,7 @@
 		ORGAN_SLOT_LIVER = /obj/item/organ/liver/alien,
 		ORGAN_SLOT_EARS = /obj/item/organ/ears,
 		ORGAN_SLOT_STOMACH = /obj/item/organ/stomach/alien_banda,
-		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel,
+		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/banda,
 	)
 
 /mob/living/carbon/alien/adult/banda/ravager/Initialize(mapload)

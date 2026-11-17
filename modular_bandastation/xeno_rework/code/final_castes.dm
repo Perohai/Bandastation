@@ -11,27 +11,31 @@
 		ORGAN_SLOT_LIVER = /obj/item/organ/liver/alien,
 		ORGAN_SLOT_EARS = /obj/item/organ/ears,
 		ORGAN_SLOT_STOMACH = /obj/item/organ/stomach/alien_banda,
-		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/large,
+		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/banda/large,
 	)
 
 /** Warrior retains its purchased Crusher branch after the finale ends. */
 /mob/living/carbon/alien/adult/banda/warrior
 	final_evolution = /mob/living/carbon/alien/adult/banda/final_caste/crusher
 
-/** Sentinel may choose either Praetorian or the purchased Boiler specialization. */
-/mob/living/carbon/alien/adult/banda/sentinel
+/** Spitter may choose either Praetorian or the purchased Boiler specialization. */
+/mob/living/carbon/alien/adult/banda/spitter
 	final_evolution = /mob/living/carbon/alien/adult/banda/final_caste/boiler
 
-/** Hunter is a separate Runner specialization, not an evolution of Ravager. */
+/** Runner always has Hunter; a purchased Ravager adds a choice instead of replacing it. */
 /mob/living/carbon/alien/adult/banda/runner
-	final_evolution = /mob/living/carbon/alien/adult/banda/final_caste/hunter
+	final_evolution = /mob/living/carbon/alien/adult/banda/ravager
+
+/mob/living/carbon/alien/adult/banda/drone
+	final_evolution = /mob/living/carbon/alien/adult/banda/carrier
 
 /** Return the purchased specialization, or the ordinary branch if none is unlocked. */
 /mob/living/carbon/alien/adult/banda/proc/get_evolution_type()
 	var/static/list/unlocks = list(
 		/mob/living/carbon/alien/adult/banda/final_caste/crusher = "crusher",
 		/mob/living/carbon/alien/adult/banda/final_caste/boiler = "boiler",
-		/mob/living/carbon/alien/adult/banda/final_caste/hunter = "hunter",
+		/mob/living/carbon/alien/adult/banda/ravager = "ravager",
+		/mob/living/carbon/alien/adult/banda/carrier = "carrier",
 	)
 	if(final_evolution && GLOB.xeno_hive?.purchased[unlocks[final_evolution]])
 		return final_evolution

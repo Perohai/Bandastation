@@ -18,8 +18,9 @@
 		ORGAN_SLOT_EYES = /obj/item/organ/eyes/alien,
 		ORGAN_SLOT_LIVER = /obj/item/organ/liver/alien,
 		ORGAN_SLOT_EARS = /obj/item/organ/ears,
+		ORGAN_SLOT_XENO_ACIDGLAND = /obj/item/organ/alien/acid,
 		ORGAN_SLOT_STOMACH = /obj/item/organ/stomach/alien_banda,
-		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/large/queen,
+		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/banda/queen,
 		ORGAN_SLOT_XENO_RESINSPINNER = /obj/item/organ/alien/resinspinner_banda,
 		ORGAN_SLOT_XENO_NEUROTOXINGLAND = /obj/item/organ/alien/neurotoxin/queen,
 		ORGAN_SLOT_XENO_EGGSAC = /obj/item/organ/alien/eggsac,
@@ -27,6 +28,8 @@
 
 /mob/living/carbon/alien/adult/banda/queen/Initialize(mapload)
 	. = ..()
+	GRANT_ACTION(/datum/action/cooldown/alien/make_structure/plant_weeds)
+	GRANT_ACTION(/datum/action/cooldown/alien/hive_development)
 	var/static/list/innate_actions = list(
 		/datum/action/cooldown/alien/banda/queen_screech,
 	)

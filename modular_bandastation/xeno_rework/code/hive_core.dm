@@ -1,16 +1,16 @@
 /** One installed physical core. Moving or deleting it destroys unused weak brood. */
 /obj/structure/xeno_hive_core
 	name = "hive core"
-	desc = "Пульсирующее ядро роя. Его уничтожение прерывает рост слабого потомства и уничтожает невостребованную кладку."
-	icon = 'modular_bandastation/xeno_rework/icons/brood/hive_core.dmi'
+	desc = "Живой маточный мешок с выводковой горловиной и хранилищами биомассы. Его уничтожение прерывает рост потомства и уничтожает невостребованные яйца."
+	icon = 'modular_bandastation/xeno_rework/icons/brood/brood_core.dmi'
 	icon_state = "core"
-	pixel_x = -16
-	pixel_y = -12
+	bound_width = 64
+	bound_height = 64
 	anchored = TRUE
-	density = FALSE
+	density = TRUE
 	max_integrity = 250
-	/// Owned physical clutch; created only when the first place is earned.
-	var/obj/structure/xeno_hive_egg/clutch
+	/// One destructible shell per passive place, all released on core loss.
+	var/list/obj/structure/xeno_hive_egg/brood_eggs = list()
 	/// Crew recount is sampled every ten seconds by this single processing core.
 	var/crew_sample_time = 0
 	/// Crew population used between samples, not a cap on active brood.
@@ -27,7 +27,9 @@
 
 /obj/structure/xeno_hive_core/Destroy()
 	STOP_PROCESSING(SSobj, src)
-	QDEL_NULL(clutch)
+	for(var/obj/structure/xeno_hive_egg/egg as anything in brood_eggs.Copy())
+		qdel(egg)
+	brood_eggs.Cut()
 	if(GLOB.xeno_hive?.core == src)
 		GLOB.xeno_hive.core = null
 		GLOB.xeno_hive.brood_points = 0
@@ -38,7 +40,28 @@
 	qdel(src)
 
 /obj/structure/xeno_hive_core/proc/is_installed()
-	return isturf(loc) && (locate(/obj/structure/alien/weeds) in loc)
+	if(!isturf(loc) || !(locate(/obj/structure/alien/weeds) in loc))
+		return FALSE
+	var/turf/far_corner = locate(x + 1, y + 1, z)
+	if(!far_corner)
+		return FALSE
+	for(var/turf/location as anything in block(loc, far_corner))
+		if(!isopenturf(location) || isspaceturf(location))
+			return FALSE
+	return TRUE
+
+/** Egg ownership follows the whole footprint rather than distance to its southwest anchor. */
+/obj/structure/xeno_hive_core/proc/next_to_core(atom/target)
+	if(QDELETED(target) || target.z != z)
+		return FALSE
+	return target.x >= x - 1 && target.x <= x + 2 && target.y >= y - 1 && target.y <= y + 2 && !(target.x >= x && target.x <= x + 1 && target.y >= y && target.y <= y + 1)
+
+/** Native click reach only checks loc; expose every tile of this large body to rescuers. */
+/obj/structure/xeno_hive_core/CheckReachableAdjacency(atom/movable/reacher, reacher_range)
+	for(var/turf/location as anything in locs)
+		if(location.Adjacent(reacher, target = src, mover = reacher))
+			return TRUE
+	return ..()
 
 /obj/structure/xeno_hive_core/process(seconds_per_tick)
 	if(world.time >= crew_sample_time)
@@ -46,23 +69,86 @@
 		crew_sample_time = world.time + 10 SECONDS
 	GLOB.xeno_hive.advance_brood(seconds_per_tick, cached_crew)
 
+/** Prefer an empty neighboring floor; stacking eggs never caps unclaimed places. */
+/obj/structure/xeno_hive_core/proc/egg_spawn_turf()
+	var/list/empty = list()
+	var/list/occupied = list()
+	var/turf/bottom_left = locate(max(1, x - 1), max(1, y - 1), z)
+	var/turf/top_right = locate(min(world.maxx, x + 2), min(world.maxy, y + 2), z)
+	var/list/large_neighbors = list()
+	for(var/obj/structure/xeno_biomass_generator/generator in range(3, src))
+		large_neighbors += generator
+	for(var/turf/open/location in block(bottom_left, top_right))
+		if(!next_to_core(location) || isspaceturf(location))
+			continue
+		if(location.is_blocked_turf(exclude_mobs = TRUE))
+			continue
+		var/blocked = FALSE
+		for(var/obj/structure/xeno_biomass_generator/generator as anything in large_neighbors)
+			if(location.x >= generator.x && location.x <= generator.x + 1 && location.y >= generator.y && location.y <= generator.y + 1)
+				blocked = TRUE
+				break
+		if(blocked)
+			continue
+		if(locate(/obj/structure/xeno_hive_egg) in location)
+			occupied += location
+		else
+			empty += location
+	if(length(empty))
+		return pick(empty)
+	if(length(occupied))
+		return pick(occupied)
+	return null
+
+/obj/structure/xeno_hive_core/proc/available_brood()
+	var/places = 0
+	for(var/obj/structure/xeno_hive_egg/egg as anything in brood_eggs)
+		places += max(egg.spawner?.uses, 0)
+	return places
+
 /obj/structure/xeno_hive_core/proc/add_brood(places)
-	if(QDELETED(clutch))
-		clutch = new(loc, src)
-	clutch.spawner.uses += places
-	if(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER)
-		INVOKE_ASYNC(clutch.spawner, TYPE_PROC_REF(/obj/effect/mob_spawn/ghost_role/xeno_hive, notify_available), "В кладке роя доступно мест: [clutch.spawner.uses].", "Слабое потомство улья")
+	var/created = 0
+	var/obj/structure/xeno_hive_egg/last_egg
+	for(var/index in 1 to places)
+		var/turf/location = egg_spawn_turf()
+		if(!location)
+			break
+		last_egg = new(location, src)
+		eject_egg(last_egg)
+		created++
+	if(created)
+		flick("core_birth", src)
+		playsound(src, 'sound/mobs/non-humanoids/alien/alien_eat.ogg', 45, TRUE)
+	if(created && (GLOB.ghost_role_flags & GHOSTROLE_SPAWNER))
+		INVOKE_ASYNC(last_egg.spawner, TYPE_PROC_REF(/obj/effect/mob_spawn/ghost_role/xeno_hive, notify_available), "В яйцах вокруг ядра доступно мест: [available_brood()].", "Слабое потомство улья")
+	return created
+
+/** Only the visual crosses tiles; the role and its final location exist synchronously. */
+/obj/structure/xeno_hive_core/proc/eject_egg(obj/structure/xeno_hive_egg/egg)
+	var/landing_x = egg.pixel_x
+	var/landing_y = egg.pixel_y
+	egg.pixel_x = (x - egg.x) * world.icon_size + 16
+	egg.pixel_y = (y - egg.y) * world.icon_size + 8
+	egg.alpha = 0
+	animate(egg, alpha = 0, time = 0.45 SECONDS)
+	animate(alpha = 255, time = 0.15 SECONDS)
+	animate(pixel_x = landing_x, pixel_y = landing_y, alpha = 255, time = 0.55 SECONDS, easing = QUAD_EASING)
+
+/obj/structure/xeno_hive_core/examine(mob/user)
+	. = ..()
+	if(isalien(user) || isobserver(user))
+		. += span_notice("Общий запас улья: [round(GLOB.xeno_hive?.biomass || 0, 0.1)] биомассы. Яиц выводка: [available_brood()].")
 
 /** Reusable destructible shell for both weak brood and purchased full larvae. */
 /obj/structure/xeno_hive_egg
-	name = "hive clutch"
-	desc = "Слабое потомство ждёт пробуждения. Уничтожение кладки уничтожит все невостребованные места."
+	name = "brood egg"
+	desc = "Слабое потомство ждёт пробуждения. Призрак может выбрать открытый вид выводка. Уничтожение яйца теряет одно место."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "eggs"
 	anchored = TRUE
 	density = FALSE
 	max_integrity = 60
-	/// Shell-owned role entry; deleted with the shell.
+	/// Shell-owned single-use role entry; deleted with the shell.
 	var/obj/effect/mob_spawn/ghost_role/xeno_hive/spawner
 	/// Only passive clutches are tied to the core lifecycle.
 	var/obj/structure/xeno_hive_core/core
@@ -71,13 +157,15 @@
 
 /obj/structure/xeno_hive_egg/Initialize(mapload, obj/structure/xeno_hive_core/core)
 	. = ..()
+	pixel_x = base_pixel_x + rand(-3, 3)
+	pixel_y = base_pixel_y + rand(-3, 3)
 	src.core = core
+	core?.brood_eggs.Add(src)
 	spawner = new spawner_type(src)
 	spawner.egg = src
 
 /obj/structure/xeno_hive_egg/Destroy()
-	if(core?.clutch == src)
-		core.clutch = null
+	core?.brood_eggs.Remove(src)
 	core = null
 	QDEL_NULL(spawner)
 	return ..()
@@ -92,6 +180,8 @@
 
 /obj/structure/xeno_hive_egg/larva
 	name = "larval egg"
+	icon = 'icons/mob/nonhuman-player/alien.dmi'
+	icon_state = "egg"
 	desc = "Крупное яйцо с полноценной личинкой. При уничтожении биомасса не возвращается."
 	spawner_type = /obj/effect/mob_spawn/ghost_role/xeno_hive/larva
 
@@ -100,13 +190,13 @@
 	name = "Выводок улья"
 	prompt_name = "помощником улья"
 	mob_type = /mob/living/carbon/alien/brood
-	uses = 0
+	uses = 1
 	deletes_on_zero_uses_left = FALSE
 	prompt_ghost = FALSE
 	role_ban = ROLE_ALIEN
 	spawner_job_path = /datum/job/xenomorph
 	you_are_text = "Вы — бруд, помощник улья."
-	flavour_text = "Микродрон разводит траву и чинит смолу, разведчик отмечает добычу, переносчик быстро эвакуирует тела. Общайтесь через :a."
+	flavour_text = "Вы — слабый миньон. Королева открывает новые виды и их способности в дереве развития. Общайтесь через :a."
 	important_text = "Вы не можете эволюционировать и не добываете биомассу. После смерти можно снова занять свободное место."
 	/// Physical owner; released when either side is destroyed.
 	var/obj/structure/xeno_hive_egg/egg
@@ -148,6 +238,7 @@
 			return
 		if(QDELETED(ghost) || !ghost.client || ghost.ckey != ghost_ckey || !allow_spawn(ghost) || !(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER))
 			continue
+		ghost.spawners_menu?.update_static_data(ghost)
 		notify_ghosts(message, source = src, header = header, click_interact = TRUE, ignore_key = POLL_IGNORE_ALIEN_LARVA, notify_flags = NOTIFY_CATEGORY_NOFLASH, recipients = list(ghost))
 
 /obj/effect/mob_spawn/ghost_role/xeno_hive/allow_spawn(mob/user, silent = FALSE)
@@ -160,7 +251,7 @@
 		return FALSE
 	if(larval_egg)
 		return TRUE
-	return !QDELETED(egg.core) && egg.core == GLOB.xeno_hive?.core && egg.loc == egg.core.loc && egg.core.is_installed() && GLOB.xeno_hive.living_queen()
+	return !QDELETED(egg.core) && egg.core == GLOB.xeno_hive?.core && (egg in egg.core.brood_eggs) && egg.core.next_to_core(egg) && egg.core.is_installed() && GLOB.xeno_hive.living_queen()
 
 /** Each observer's selection is stored separately until the synchronous creation step. */
 /obj/effect/mob_spawn/ghost_role/xeno_hive/pre_ghost_take(mob/dead/observer/user)
@@ -168,11 +259,7 @@
 	if(larval_egg)
 		var/accepted = tgui_alert(user, "Стать полноценной личинкой? После входа прежнее тело нельзя будет воскресить.", "Улей", list("Да", "Нет"), 10 SECONDS) == "Да"
 		return accepted && !QDELETED(src) && !QDELETED(user) && allow_spawn(user)
-	var/list/options = list("Микродрон" = /mob/living/carbon/alien/brood)
-	if(GLOB.xeno_hive.purchased["brood_scout"])
-		options["Разведчик"] = /mob/living/carbon/alien/brood/scout
-	if(GLOB.xeno_hive.purchased["brood_carrier"])
-		options["Переносчик"] = /mob/living/carbon/alien/brood/carrier
+	var/list/options = GLOB.xeno_hive.brood_options()
 	var/choice = tgui_input_list(user, "Выберите слабое потомство. После входа прежнее тело нельзя будет воскресить.", "Улей", options)
 	if(QDELETED(src) || QDELETED(user) || !user.client || !allow_spawn(user) || !(choice in options))
 		return FALSE
@@ -186,11 +273,13 @@
 	if(!larval_egg)
 		var/chosen_type = choices[REF(mob_possessor)]
 		choices -= REF(mob_possessor)
-		if(!ispath(chosen_type, /mob/living/carbon/alien/brood))
+		if(!GLOB.xeno_hive.brood_type_available(chosen_type))
 			return CANCEL_SPAWN
 		mob_type = chosen_type
-	// Native create/special/check_uses do not sleep, so mob_type cannot race here.
-	return ..()
+	// Native create/special/check_uses do not sleep, so the shared gate commits atomically.
+	. = ..()
+	if(ismob(.) && mob_type == /mob/living/carbon/alien/brood/baneling)
+		GLOB.xeno_hive.next_baneling_at = world.time + GLOB.xeno_hive.baneling_interval
 
 /obj/effect/mob_spawn/ghost_role/xeno_hive/Topic(href, list/href_list)
 	. = ..()
@@ -208,7 +297,30 @@
 	flavour_text = "Растите и эволюционируйте. Королева потратила на ваше яйцо биомассу нескольких жертв. Общайтесь через :a."
 	important_text = "После вылупления яйцо исчезнет."
 
-/obj/effect/mob_spawn/ghost_role/xeno_hive/larva/check_uses()
+/obj/effect/mob_spawn/ghost_role/xeno_hive/check_uses()
 	. = ..()
 	if(uses <= 0)
 		qdel(egg)
+
+/** All choices are revalidated at creation; an open prompt cannot reserve a baneling cooldown. */
+/datum/xeno_hive/proc/brood_type_available(brood_type)
+	switch(brood_type)
+		if(/mob/living/carbon/alien/brood)
+			return TRUE
+		if(/mob/living/carbon/alien/brood/mantis)
+			return !!purchased["brood_mantis"]
+		if(/mob/living/carbon/alien/brood/scorpion)
+			return !!purchased["brood_scorpion"]
+		if(/mob/living/carbon/alien/brood/baneling)
+			return purchased["brood_baneling"] && world.time >= next_baneling_at
+	return FALSE
+
+/datum/xeno_hive/proc/brood_options()
+	var/list/options = list("Жук" = /mob/living/carbon/alien/brood)
+	if(brood_type_available(/mob/living/carbon/alien/brood/mantis))
+		options["Богомол"] = /mob/living/carbon/alien/brood/mantis
+	if(brood_type_available(/mob/living/carbon/alien/brood/scorpion))
+		options["Скорпион"] = /mob/living/carbon/alien/brood/scorpion
+	if(brood_type_available(/mob/living/carbon/alien/brood/baneling))
+		options["Банелинг"] = /mob/living/carbon/alien/brood/baneling
+	return options

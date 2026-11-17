@@ -18,7 +18,7 @@
 	desc = "A robust stomach capable of holding and digesting various contents."
 	icon_state = "stomach-x"
 	w_class = WEIGHT_CLASS_BULKY
-	actions_types = list(/datum/action/cooldown/alien/regurgitate_banda)
+	actions_types = list(/datum/action/cooldown/alien/regurgitate_banda, /datum/action/cooldown/alien/hive_swallow)
 	organ_traits = list(TRAIT_STRONG_STOMACH)
 
 	/// Tracks when each mob in the stomach started resisting (world.time).
@@ -32,6 +32,11 @@
 
 /// Handles consumption of an atom, applying effects and signals for living contents.
 /obj/item/organ/stomach/alien_banda/consume_thing(atom/movable/thing)
+	if(isliving(thing))
+		var/mob/living/prey = thing
+		if(prey.stat == DEAD)
+			to_chat(owner, span_warning("[prey] выглядит невкусно."))
+			return FALSE
 	. = ..()
 	if (!.)
 		return
@@ -289,3 +294,43 @@
 
 	playsound(owner, 'sound/mobs/non-humanoids/alien/alien_york.ogg', 100)
 	melting_pot.eject_stomach(slice_off_turfs(owner, border_diamond_range_turfs(owner, 9), dir_angle - angle_delta, dir_angle + angle_delta), 4, mob_speed, spit_speed)
+
+/** Keep the native vessel physiology without granting every reworked caste construction. */
+/obj/item/organ/alien/plasmavessel/banda
+	actions_types = list(/datum/action/cooldown/alien/transfer)
+
+/obj/item/organ/alien/plasmavessel/banda/large
+	max_plasma = 500
+	stored_plasma = 200
+	plasma_rate = 7.5
+
+/obj/item/organ/alien/plasmavessel/banda/queen
+	parent_type = /obj/item/organ/alien/plasmavessel/banda/large
+	plasma_rate = 10
+
+/obj/item/organ/alien/plasmavessel/banda/small
+	max_plasma = 150
+	stored_plasma = 100
+	plasma_rate = 2.5
+
+/obj/item/organ/alien/plasmavessel/banda/tiny
+	parent_type = /obj/item/organ/alien/plasmavessel/banda/small
+	max_plasma = 100
+
+/datum/action/cooldown/alien/make_structure/plant_weeds/IsAvailable(feedback = FALSE)
+	if(istype(owner, /mob/living/carbon/alien/brood))
+		return FALSE
+	if(!..())
+		return FALSE
+	if(istype(owner, /mob/living/carbon/alien/adult/banda))
+		return istype(owner, /mob/living/carbon/alien/adult/banda/queen) || istype(owner, /mob/living/carbon/alien/adult/banda/drone) || istype(owner, /mob/living/carbon/alien/adult/banda/praetorian)
+	return TRUE
+
+/datum/action/cooldown/alien/acid/corrosion/IsAvailable(feedback = FALSE)
+	if(istype(owner, /mob/living/carbon/alien/brood))
+		return FALSE
+	if(!..())
+		return FALSE
+	if(istype(owner, /mob/living/carbon/alien/adult/banda))
+		return istype(owner, /mob/living/carbon/alien/adult/banda/queen) || istype(owner, /mob/living/carbon/alien/adult/banda/praetorian) || istype(owner, /mob/living/carbon/alien/adult/banda/final_caste/boiler)
+	return TRUE

@@ -16,7 +16,7 @@
 	var/tree_y = 0
 	/// Biomass before repeatable level scaling.
 	var/cost = 100
-	/// INFINITY is reserved for purchased larval eggs.
+	/// Repeatable purchases use INFINITY.
 	var/max_level = 1
 	/// All prerequisites must be owned before and after the purchase channel.
 	var/list/requires = list()
@@ -103,7 +103,7 @@
 /datum/xeno_hive_upgrade/boiler
 	id = "boiler"
 	name = "Кислотная артиллерия · Boiler"
-	desc = "Страж может эволюционировать в Бойлера. Один одновременный слот."
+	desc = "Плеватель может эволюционировать в Бойлера. Один одновременный слот."
 	branch = "Качество"
 	cost = 350
 	icon = "flask"
@@ -111,16 +111,16 @@
 	tree_y = 2
 	requires = list("tier3")
 
-/datum/xeno_hive_upgrade/mech
-	id = "mech"
-	name = "Разрыв брони мехов"
-	desc = "Взрослые получают совместную атаку по мехам. Для пробития нужны разные ксеноморфы; управление и ремонт меха сохраняются."
+/datum/xeno_hive_upgrade/ravager
+	id = "ravager"
+	name = "Разоритель · Ravager T4"
+	desc = "Открывает Runner выбор Ravager T4 вместо обычного Hunter T2. Один одновременный слот; покупка не превращает ксеноморфа автоматически."
 	branch = "Качество"
-	cost = 250
-	icon = "gears"
-	tree_x = 2
-	tree_y = 0
-	requires = list("claws")
+	cost = 300
+	icon = "khanda"
+	tree_x = 3
+	tree_y = 3
+	requires = list("tier3")
 
 /datum/xeno_hive_upgrade/larva
 	id = "larva"
@@ -159,19 +159,6 @@
 	scaling_cost = TRUE
 	slot_type = /mob/living/carbon/alien/adult/banda/praetorian
 
-/datum/xeno_hive_upgrade/ravager_slot
-	id = "ravager_slot"
-	name = "Резерв разорителей"
-	desc = "+1 одновременный слот Ravager. До трёх дополнительных слотов; цена растёт."
-	branch = "Количество"
-	cost = 180
-	icon = "khanda"
-	tree_x = 2
-	tree_y = 2
-	max_level = 3
-	scaling_cost = TRUE
-	slot_type = /mob/living/carbon/alien/adult/banda/ravager
-
 /datum/xeno_hive_upgrade/construction
 	id = "construction"
 	name = "Живая смола"
@@ -179,41 +166,79 @@
 	branch = "Функциональность"
 	cost = 100
 	icon = "trowel"
-	tree_x = 0
+	tree_x = 1
 	tree_y = 0
 
 /datum/xeno_hive_upgrade/brood_vigor
 	id = "brood_vigor"
 	name = "Крепкий выводок"
-	desc = "+20 здоровья живым и будущим брудам. Открывает развитие специализированного потомства. Эволюции во взрослых нет."
+	desc = "+15 здоровья и +2 урона когтей живому и будущему выводку. Эволюции во взрослых нет."
 	branch = "Функциональность"
 	cost = 100
 	icon = "heart-pulse"
 	tree_x = 1
-	tree_y = 0
+	tree_y = 1
 	requires = list("construction")
 
-/datum/xeno_hive_upgrade/brood_scout
-	id = "brood_scout"
-	name = "Выводок разведчиков"
-	desc = "Открывает разведчика: 45 здоровья, быстрый бег, укрытие, проход под дверями и феромонная метка добычи."
-	branch = "Функциональность"
+/datum/xeno_hive_upgrade/brood_mantis
+	id = "brood_mantis"
+	name = "Выводок богомолов"
+	desc = "Открывает слабого богомола: 25 здоровья, 4 урона когтей. Размах открывается отдельно."
 	cost = 80
-	icon = "binoculars"
-	tree_x = 2
-	tree_y = 0
+	icon = "scissors"
+	tree_x = 1
+	tree_y = 2
 	requires = list("brood_vigor")
 
-/datum/xeno_hive_upgrade/brood_carrier
-	id = "brood_carrier"
-	name = "Выводок переносчиков"
-	desc = "Открывает переносчика: 90 здоровья, быстрый бег и перенос лежащих тел без обычного замедления."
-	branch = "Функциональность"
+/datum/xeno_hive_upgrade/brood_scorpion
+	id = "brood_scorpion"
+	name = "Выводок скорпионов"
+	desc = "Открывает слабого скорпиона: 25 здоровья, 2 урона когтей. Кислотный плевок открывается отдельно."
 	cost = 80
-	icon = "truck-fast"
+	icon = "locust"
 	tree_x = 2
-	tree_y = 1
+	tree_y = 2
 	requires = list("brood_vigor")
+
+/datum/xeno_hive_upgrade/beetle_charge
+	id = "beetle_charge"
+	name = "Жук: таран"
+	desc = "Жуки получают рывок на 4 клетки: 15 урона и опрокидывание на секунду. Подготовка 0,5 секунды; 80 плазмы, перезарядка 30 секунд. Запас плазмы 320, восстановление 10."
+	cost = 120
+	icon = "angles-right"
+	tree_x = 0
+	tree_y = 3
+	requires = list("brood_vigor")
+
+/datum/xeno_hive_upgrade/mantis_ravage
+	id = "mantis_ravage"
+	name = "Богомол: размах"
+	desc = "Богомолы получают удар по трём клеткам перед собой: 12 урона. Подготовка 0,5 секунды; 200 плазмы, перезарядка 30 секунд. Запас плазмы 600, восстановление 20."
+	cost = 120
+	icon = "fan"
+	tree_x = 1
+	tree_y = 3
+	requires = list("brood_mantis")
+
+/datum/xeno_hive_upgrade/scorpion_spit
+	id = "scorpion_spit"
+	name = "Скорпион: кислота"
+	desc = "Скорпионы получают кислотный плевок на 7 клеток: 10 ожогов. 75 плазмы, перезарядка 1,8 секунды. Усиливает базовый плевок с 5 до 10 урона. Запас плазмы 500, восстановление 10."
+	cost = 120
+	icon = "droplet"
+	tree_x = 2
+	tree_y = 3
+	requires = list("brood_scorpion")
+
+/datum/xeno_hive_upgrade/brood_baneling
+	id = "brood_baneling"
+	name = "Банелинг"
+	desc = "Финальный выводок: подвижный отсчёт 5 секунд с громкими предупреждениями, затем самоподрыв на 100/75/50/25 ожогов до 3 клеток с учётом кислотной брони. Один вход каждые 120 секунд для всего улья; требуется место в яйце."
+	cost = 350
+	icon = "burst"
+	tree_x = 1
+	tree_y = 4
+	requires = list("beetle_charge", "mantis_ravage", "scorpion_spit")
 
 /datum/xeno_hive_upgrade/capture
 	id = "capture"
@@ -223,7 +248,7 @@
 	cost = 100
 	icon = "link"
 	tree_x = 0
-	tree_y = 1
+	tree_y = 0
 
 /datum/xeno_hive_upgrade/processing
 	id = "processing"
@@ -232,40 +257,61 @@
 	branch = "Функциональность"
 	cost = 150
 	icon = "recycle"
-	tree_x = 1
+	tree_x = 0
 	tree_y = 1
 	requires = list("capture")
 
 /datum/xeno_hive_upgrade/coordination
 	id = "coordination"
 	name = "Связь охотников"
-	desc = "Взрослые получают указание точки сбора с сообщением области в связь улья."
+	desc = "Все взрослые получают личный фиолетовый указатель вокруг персонажа. Назначать точку могут только Queen, T4 и Hivemind."
 	branch = "Функциональность"
 	cost = 80
 	icon = "location-crosshairs"
-	tree_x = 0
-	tree_y = 2
+	tree_x = 3
+	tree_y = 0
 
 /datum/xeno_hive_upgrade/pheromones
 	id = "pheromones"
 	name = "Восстановительные феромоны"
-	desc = "Королева лечит по 5 ушибов и ожогов союзникам в view(5). 100 плазмы; перезарядка 30 секунд."
+	desc = "Queen, Praetorian и Carrier получают восстановительные феромоны: по 5 ушибов и ожогов союзникам в view(5). 100 плазмы; перезарядка 30 секунд."
 	branch = "Функциональность"
 	cost = 180
 	icon = "wind"
-	tree_x = 1
-	tree_y = 2
+	tree_x = 3
+	tree_y = 1
 	requires = list("coordination")
 
-/datum/xeno_hive_upgrade/hunter
-	id = "hunter"
-	name = "Диверсант · Hunter"
-	desc = "Бегун может эволюционировать в Охотника. Один отдельный слот; доступ покупается в любое время."
-	branch = "Функциональность"
-	cost = 150
-	icon = "user-ninja"
-	tree_x = 3
-	tree_y = 2
+/datum/xeno_hive_upgrade/carrier
+	id = "carrier"
+	name = "Носитель · Carrier T2"
+	desc = "Трутень получает эволюцию в Носителя T2: хранилище четырёх хаггеров, выращивание и бросок хаггеров, кладка яиц. Феромоны требуют отдельной покупки. Смолу и траву не строит; отдельного лимита касты нет."
+	cost = 200
+	icon = "bugs"
+	tree_x = 2
+	tree_y = 0
+
+/datum/xeno_hive_upgrade/generator
+	id = "generator"
+	name = "Генератор биомассы"
+	desc = "Построить перед королевой непроходимый генератор 2×2. 600 биомассы; доход 1 в секунду, окупаемость 10 минут. 350 прочности, слышимый шум. Количество не ограничено; четыре клетки должны быть свободны."
+	branch = "Количество"
+	cost = 600
+	icon = "industry"
+	tree_x = 1
+	tree_y = 3
+	max_level = INFINITY
+
+/datum/xeno_hive_upgrade/hivemind
+	id = "hivemind"
+	name = "Разум улья · Hivemind"
+	desc = "Вырастить перед королевой на траве привязку для призрака. Hivemind T0 перемещается духом по траве, воплощается для удалённого строительства, лечения и передачи плазмы. Запас плазмы 400. Одна привязка одновременно; её уничтожение убивает Hivemind. Каждый призыв стоит 300."
+	cost = 300
+	icon = "brain"
+	tree_x = 2
+	tree_y = 1
+	requires = list("coordination")
+	max_level = INFINITY
 
 /** Independent caste limits; purchasing access never creates or evolves a mob. */
 /datum/xeno_hive/proc/slot_limit(caste_type)
@@ -298,14 +344,13 @@
 	member.melee_damage_upper += claw_bonus - member.hive_claw_bonus
 	member.hive_health_bonus = health_bonus
 	member.hive_claw_bonus = claw_bonus
-	if(health_bonus || claw_bonus)
-		member.add_filter("hive_adaptation", 1, outline_filter(size = 1, color = "#89966a80"))
 	member.updatehealth()
-	if(purchased["mech"] && !(locate(/datum/action/cooldown/alien/banda/mech_rend) in member.actions))
-		member.grant_actions_by_list(list(/datum/action/cooldown/alien/banda/mech_rend))
-	if(purchased["coordination"] && !(locate(/datum/action/cooldown/alien/banda/hive_rally) in member.actions))
+	// Dead members also inherit their caste's button for a later revival.
+	if(purchased["coordination"] && (istype(member, /mob/living/carbon/alien/adult/banda/queen) || member.evolution_tier == 4) && !(locate(/datum/action/cooldown/alien/banda/hive_rally) in member.actions))
 		member.grant_actions_by_list(list(/datum/action/cooldown/alien/banda/hive_rally))
-	if(istype(member, /mob/living/carbon/alien/adult/banda/queen) && purchased["pheromones"] && !(locate(/datum/action/cooldown/alien/banda/hive_pheromones) in member.actions))
+	if(purchased["coordination"] && !(locate(/datum/action/cooldown/alien/banda/hive_rally_track) in member.actions))
+		member.grant_actions_by_list(list(/datum/action/cooldown/alien/banda/hive_rally_track))
+	if(can_use_pheromones(member) && !(locate(/datum/action/cooldown/alien/banda/hive_pheromones) in member.actions))
 		member.grant_actions_by_list(list(/datum/action/cooldown/alien/banda/hive_pheromones))
 
 /mob/living/carbon/alien/adult/banda
@@ -322,7 +367,7 @@
 		. += span_warning("Когти покрыты дополнительными режущими зазубринами.")
 
 /datum/xeno_hive/proc/can_manage(mob/living/carbon/alien/adult/banda/queen/queen)
-	return istype(queen) && !QDELETED(queen) && queen == living_queen() && !IS_UNCONSCIOUS(queen) && !queen.incapacitated
+	return istype(queen) && !QDELETED(queen) && queen == living_queen() && !IS_UNCONSCIOUS(queen) && !queen.incapacitated && !queen.resting
 
 /datum/xeno_hive/proc/can_buy(mob/living/carbon/alien/adult/banda/queen/queen, id)
 	if(!can_manage(queen) || !istext(id))
@@ -333,7 +378,11 @@
 	for(var/requirement in upgrade.requires)
 		if(!purchased[requirement])
 			return FALSE
-	if(id == "larva" && (QDELETED(core) || !core.is_installed()))
+	if(id == "larva" && (QDELETED(core) || !core.is_installed() || !core.egg_spawn_turf()))
+		return FALSE
+	if(id == "generator" && !can_place_generator(queen, hive_structure_location(queen)))
+		return FALSE
+	if(id == "hivemind" && !can_place_hivemind(queen, hivemind_location(queen)))
 		return FALSE
 	return TRUE
 
@@ -368,41 +417,60 @@
 	if(purchase_busy || !can_buy(queen, id))
 		return FALSE
 	var/obj/structure/xeno_hive_core/original_core = core
+	var/turf/generator_origin = id == "generator" ? hive_structure_location(queen) : null
+	var/turf/hivemind_origin = id == "hivemind" ? hivemind_location(queen) : null
 	if(!channel(queen, purchase_time) || !can_buy(queen, id))
 		return FALSE
 	if(id == "larva" && core != original_core)
 		return FALSE
+	if(id == "generator" && !can_place_generator(queen, generator_origin))
+		return FALSE
+	if(id == "hivemind" && !can_place_hivemind(queen, hivemind_origin))
+		return FALSE
 	var/datum/xeno_hive_upgrade/upgrade = upgrades[id]
 	biomass -= upgrade.price(purchased[id] || 0)
 	purchased[id] = (purchased[id] || 0) + 1
+	if(id == "generator")
+		new /obj/structure/xeno_biomass_generator(generator_origin)
+	if(id == "hivemind")
+		var/obj/structure/xeno_hivemind_anchor/anchor = new(hivemind_origin)
+		if(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER)
+			INVOKE_ASYNC(anchor.spawner, TYPE_PROC_REF(/obj/effect/mob_spawn/ghost_role/xeno_hivemind, notify_available))
 	if(id == "larva")
-		var/obj/structure/xeno_hive_egg/egg = new /obj/structure/xeno_hive_egg/larva(get_turf(core))
+		var/obj/structure/xeno_hive_egg/egg = new /obj/structure/xeno_hive_egg/larva(core.egg_spawn_turf())
+		core.eject_egg(egg)
+		flick("core_birth", core)
 		if(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER)
 			INVOKE_ASYNC(egg.spawner, TYPE_PROC_REF(/obj/effect/mob_spawn/ghost_role/xeno_hive, notify_available), "Улей вырастил яйцо полноценной личинки.", "Личинка улья")
 	for(var/mob/living/carbon/alien/adult/banda/member as anything in members)
 		apply_upgrades(member)
-	if(id == "brood_vigor")
-		for(var/mob/living/carbon/alien/brood/brood in GLOB.mob_living_list)
-			brood.apply_hive_upgrade()
+	for(var/mob/living/carbon/alien/brood/brood in GLOB.mob_living_list)
+		brood.apply_hive_upgrade()
+	var/mob/living/carbon/alien/hivemind/hivemind = hivemind_anchor?.hivemind_ref?.resolve()
+	hivemind?.apply_hive_upgrades()
 	log_game("[key_name(queen)] purchased hive upgrade [id] for hive level [purchased[id]]. Remaining biomass: [biomass].")
 	return TRUE
 
 /datum/xeno_hive/proc/can_place_core(mob/living/carbon/alien/adult/banda/queen/queen)
-	return can_manage(queen) && !core && isopenturf(queen.loc) && !isspaceturf(queen.loc) && (locate(/obj/structure/alien/weeds) in queen.loc)
+	var/turf/origin = hive_structure_location(queen)
+	return can_manage(queen) && !core && origin && (locate(/obj/structure/alien/weeds) in origin) && clear_structure_footprint(origin, floors_only = FALSE)
 
 /datum/xeno_hive/proc/place_core(mob/living/carbon/alien/adult/banda/queen/queen)
+	var/turf/origin = hive_structure_location(queen)
 	if(!can_place_core(queen) || !channel(queen, 5 SECONDS) || !can_place_core(queen))
 		return FALSE
-	new /obj/structure/xeno_hive_core(queen.loc)
+	if(origin != hive_structure_location(queen))
+		return FALSE
+	new /obj/structure/xeno_hive_core(origin)
 	return TRUE
 
 /datum/xeno_hive/proc/pack_core(mob/living/carbon/alien/adult/banda/queen/queen)
 	var/obj/structure/xeno_hive_core/original_core = core
-	if(!can_manage(queen) || QDELETED(original_core) || !queen.Adjacent(original_core))
+	if(!can_manage(queen) || QDELETED(original_core) || !original_core.next_to_core(queen) || !original_core.CheckReachableAdjacency(queen, 1))
 		return FALSE
 	if(!channel(queen, purchased["construction"] ? 3 SECONDS : 10 SECONDS))
 		return FALSE
-	if(!can_manage(queen) || QDELETED(original_core) || core != original_core || !queen.Adjacent(original_core))
+	if(!can_manage(queen) || QDELETED(original_core) || core != original_core || !original_core.next_to_core(queen) || !original_core.CheckReachableAdjacency(queen, 1))
 		return FALSE
 	qdel(core)
 	return TRUE
@@ -440,14 +508,23 @@
 			"available" = !purchase_busy && can_buy(user, id),
 		))
 	return list(
-		"biomass" = biomass,
+		"biomass" = round(biomass, 0.1),
+		"territoryTiles" = length(claimed_territory),
+		"territoryPending" = territory_pending_tiles,
+		"territoryBatch" = territory_tiles_per_biomass,
+		"territoryEarned" = territory_biomass_earned,
+		"crew" = core?.cached_crew || 0,
+		"broodRate" = core?.is_installed() && living_queen() ? brood_rate(core.cached_crew) : 0,
+		"canDebug" = can_debug(user),
+		"debugUsed" = debug_used,
 		"broodPoints" = round(brood_points, 0.1),
 		"broodCost" = brood_slot_cost,
-		"broodPlaces" = core?.clutch?.spawner?.uses || 0,
+		"broodPlaces" = core?.available_brood() || 0,
+		"broodBlocked" = core && !core.egg_spawn_turf(),
 		"core" = !!core,
 		"busy" = purchase_busy,
 		"canPlace" = !purchase_busy && can_place_core(user),
-		"canPack" = !purchase_busy && core && user.Adjacent(core),
+		"canPack" = !purchase_busy && core && core.next_to_core(user) && core.CheckReachableAdjacency(user, 1),
 		"nodes" = nodes,
 	)
 
@@ -456,6 +533,8 @@
 	if(. || !can_manage(ui.user))
 		return
 	switch(action)
+		if("debug")
+			return debug_resources(ui.user)
 		if("buy")
 			if(!istext(params["id"]) || !(params["id"] in upgrades))
 				return FALSE
@@ -468,43 +547,15 @@
 			return FALSE
 	return TRUE
 
-/mob/living/carbon/alien/adult/banda/queen/verb/hive_evolution()
-	set name = "Развитие улья"
-	set category = "Alien"
-	var/datum/xeno_hive/hive = get_xeno_hive()
-	hive.ui_interact(src)
+/** Admin-only resource grant. Never trust the checkbox or a client-supplied resource amount. */
+/datum/xeno_hive/proc/can_debug(mob/user)
+	return user?.client?.holder && check_rights_for(user.client, R_DEBUG)
 
-/datum/action/cooldown/alien/banda/hive_pheromones
-	name = "Феромоны поддержки"
-	desc = "Лечит по 5 ушибов и ожогов союзникам в радиусе пяти клеток."
-	button_icon_state = "screech"
-	cooldown_time = 30 SECONDS
-	plasma_cost = 100
-
-/datum/action/cooldown/alien/banda/hive_pheromones/Activate()
-	if(!istype(owner, /mob/living/carbon/alien/adult/banda/queen) || !GLOB.xeno_hive?.purchased["pheromones"])
+/datum/xeno_hive/proc/debug_resources(mob/user)
+	if(debug_used || !can_manage(user) || !can_debug(user))
 		return FALSE
-	for(var/mob/living/carbon/alien/ally in view(5, owner))
-		if(ally.stat == DEAD)
-			continue
-		ally.adjust_brute_loss(-5)
-		ally.adjust_fire_loss(-5)
-	playsound(owner, 'modular_bandastation/xeno_rework/sound/alien_hiss.ogg', 50, TRUE)
-	StartCooldown()
-	return TRUE
-
-/datum/action/cooldown/alien/banda/hive_rally
-	name = "Точка сбора"
-	desc = "Укажите видимую клетку в пределах семи клеток, чтобы сообщить рою место сбора."
-	button_icon_state = "evolution"
-	cooldown_time = 15 SECONDS
-	click_to_activate = TRUE
-
-/datum/action/cooldown/alien/banda/hive_rally/Activate(atom/target)
-	var/turf/location = get_turf(target)
-	if(!GLOB.xeno_hive?.purchased["coordination"] || !location || !(location in view(7, owner)))
-		return FALSE
-	var/mob/living/carbon/alien/adult/banda/xeno = owner
-	xeno.alien_talk("Место сбора: [get_area(location)], [location.x], [location.y].")
-	StartCooldown()
+	debug_used = TRUE
+	biomass = 99999
+	log_admin("[key_name(user)] enabled hive economy debug: biomass set to 99999.")
+	message_admins("[key_name_admin(user)] включил отладку экономики улья: 99999 биомассы.")
 	return TRUE

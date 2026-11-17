@@ -29,7 +29,17 @@
 	return TRUE
 
 /datum/action/cooldown/alien/select_resin_structure/IsAvailable(feedback = FALSE)
-	return isalien(owner) && ..()
+	return isalien(owner) && resin_caste_allowed() && ..()
+
+/** Also guards the native resin action obtained from a transplanted organ. */
+/datum/action/cooldown/alien/proc/resin_caste_allowed()
+	if(istype(owner, /mob/living/carbon/alien/hivemind))
+		var/mob/living/carbon/alien/hivemind/hivemind = owner
+		return hivemind.operational() && hivemind.manifested && !hivemind.channeling
+	return !istype(owner, /mob/living/carbon/alien/adult/banda/carrier) && !istype(owner, /mob/living/carbon/alien/adult/banda/praetorian)
+
+/datum/action/cooldown/alien/make_structure/resin/IsAvailable(feedback = FALSE)
+	return resin_caste_allowed() && ..()
 
 /** Build the selected resin structure on nearby xenomorph weeds. */
 /datum/action/cooldown/alien/build_resin_structure
@@ -41,6 +51,8 @@
 	unset_after_click = FALSE
 	/// Uninterrupted construction duration, in deciseconds.
 	var/build_time = 3 SECONDS
+	/// Native builders are adjacent; the Hivemind reaches four visible tiles.
+	var/build_range = 1
 	/// Server-side allowlist of resin construction paths.
 	var/static/list/structure_types = list(
 		/obj/structure/alien/resin/wall,
@@ -54,7 +66,7 @@
 /datum/action/cooldown/alien/build_resin_structure/proc/can_build(turf/location, structure_type)
 	if(QDELETED(owner) || !isalien(owner) || !isturf(owner.loc) || !isopenturf(location) || isspaceturf(location))
 		return FALSE
-	if(!(structure_type in structure_types) || get_dist(owner, location) > 1 || owner.z != location.z)
+	if(!(structure_type in structure_types) || get_dist(owner, location) > build_range || owner.z != location.z || !(location in view(build_range, owner)))
 		return FALSE
 	if(!(locate(/obj/structure/alien/weeds) in location))
 		return FALSE
@@ -71,7 +83,7 @@
 	var/turf/location = get_turf(target)
 	if(!IsAvailable() || !can_build(location, structure_type))
 		return FALSE
-	var/duration = build_time * (istype(owner, /mob/living/carbon/alien/adult/banda) && GLOB.xeno_hive?.purchased["construction"] ? 0.5 : 1)
+	var/duration = build_time * ((istype(owner, /mob/living/carbon/alien/adult/banda) || istype(owner, /mob/living/carbon/alien/hivemind)) && GLOB.xeno_hive?.purchased["construction"] ? 0.5 : 1)
 	if(!do_after(owner, duration, target = location, extra_checks = CALLBACK(src, PROC_REF(can_build), location, structure_type)))
 		return FALSE
 	if(QDELETED(src) || QDELETED(owner) || !IsAvailable() || !can_build(location, structure_type))
@@ -82,7 +94,7 @@
 	return TRUE
 
 /datum/action/cooldown/alien/build_resin_structure/IsAvailable(feedback = FALSE)
-	return isalien(owner) && ..()
+	return isalien(owner) && resin_caste_allowed() && ..()
 
 // MARK: QUEEN
 
@@ -721,17 +733,19 @@
 	pounce_ability.finish_pounce()
 
 // Evade
-/** Окно уклонения от снарядов на 0,6 секунды. Успешное уклонение сбрасывает двухсекундную перезарядку. */
+/** Окно 0,15 секунды, строго один снаряд. Успех полностью сбрасывает перезарядку; промах — 8 секунд перезарядки и 1,5 секунды замедления. */
 /datum/action/cooldown/alien/banda/evade
 	name = "Уклонение"
-	desc = "Окно уклонения от снарядов на 0,6 секунды. Успешное уклонение сбрасывает двухсекундную перезарядку."
+	desc = "Окно 0,15 секунды, строго один снаряд. Успех полностью сбрасывает перезарядку; промах — 8 секунд перезарядки и 1,5 секунды замедления."
 	button_icon_state = "evade"
-	cooldown_time = 2 SECONDS
+	cooldown_time = 8 SECONDS
 	/// Whether the evasion window is open.
 	var/evade_active = FALSE
 	/// Limits the activation to a single projectile evasion.
 	var/dodged_this_activation = FALSE
 	/// Stoppable evasion expiry timer.
+	var/window_expires = 0
+	/// Expiry is also checked at impact so timer lag never extends protection.
 	var/window_timer
 
 /datum/action/cooldown/alien/banda/evade/IsAvailable(feedback = FALSE)
@@ -744,24 +758,34 @@
 	dodged_this_activation = FALSE
 	playsound(owner, 'sound/effects/magic/tail_swing.ogg', 40, TRUE)
 	StartCooldown()
-	window_timer = addtimer(CALLBACK(src, PROC_REF(end_evade)), 0.6 SECONDS, TIMER_STOPPABLE)
+	window_expires = world.time + 0.15 SECONDS
+	window_timer = addtimer(CALLBACK(src, PROC_REF(end_evade)), 0.15 SECONDS, TIMER_STOPPABLE)
 	return TRUE
 
 /** End evasion and release its expiry timer. */
 /datum/action/cooldown/alien/banda/evade/proc/end_evade()
+	deltimer(window_timer)
 	window_timer = null
+	if(evade_active && !dodged_this_activation && !QDELETED(owner) && owner.stat != DEAD)
+		var/mob/living/living_owner = owner
+		living_owner.apply_status_effect(/datum/status_effect/xeno_evade_miss)
 	evade_active = FALSE
 	build_all_button_icons(UPDATE_BUTTON_STATUS)
 
-/** Apply the single-projectile evasion window to an incoming shot. */
+/** One projectile per activation; a precise success resets the cooldown. */
 /datum/action/cooldown/alien/banda/evade/proc/on_projectile_hit(obj/projectile/hitting_projectile)
-	if(!evade_active || QDELETED(owner) || !isturf(owner.loc) || INCAPACITATED_IGNORING(owner, INCAPABLE_GRAB))
+	var/mob/living/living_owner = owner
+	if(evade_active && world.time >= window_expires)
+		end_evade()
+	if(!evade_active || dodged_this_activation || QDELETED(owner) || living_owner.resting || !isturf(owner.loc) || INCAPACITATED_IGNORING(owner, INCAPABLE_GRAB))
 		return BULLET_ACT_HIT
-	if(!dodged_this_activation)
-		dodged_this_activation = TRUE
-		owner.visible_message(span_danger("[owner] уклоняется от снаряда!"), span_noticealien("Вы уклоняетесь от снаряда!"))
-		playsound(owner, 'modular_bandastation/xeno_rework/sound/spin.ogg', 60, TRUE)
-		ResetCooldown()
+	dodged_this_activation = TRUE
+	evade_active = FALSE
+	deltimer(window_timer)
+	window_timer = null
+	owner.visible_message(span_danger("[owner] уклоняется от снаряда!"), span_noticealien("Точное уклонение!"))
+	playsound(owner, 'modular_bandastation/xeno_rework/sound/spin.ogg', 60, TRUE)
+	ResetCooldown()
 	return BULLET_ACT_FORCE_PIERCE
 
 /datum/action/cooldown/alien/banda/evade/Remove(mob/living/remove_from)
@@ -777,6 +801,8 @@
 	name = "Rest"
 	desc = "Иногда даже кровожадным чужим нужно немного полежать."
 	button_icon_state = "sleepytime"
+	check_flags = AB_CHECK_CONSCIOUS | AB_CHECK_INCAPACITATED
+	can_be_used_always = TRUE
 
 /datum/action/cooldown/alien/banda/sleepytime/Activate()
 	var/mob/living/carbon/sleepytime_mob = owner
@@ -791,8 +817,12 @@
 /** Позволяет нам эволюционировать в высшую касту нашего типа, если такая ещё не существует. */
 /datum/action/cooldown/alien/banda/generic_evolve
 	name = "Evolve"
-	desc = "Позволяет нам эволюционировать в высшую касту нашего типа, если такая ещё не существует."
+	desc = "Эволюция в доступную высшую касту занимает 5 секунд. Движение или потеря сознания прерывают линьку."
 	button_icon_state = "evolution"
+	/// Locks requests after caste selection and before the channel yields.
+	var/evolving = FALSE
+	/// Matches larval preparation; the existing inter-evolution cooldown is separate.
+	var/evolution_time = 5 SECONDS
 
 /datum/action/cooldown/alien/banda/generic_evolve/Grant(mob/grant_to)
 	. = ..()
@@ -811,7 +841,7 @@
 	return node && !node.recent_queen_death
 
 /datum/action/cooldown/alien/banda/generic_evolve/Activate()
-	if(!IsAvailable())
+	if(evolving || !IsAvailable())
 		return FALSE
 	var/mob/living/carbon/alien/adult/banda/evolver = owner
 	var/list/options = evolver.get_evolution_options()
@@ -824,13 +854,36 @@
 		if(QDELETED(src) || QDELETED(evolver) || owner != evolver || !IsAvailable() || !(choice in choices))
 			return FALSE
 		evolution_type = choices[choice]
+	return evolve_into(evolution_type)
+
+/** Caste, slot and actor are checked again after the interruptible shedding animation. */
+/datum/action/cooldown/alien/banda/generic_evolve/proc/evolve_into(evolution_type)
+	var/mob/living/carbon/alien/adult/banda/evolver = owner
+	if(evolving || !evolution_type || !IsAvailable() || !istype(evolver))
+		return FALSE
 	if(!evolver.can_evolve(evolution_type))
 		evolver.balloon_alert(evolver, "высшая каста уже существует")
+		return FALSE
+	evolving = TRUE
+	var/turf/start = evolver.loc
+	evolver.visible_message(span_warning("[evolver] начинает сбрасывать хитиновую оболочку!"))
+	evolver.start_hive_evolution_visual()
+	var/ready = do_after(evolver, evolution_time, target = evolver)
+	if(!QDELETED(evolver))
+		evolver.remove_filter("xeno_evolution")
+	if(QDELETED(src))
+		return FALSE
+	evolving = FALSE
+	if(!ready || QDELETED(evolver) || owner != evolver || evolver.loc != start || !IsAvailable() || !evolver.can_evolve(evolution_type))
 		return FALSE
 	var/new_xeno = new evolution_type(evolver.loc)
 	playsound(new_xeno, 'sound/mobs/non-humanoids/alien/alien_explode.ogg', 60, TRUE)
 	evolver.alien_evolve(new_xeno)
 	return TRUE
+
+/datum/action/cooldown/alien/banda/generic_evolve/Remove(mob/living/remove_from)
+	remove_from?.remove_filter("xeno_evolution")
+	return ..()
 
 /// Each T3 and purchased specialization has its own simultaneous limit.
 /mob/living/carbon/alien/adult/banda/proc/can_evolve(evolution_target)
@@ -843,14 +896,12 @@
 	var/obj/item/organ/alien/hivenode/node = get_organ_slot(ORGAN_SLOT_XENO_HIVENODE)
 	if(!node || node.recent_queen_death)
 		return FALSE
-	if(ispath(evolution_target, /mob/living/carbon/alien/adult/banda/final_caste))
-		return GLOB.xeno_hive.slot_available(evolution_target)
 	if(evolution_target == /mob/living/carbon/alien/adult/banda/queen)
 		for(var/mob/living/carbon/alien/other in GLOB.alive_mob_list)
 			if(istype(other, /mob/living/carbon/alien/adult/banda/queen) || istype(other, /mob/living/carbon/alien/adult/royal/queen))
 				return FALSE
 		return TRUE
 	var/mob/living/carbon/alien/adult/banda/evolution_type = evolution_target
-	if(initial(evolution_type.evolution_tier) == 3)
+	if(initial(evolution_type.evolution_tier) >= 3 || evolution_target == /mob/living/carbon/alien/adult/banda/final_caste/hunter)
 		return GLOB.xeno_hive.slot_available(evolution_target)
 	return TRUE

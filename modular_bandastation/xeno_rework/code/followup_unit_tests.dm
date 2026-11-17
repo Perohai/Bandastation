@@ -1,0 +1,201 @@
+/datum/unit_test/xeno_rework_hive/support_gates/Run()
+	var/mob/living/carbon/alien/adult/banda/queen/queen = allocate(/mob/living/carbon/alien/adult/banda/queen)
+	var/mob/living/carbon/alien/adult/banda/praetorian/praetorian = allocate(/mob/living/carbon/alien/adult/banda/praetorian)
+	var/mob/living/carbon/alien/adult/banda/carrier/carrier = allocate(/mob/living/carbon/alien/adult/banda/carrier)
+	for(var/mob/living/carbon/alien/adult/banda/member as anything in list(queen, praetorian, carrier))
+		TEST_ASSERT_NULL(locate(/datum/action/cooldown/alien/banda/hive_pheromones) in member.actions, "[member.type] has innate healing")
+		if(member == queen)
+			continue
+		TEST_ASSERT_NULL(member.get_organ_slot(ORGAN_SLOT_XENO_RESINSPINNER), "[member.type] still has a resin spinner")
+		var/datum/action/cooldown/alien/build_resin_structure/forged = allocate(/datum/action/cooldown/alien/build_resin_structure)
+		forged.Grant(member)
+		TEST_ASSERT(!forged.IsAvailable(), "Forged construction bypassed [member.type]'s restriction")
+		var/datum/action/cooldown/alien/make_structure/resin/native_resin = allocate(/datum/action/cooldown/alien/make_structure/resin)
+		native_resin.Grant(member)
+		TEST_ASSERT(!native_resin.IsAvailable(), "A native resin spinner bypassed [member.type]'s restriction")
+	TEST_ASSERT_NOTNULL(locate(/datum/action/cooldown/alien/make_structure/plant_weeds) in praetorian.actions, "Praetorian lost its agreed weed planting")
+	TEST_ASSERT_NOTNULL(locate(/datum/action/cooldown/alien/make_structure/lay_egg) in carrier.actions, "Carrier lost its agreed egg laying")
+	hive.purchased["coordination"] = 1
+	hive.biomass = 180
+	hive.purchase_time = 0
+	TEST_ASSERT(hive.buy(queen, "pheromones"), "Healing upgrade could not be purchased")
+	for(var/mob/living/carbon/alien/adult/banda/member as anything in list(queen, praetorian, carrier))
+		var/datum/action/cooldown/alien/banda/hive_pheromones/healing = locate() in member.actions
+		TEST_ASSERT_NOTNULL(healing, "Purchased healing missed an existing [member.type]")
+		TEST_ASSERT(healing.IsAvailable(), "Purchased healing remains unusable on [member.type]")
+	var/mob/living/carbon/alien/adult/banda/praetorian/future = allocate(/mob/living/carbon/alien/adult/banda/praetorian)
+	TEST_ASSERT_NOTNULL(locate(/datum/action/cooldown/alien/banda/hive_pheromones) in future.actions, "Future support caste did not inherit healing")
+	var/mob/living/carbon/alien/adult/banda/runner/runner = allocate(/mob/living/carbon/alien/adult/banda/runner)
+	var/datum/action/cooldown/alien/banda/hive_pheromones/forged_healing = allocate(/datum/action/cooldown/alien/banda/hive_pheromones)
+	forged_healing.Grant(runner)
+	TEST_ASSERT(!forged_healing.IsAvailable() && !forged_healing.Activate(), "A non-support caste bypassed the healing gate")
+	for(var/mob/living/carbon/alien/adult/banda/member as anything in list(queen, praetorian, carrier, runner))
+		TEST_ASSERT_EQUAL(member.sprite_scale, 0.9, "Previous visual scale was not restored")
+	var/mob/living/carbon/alien/adult/banda/final_caste/hunter/hunter = allocate(/mob/living/carbon/alien/adult/banda/final_caste/hunter)
+	TEST_ASSERT_EQUAL(hunter.get_cached_width(), 32, "Hunter is not a one-tile sprite")
+	TEST_ASSERT_EQUAL(hunter.sprite_scale, 1, "Native 32x32 Hunter was shrunk a second time")
+
+/datum/unit_test/xeno_rework_hive/hunter_entry/Run()
+	var/mob/living/carbon/alien/adult/banda/final_caste/hunter/hunter = allocate(/mob/living/carbon/alien/adult/banda/final_caste/hunter)
+	// Keep the cancellation assertion independent of the native organ processing tick.
+	var/obj/item/organ/alien/plasmavessel/vessel = hunter.get_organ_slot(ORGAN_SLOT_XENO_PLASMAVESSEL)
+	vessel.plasma_rate = 0
+	var/datum/action/cooldown/alien/banda/hunter_stealth/stealth = locate() in hunter.actions
+	TEST_ASSERT_EQUAL(stealth.entry_time, 3 SECONDS, "Hunter default preparation is not three seconds")
+	stealth.entry_time = 0.3 SECONDS
+	var/before = hunter.getPlasma()
+	INVOKE_ASYNC(stealth, TYPE_PROC_REF(/datum/action/cooldown/alien/banda/hunter_stealth, PreActivate), hunter)
+	sleep(0.1 SECONDS)
+	TEST_ASSERT(stealth.preparing, "Hunter did not enter a preparation channel")
+	TEST_ASSERT_NULL(hunter.has_status_effect(/datum/status_effect/xeno_hunter_stealth), "Camouflage applied instantly")
+	TEST_ASSERT(!stealth.Activate(), "Parallel camouflage entry was accepted")
+	hunter.forceMove(get_step(hunter, NORTH))
+	sleep(0.4 SECONDS)
+	TEST_ASSERT(!stealth.preparing && !hunter.has_status_effect(/datum/status_effect/xeno_hunter_stealth), "Movement did not cancel camouflage")
+	TEST_ASSERT_EQUAL(hunter.getPlasma(), before, "Cancelled camouflage spent plasma")
+	INVOKE_ASYNC(stealth, TYPE_PROC_REF(/datum/action/cooldown/alien/banda/hunter_stealth, PreActivate), hunter)
+	sleep(0.1 SECONDS)
+	hunter.apply_damage(1, BRUTE)
+	hunter.adjust_brute_loss(-1)
+	sleep(0.4 SECONDS)
+	TEST_ASSERT_NULL(hunter.has_status_effect(/datum/status_effect/xeno_hunter_stealth), "Healed damage failed to interrupt camouflage")
+	stealth.entry_time = 0
+	TEST_ASSERT(stealth.PreActivate(hunter), "Uninterrupted Hunter could not enter camouflage")
+	TEST_ASSERT_NOTNULL(hunter.has_status_effect(/datum/status_effect/xeno_hunter_stealth), "Successful channel did not camouflage")
+
+/datum/unit_test/xeno_rework_hive/adult_evolution_channel/Run()
+	var/mob/living/carbon/alien/adult/banda/sentinel/sentinel = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
+	sentinel.adjustPlasma(sentinel.get_max_plasma())
+	var/datum/action/cooldown/alien/banda/generic_evolve/evolution = locate() in sentinel.actions
+	TEST_ASSERT_EQUAL(evolution.evolution_time, 5 SECONDS, "Adult evolution is not five seconds")
+	evolution.evolution_time = 0.3 SECONDS
+	INVOKE_ASYNC(evolution, TYPE_PROC_REF(/datum/action/cooldown/alien/banda/generic_evolve, PreActivate), sentinel)
+	sleep(0.1 SECONDS)
+	TEST_ASSERT(evolution.evolving && !QDELETED(sentinel), "Adult evolution happened instantly")
+	TEST_ASSERT_NOTNULL(sentinel.get_filter("xeno_evolution"), "Adult evolution has no animation")
+	TEST_ASSERT(!evolution.evolve_into(/mob/living/carbon/alien/adult/banda/spitter), "Concurrent evolution was accepted")
+	sentinel.forceMove(get_step(sentinel, NORTH))
+	sleep(0.4 SECONDS)
+	TEST_ASSERT(!QDELETED(sentinel) && !evolution.evolving, "Movement failed to cancel adult evolution")
+	TEST_ASSERT_NULL(sentinel.get_filter("xeno_evolution"), "Cancelled evolution retained its glow")
+	TEST_ASSERT(!evolution.evolve_into(/mob/living/carbon/alien/adult/banda/queen), "Adult accepted an unlisted caste")
+	var/mob/living/carbon/alien/adult/banda/spitter/spitter = allocate(/mob/living/carbon/alien/adult/banda/spitter)
+	spitter.adjustPlasma(spitter.get_max_plasma())
+	var/datum/action/cooldown/alien/banda/generic_evolve/tier3 = locate() in spitter.actions
+	tier3.evolution_time = 0.3 SECONDS
+	INVOKE_ASYNC(tier3, TYPE_PROC_REF(/datum/action/cooldown/alien/banda/generic_evolve, PreActivate), spitter)
+	sleep(0.1 SECONDS)
+	var/mob/living/carbon/alien/adult/banda/praetorian/blocker = allocate(/mob/living/carbon/alien/adult/banda/praetorian)
+	sleep(0.4 SECONDS)
+	TEST_ASSERT(!QDELETED(spitter), "Evolution ignored a slot occupied during its channel")
+	qdel(blocker)
+	tier3.evolution_time = 0
+	TEST_ASSERT(tier3.PreActivate(spitter), "Adult could not retry after the slot became free")
+	TEST_ASSERT(QDELETED(spitter), "Successful adult evolution retained the old body")
+	var/mob/living/carbon/alien/adult/banda/praetorian/evolved = locate() in hive.members
+	TEST_ASSERT_NOTNULL(evolved, "No adult was created after shedding")
+	TEST_ASSERT(evolved.has_evolved_recently, "Adult evolution lost the existing 90-second gate")
+	TEST_ASSERT_NULL(evolved.get_filter("xeno_evolution"), "Evolution glow leaked to the new body")
+
+/datum/unit_test/xeno_rework_hive/rally_navigation/Run()
+	var/mob/living/carbon/alien/adult/banda/runner/runner = allocate(/mob/living/carbon/alien/adult/banda/runner)
+	TEST_ASSERT_NULL(locate(/datum/action/cooldown/alien/banda/hive_rally_track) in runner.actions, "Rally tracking is available before purchase")
+	var/mob/living/carbon/alien/adult/banda/queen/queen = allocate(/mob/living/carbon/alien/adult/banda/queen)
+	hive.purchased["coordination"] = 1
+	hive.apply_upgrades(queen)
+	hive.apply_upgrades(runner)
+	var/datum/action/cooldown/alien/banda/hive_rally/rally = locate() in queen.actions
+	var/datum/action/cooldown/alien/banda/hive_rally_track/follow = locate() in runner.actions
+	TEST_ASSERT_NOTNULL(rally, "Purchase missed the rally placement action")
+	TEST_ASSERT_NOTNULL(follow, "Purchase missed the rally tracking action")
+	TEST_ASSERT(rally.PreActivate(get_step(runner, NORTH)), "Visible rally point could not be placed")
+	TEST_ASSERT(follow.PreActivate(), "Rally tracking could not be toggled on")
+	var/datum/status_effect/agent_pinpointer/xeno_rally/tracker = runner.has_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
+	TEST_ASSERT_NOTNULL(tracker, "Tracking did not create a native pinpointer")
+	TEST_ASSERT_EQUAL(tracker.scan_target, hive.rally_point, "Pinpointer lost the shared marker")
+	TEST_ASSERT_EQUAL(tracker.direction_arrow.dir, NORTH, "Pinpointer points away from the rally point")
+	rally.ResetCooldown()
+	TEST_ASSERT(rally.PreActivate(get_step(runner, EAST)), "Rally point could not be relocated")
+	tracker.tick(0)
+	TEST_ASSERT_EQUAL(tracker.direction_arrow.dir, EAST, "Active tracking ignored rally relocation")
+	qdel(hive.rally_point)
+	TEST_ASSERT_NULL(tracker.scan_target, "Deleted marker remains strongly referenced")
+	tracker.tick(0)
+	TEST_ASSERT_EQUAL(tracker.direction_arrow.alpha, 0, "Deleted marker still shows a direction")
+	TEST_ASSERT(follow.PreActivate(), "Rally tracking could not be toggled off")
+	TEST_ASSERT_NULL(runner.has_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally), "Tracking remains after toggle-off")
+
+/datum/unit_test/xeno_rework_hive/boiler_spray_length
+	normal_floor_required = TRUE
+
+/datum/unit_test/xeno_rework_hive/boiler_spray_length/Run()
+	var/mob/living/carbon/alien/adult/banda/final_caste/boiler/boiler = allocate(/mob/living/carbon/alien/adult/banda/final_caste/boiler)
+	var/datum/action/cooldown/alien/banda/acid_spray/boiler/spray = locate() in boiler.actions
+	TEST_ASSERT(spray.PreActivate(get_ranged_target_turf(boiler, NORTH, 4)), "Boiler could not spray four tiles")
+	for(var/distance in 1 to 4)
+		var/turf/location = get_ranged_target_turf(boiler, NORTH, distance)
+		TEST_ASSERT_NOTNULL(locate(/obj/effect/xeno_acid_pool/spray) in location, "Boiler spray missed tile [distance]")
+	var/turf/beyond = get_ranged_target_turf(boiler, NORTH, 5)
+	TEST_ASSERT_NULL(locate(/obj/effect/xeno_acid_pool/spray) in beyond, "Boiler spray exceeded four tiles")
+	var/mob/living/carbon/alien/adult/banda/spitter/spitter = allocate(/mob/living/carbon/alien/adult/banda/spitter)
+	var/datum/action/cooldown/alien/banda/acid_spray/spitter/other_spray = locate() in spitter.actions
+	TEST_ASSERT_EQUAL(other_spray.spray_length, 3, "Boiler tuning changed Spitter spray")
+
+/datum/unit_test/xeno_rework_hive/minion_attack_visuals/Run()
+	hive.purchased["mantis_ravage"] = 1
+	var/mob/living/carbon/alien/brood/mantis/mantis = allocate(/mob/living/carbon/alien/brood/mantis, get_ranged_target_turf(run_loc_floor_bottom_left, NORTH, 2))
+	var/mob/living/carbon/human/front = allocate(/mob/living/carbon/human/consistent, get_step(mantis, NORTH))
+	var/mob/living/carbon/human/behind = allocate(/mob/living/carbon/human/consistent, get_step(mantis, SOUTH))
+	var/datum/action/cooldown/alien/brood_ravage/ravage = locate() in mantis.actions
+	mantis.adjustPlasma(mantis.get_max_plasma())
+	ravage.windup_time = 0
+	TEST_ASSERT(ravage.PreActivate(front), "Mantis ravage could not activate")
+	TEST_ASSERT_EQUAL(front.get_brute_loss(), 12, "Mantis ravage did not damage its target")
+	TEST_ASSERT_EQUAL(behind.get_brute_loss(), 0, "Mantis ravage damaged a target behind it")
+	TEST_ASSERT_NOTNULL(locate(/obj/effect/temp_visual/cleave) in get_step(mantis, NORTH), "Mantis sweep has no visible arc")
+	front.forceMove(get_step(mantis, NORTH))
+	ravage.ResetCooldown()
+	ravage.windup_time = 0.3 SECONDS
+	mantis.adjustPlasma(mantis.get_max_plasma())
+	INVOKE_ASYNC(ravage, TYPE_PROC_REF(/datum/action/cooldown/alien/brood_ravage, PreActivate), front)
+	sleep(0.1 SECONDS)
+	var/mob/living/carbon/alien/brood/mantis/replacement = allocate(/mob/living/carbon/alien/brood/mantis, mantis.loc)
+	replacement.adjustPlasma(replacement.get_max_plasma())
+	ravage.Grant(replacement)
+	sleep(0.4 SECONDS)
+	TEST_ASSERT_EQUAL(front.get_brute_loss(), 12, "Ravage survived transfer to another owner during its windup")
+	qdel(replacement)
+	qdel(mantis)
+	qdel(front)
+	qdel(behind)
+	hive.purchased["beetle_charge"] = 1
+	var/mob/living/carbon/alien/brood/beetle = allocate(/mob/living/carbon/alien/brood)
+	var/datum/action/cooldown/alien/brood_charge/charge = locate() in beetle.actions
+	charge.windup_time = 0.3 SECONDS
+	INVOKE_ASYNC(charge, TYPE_PROC_REF(/datum/action/cooldown/alien/brood_charge, PreActivate), get_ranged_target_turf(beetle, NORTH, 3))
+	sleep(0.1 SECONDS)
+	TEST_ASSERT(charge.preparing, "Beetle skipped its warning windup")
+	TEST_ASSERT_NOTNULL(locate(/obj/effect/temp_visual/telegraphing/exclamation) in beetle.loc, "Beetle has no exclamation before charging")
+	sleep(1 SECONDS)
+	TEST_ASSERT(!beetle.charging && (beetle.pass_flags & PASSMOB), "Completed beetle charge lost its collision cleanup")
+	TEST_ASSERT_NULL(beetle.get_filter("minion_charge"), "Completed beetle charge retained its motion blur")
+
+/datum/unit_test/xeno_rework_hive/corpse_swallow_gate/Run()
+	var/mob/living/carbon/alien/adult/banda/drone/eater = allocate(/mob/living/carbon/alien/adult/banda/drone)
+	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human/consistent)
+	var/obj/item/organ/stomach/alien_banda/stomach = eater.get_organ_slot(ORGAN_SLOT_STOMACH)
+	var/datum/action/cooldown/alien/hive_swallow/swallow = locate() in eater.actions
+	prey.death()
+	TEST_ASSERT(!swallow.PreActivate(prey), "Dedicated skill swallowed a corpse")
+	TEST_ASSERT(!eater.can_consume(prey), "Grab path accepted a corpse")
+	TEST_ASSERT(!stomach.consume_thing(prey), "Direct consumption bypassed the corpse gate")
+	TEST_ASSERT(!(prey in stomach.stomach_contents), "Rejected corpse entered stomach bookkeeping")
+	prey.revive(ADMIN_HEAL_ALL, force_grab_ghost = FALSE)
+	swallow.swallow_time = 0.3 SECONDS
+	INVOKE_ASYNC(swallow, TYPE_PROC_REF(/datum/action/cooldown/alien/hive_swallow, PreActivate), prey)
+	sleep(0.1 SECONDS)
+	prey.death()
+	sleep(0.4 SECONDS)
+	TEST_ASSERT(!(prey in stomach.stomach_contents), "Prey dying during the channel was swallowed")
+	var/obj/structure/xeno_hive_egg/larva/egg = allocate(/obj/structure/xeno_hive_egg/larva)
+	TEST_ASSERT(egg.icon_state in icon_states(egg.icon), "Larval egg refers to a nonexistent sprite state")

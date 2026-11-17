@@ -7,6 +7,7 @@
 	maxHealth = 250
 	health = 250
 	icon_state = "aliendefender"
+	hud_sprite_height = 53
 	melee_damage_lower = 10
 	melee_damage_upper = 10
 	next_evolution = /mob/living/carbon/alien/adult/banda/warrior
@@ -19,7 +20,7 @@
 		ORGAN_SLOT_LIVER = /obj/item/organ/liver/alien,
 		ORGAN_SLOT_EARS = /obj/item/organ/ears,
 		ORGAN_SLOT_STOMACH = /obj/item/organ/stomach/alien_banda,
-		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/small,
+		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/banda/small,
 	)
 
 	/// ---------- state ----------

@@ -38,6 +38,8 @@
 	var/sprite_scale = 0.9
 	/// visual offset to re-center the sprite after scaling
 	var/sprite_pixel_y_offset = -4
+	/// Topmost opaque standing pixel, measured from the icon's bottom (all four directions).
+	var/hud_sprite_height = 64
 	/// Per-mob hive roster UI source, deleted with the mob.
 	var/datum/xeno_rework_hive_status/hive_status_panel
 
@@ -61,10 +63,13 @@
 	addtimer(CALLBACK(src, PROC_REF(patch_seethrough_for_xeno)), 0)
 
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/sleepytime)
+	GRANT_ACTION(/datum/action/cooldown/alien/hive_roster)
+	RegisterSignal(src, COMSIG_LIVING_RESTING, PROC_REF(on_hive_rest))
+	RegisterSignal(src, COMSIG_LIVING_SET_BODY_POSITION, PROC_REF(on_hive_stand))
 	if(next_evolution || final_evolution)
 		GRANT_ACTION(/datum/action/cooldown/alien/banda/generic_evolve)
 
-	pixel_x = -16
+	pixel_x = base_pixel_x
 
 	ADD_TRAIT(src, TRAIT_XENO_HEAL_AURA, TRAIT_XENO_INNATE)
 	ADD_TRAIT(src, TRAIT_SLEEPIMMUNE, TRAIT_XENO_INNATE)
@@ -82,9 +87,21 @@
 /** Apply the caste sprite scale while preserving its tile alignment. */
 /mob/living/carbon/alien/adult/banda/proc/update_xeno_sprite_scale()
 	var/matrix/sprite_transform = matrix()
-	sprite_transform.Scale(sprite_scale, sprite_scale)
+	sprite_transform.Scale(sprite_scale * current_size, sprite_scale * current_size)
 	transform = sprite_transform
 	pixel_y = initial(pixel_y) + sprite_pixel_y_offset
+	med_hud_set_health()
+	med_hud_set_status()
+
+/** The atlas canvas includes transparent space above short castes. */
+/mob/living/carbon/alien/adult/banda/get_hud_y_offset()
+	var/center = get_cached_height() / 2
+	return round(center + (hud_sprite_height - center) * sprite_scale * current_size - ICON_SIZE_Y)
+
+/** Preserve the visual caste shrink after native resizing, posture updates and regeneration. */
+/mob/living/carbon/alien/adult/banda/update_transform()
+	. = ..()
+	update_xeno_sprite_scale()
 
 /// Called when a larva or xeno evolves, adds a configurable timer on evolving again to the xeno
 /mob/living/carbon/alien/adult/banda/proc/has_just_evolved()

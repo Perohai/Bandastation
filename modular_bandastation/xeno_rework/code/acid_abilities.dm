@@ -11,6 +11,10 @@
 	var/acid_mode = FALSE
 	/// Projectile subtype selected when acid mode is active.
 	var/acid_projectile = /obj/projectile/neurotoxin/banda/acid/standard
+	/// Prices belong to the gland, so toggling never restores another caste's price.
+	var/neuro_plasma_cost = 40
+	/// Acid-mode price for this gland.
+	var/acid_plasma_cost = 100
 
 /datum/action/cooldown/alien/banda/spit/Activate(atom/target)
 	if(!target || !isturf(owner.loc) || target.z != owner.z || get_dist(owner, target) > 7)
@@ -22,6 +26,11 @@
 	projectile.fire()
 	playsound(owner, 'modular_bandastation/xeno_rework/sound/alien_spitacid.ogg', 70, TRUE)
 	return TRUE
+
+/datum/action/cooldown/alien/banda/spit/spitter
+	plasma_cost = 20
+	neuro_plasma_cost = 20
+	acid_plasma_cost = 40
 
 /** Praetorian spit selects its caste-specific acid projectile. */
 /datum/action/cooldown/alien/banda/spit/praetorian
@@ -49,19 +58,19 @@
 /obj/projectile/neurotoxin/banda/acid/standard/praetorian
 	damage = 10
 
-/** Переключает между нейротоксином за 40 плазмы и кислотой за 100 плазмы. */
+/** Переключает нейротоксин и кислоту. Текущая цена указана на кнопке плевка. */
 /datum/action/cooldown/alien/banda/toggle_spit
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toggle_spit"
 	name = "Переключить плевок"
-	desc = "Переключает между нейротоксином за 40 плазмы и кислотой за 100 плазмы."
+	desc = "Переключает нейротоксин и кислоту. Текущая цена указана на кнопке плевка."
 
 /datum/action/cooldown/alien/banda/toggle_spit/Activate()
 	var/datum/action/cooldown/alien/banda/spit/spit = locate() in owner.actions
 	if(!spit)
 		return FALSE
 	spit.acid_mode = !spit.acid_mode
-	spit.plasma_cost = spit.acid_mode ? 100 : 40
+	spit.plasma_cost = spit.acid_mode ? spit.acid_plasma_cost : spit.neuro_plasma_cost
 	spit.button_icon_state = spit.acid_mode ? "acid_spit" : "neuro_spit"
 	spit.name = "[spit.acid_mode ? "Кислотный плевок" : "Нейротоксин"] ([spit.plasma_cost]P)"
 	spit.build_all_button_icons(UPDATE_BUTTON_STATUS)
@@ -73,7 +82,7 @@
 	button_icon_state = "acid_volley"
 	name = "Разбросанный плевок"
 	desc = "После короткой подготовки выпускает три кислотных снаряда, оставляющих лужи на две секунды."
-	plasma_cost = 280
+	plasma_cost = 100
 	cooldown_time = 15 SECONDS
 	click_to_activate = TRUE
 	/// Guards overlapping channelled activations.
@@ -130,6 +139,8 @@
 	click_to_activate = TRUE
 	/// Whether spray covers a second column beside its cursor line.
 	var/cone = FALSE
+	/// Maximum center-line length; caste overrides do not change the other sprays.
+	var/spray_length = 3
 
 /datum/action/cooldown/alien/banda/acid_spray/Activate(atom/target)
 	var/turf/target_turf = get_turf(target)
@@ -138,8 +149,8 @@
 	var/direction = get_dir(owner, target_turf)
 	var/list/centers = get_line(get_turf(owner), target_turf)
 	centers -= get_turf(owner)
-	if(length(centers) > 3)
-		centers.Cut(4)
+	if(length(centers) > spray_length)
+		centers.Cut(spray_length + 1)
 	if(!length(centers))
 		return FALSE
 	var/turf/previous_center = get_turf(owner)
@@ -172,6 +183,10 @@
 	new /obj/effect/xeno_acid_pool/spray(location)
 	return TRUE
 
+/datum/action/cooldown/alien/banda/acid_spray/spitter
+	plasma_cost = 120
+	cooldown_time = 30 SECONDS
+
 /** Покрывает узкую область шириной две и длиной до трёх клеток по направлению курсора. Кислота опрокидывает и обжигает врагов. */
 /datum/action/cooldown/alien/banda/acid_spray/cone
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
@@ -185,6 +200,8 @@
 	name = "xenomorph acid"
 	icon = 'modular_bandastation/xeno_rework/icons/xeno_effects.dmi'
 	icon_state = "acid_pool"
+	color = "#899364"
+	alpha = 145
 	anchored = TRUE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	/// Lifetime before this temporary effect is deleted.

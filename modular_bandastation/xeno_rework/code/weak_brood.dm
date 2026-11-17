@@ -1,19 +1,20 @@
-/** Weak brood is deliberately outside adult and larva inheritance: no evolution or finale slot. */
+/** Player-controlled, deliberately weakened TGMC minions. They never become adult castes. */
 /mob/living/carbon/alien/brood
-	name = "hive microdrone"
-	desc = "Рабочий выводка: распространяет траву, чинит смолу и перетаскивает добычу. Во взрослых не эволюционирует."
-	icon = 'modular_bandastation/xeno_rework/icons/brood/microdrone.dmi'
-	icon_state = "microdrone"
+	name = "hive beetle"
+	desc = "Маленький жук выводка. Умеет кусаться и таскать тела; таран открывает королева."
+	icon = 'modular_bandastation/xeno_rework/icons/brood/beetle.dmi'
+	icon_state = "beetle"
 	rotate_on_lying = FALSE
 	hud_type = /datum/hud/larva
-	maxHealth = 65
-	health = 65
+	maxHealth = 35
+	health = 35
 	hardcrit_threshold = HEALTH_THRESHOLD_CRIT
-	melee_damage_lower = 5
-	melee_damage_upper = 5
+	melee_damage_lower = 3
+	melee_damage_upper = 3
 	mob_size = MOB_SIZE_SMALL
 	density = FALSE
 	pass_flags = PASSTABLE | PASSMOB
+	combat_mode = TRUE
 	default_num_hands = 0
 	default_num_legs = 1
 	num_legs = 1
@@ -28,16 +29,20 @@
 		ORGAN_SLOT_EARS = /obj/item/organ/ears,
 		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/brood,
 	)
-	/// Incremental upgrades must not heal a brood on every menu refresh.
+	/// A vigor purchase changes an existing mob once, without healing it.
 	var/brood_upgraded = FALSE
+	/// The Beetle's native throw is dangerous only during its unlocked charge.
+	var/charging = FALSE
+	/// Restore only our temporary collision change when a charge lands.
+	var/charge_had_pass_mob = FALSE
 
 /mob/living/carbon/alien/brood/Initialize(mapload)
 	. = ..()
+	GRANT_ACTION(/datum/action/cooldown/alien/banda/sleepytime)
+	RegisterSignal(src, COMSIG_LIVING_RESTING, PROC_REF(on_hive_rest))
+	RegisterSignal(src, COMSIG_LIVING_SET_BODY_POSITION, PROC_REF(on_hive_stand))
 	apply_hive_upgrade()
-	if(type == /mob/living/carbon/alien/brood)
-		GRANT_ACTION(/datum/action/cooldown/alien/brood_repair)
 
-/** Brood use larval placeholder anatomy, so healing must not grow human arms and legs. */
 /mob/living/carbon/alien/brood/get_all_limbs()
 	return list(BODY_ZONE_CHEST, BODY_ZONE_HEAD)
 
@@ -53,137 +58,110 @@
 	update_icons()
 
 /mob/living/carbon/alien/brood/proc/apply_hive_upgrade()
-	if(brood_upgraded || !GLOB.xeno_hive?.purchased["brood_vigor"])
-		return
-	brood_upgraded = TRUE
-	maxHealth += 20
-	updatehealth()
+	var/datum/xeno_hive/hive = get_xeno_hive()
+	if(!brood_upgraded && hive.purchased["brood_vigor"])
+		brood_upgraded = TRUE
+		maxHealth += 15
+		melee_damage_lower += 2
+		melee_damage_upper += 2
+		updatehealth()
+	var/ability_type
+	var/capacity = 100
+	var/regeneration = 1
+	if(type == /mob/living/carbon/alien/brood && hive.purchased["beetle_charge"])
+		ability_type = /datum/action/cooldown/alien/brood_charge
+		capacity = 320
+		regeneration = 10
+	else if(istype(src, /mob/living/carbon/alien/brood/mantis) && hive.purchased["mantis_ravage"])
+		ability_type = /datum/action/cooldown/alien/brood_ravage
+		capacity = 600
+		regeneration = 20
+	else if(istype(src, /mob/living/carbon/alien/brood/scorpion))
+		ability_type = /datum/action/cooldown/alien/brood_spit
+		capacity = 500
+		regeneration = hive.purchased["scorpion_spit"] ? 10 : 1
+	else if(istype(src, /mob/living/carbon/alien/brood/baneling) && hive.purchased["brood_baneling"])
+		ability_type = /datum/action/cooldown/alien/brood_detonate
+	if(ability_type && !(locate(ability_type) in actions))
+		grant_actions_by_list(list(ability_type))
+	var/obj/item/organ/alien/plasmavessel/vessel = get_organ_slot(ORGAN_SLOT_XENO_PLASMAVESSEL)
+	if(vessel)
+		vessel.max_plasma = capacity
+		vessel.plasma_rate = regeneration
 
 /mob/living/carbon/alien/brood/can_unarmed_attack()
-	return TRUE
+	return !resting && !incapacitated
 
-/** Small bites use normal armor and blocking; no adult disarm, dismemberment or structure damage. */
 /mob/living/carbon/alien/brood/resolve_unarmed_attack(atom/attack_target, list/modifiers)
-	if(!isliving(attack_target) || !combat_mode || HAS_TRAIT(src, TRAIT_PACIFISM))
+	if(resting || incapacitated || !isliving(attack_target) || !Adjacent(attack_target) || attack_target == src || !combat_mode || HAS_TRAIT(src, TRAIT_PACIFISM))
 		return
 	var/mob/living/victim = attack_target
 	if(isalien(victim) || victim.check_block(src, melee_damage_upper, name, attack_type = UNARMED_ATTACK))
 		return
+	changeNext_move(CLICK_CD_MELEE)
 	do_attack_animation(victim, ATTACK_EFFECT_BITE)
+	playsound(victim, 'sound/items/weapons/bite.ogg', 55, TRUE)
+	victim.visible_message(span_danger("[src] кусает [victim]!"), span_userdanger("[src] кусает вас!"))
 	victim.apply_damage(melee_damage_upper, BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
 	log_combat(src, victim, "bit")
 
 /mob/living/carbon/alien/brood/resolve_right_click_attack(atom/target, list/modifiers)
-	return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
+	return SECONDARY_ATTACK_CALL_NORMAL
 
-/** No carrying machinery, holding prey in a stomach, or securing prey for rewards. */
 /mob/living/carbon/alien/brood/start_pulling(atom/movable/pulled_atom, state, force = pull_force, supress_message = FALSE)
-	if(!isliving(pulled_atom))
+	if(!isliving(pulled_atom) || resting)
 		return FALSE
+	return ..()
+
+/mob/living/carbon/alien/brood/proc/end_minion_charge()
+	charging = FALSE
+	remove_filter("minion_charge")
+	if(charge_had_pass_mob)
+		pass_flags |= PASSMOB
+	charge_had_pass_mob = FALSE
+
+/mob/living/carbon/alien/brood/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
+	if(charging && isliving(hit_atom) && !isalien(hit_atom) && !incapacitated && !resting)
+		var/mob/living/victim = hit_atom
+		victim.apply_damage(15, BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
+		victim.Knockdown(1 SECONDS)
+		log_combat(src, victim, "minion charged")
+	charging = FALSE
 	return ..()
 
 /obj/item/organ/alien/plasmavessel/brood
 	max_plasma = 100
 	stored_plasma = 100
-	plasma_rate = 2
-	heal_rate = 0.75
-	actions_types = list(/datum/action/cooldown/alien/make_structure/plant_weeds)
+	plasma_rate = 1
+	heal_rate = 0.25
+	actions_types = list()
 
-/mob/living/carbon/alien/brood/scout
-	name = "hive scout"
-	desc = "Разведчик выводка: скрывается, пролезает под дверями и отмечает добычу для роя."
-	maxHealth = 45
-	health = 45
-	melee_damage_lower = 3
-	melee_damage_upper = 3
-	icon = 'modular_bandastation/xeno_rework/icons/brood/scout.dmi'
-	icon_state = "scout"
+/mob/living/carbon/alien/brood/mantis
+	name = "hive mantis"
+	desc = "Маленький богомол выводка. Размашистый удар серпами открывает королева."
+	icon = 'modular_bandastation/xeno_rework/icons/brood/mantis.dmi'
+	icon_state = "mantis"
+	maxHealth = 25
+	health = 25
+	melee_damage_lower = 4
+	melee_damage_upper = 4
 
-/mob/living/carbon/alien/brood/scout/Initialize(mapload)
-	. = ..()
-	GRANT_ACTION(/datum/action/cooldown/alien/hide)
-	GRANT_ACTION(/datum/action/cooldown/alien/brood_mark)
-	AddComponent(/datum/component/slide_under_doors, slide_in_delay = 3 SECONDS)
-	add_movespeed_modifier(/datum/movespeed_modifier/alien_quick)
+/mob/living/carbon/alien/brood/scorpion
+	name = "hive scorpion"
+	desc = "Маленький скорпион выводка. Плюётся слабой кислотой; королева усиливает плевок."
+	icon = 'modular_bandastation/xeno_rework/icons/brood/scorpion.dmi'
+	icon_state = "scorpion"
+	maxHealth = 25
+	health = 25
+	melee_damage_lower = 2
+	melee_damage_upper = 2
 
-/mob/living/carbon/alien/brood/carrier
-	name = "hive carrier"
-	desc = "Переносчик выводка: быстро эвакуирует лежащих сородичей и доставляет добычу без обычного замедления."
-	maxHealth = 90
-	health = 90
-	melee_damage_lower = 6
-	melee_damage_upper = 6
-	icon = 'modular_bandastation/xeno_rework/icons/brood/carrier.dmi'
-	icon_state = "carrier"
-	slowed_by_drag = FALSE
-
-/mob/living/carbon/alien/brood/carrier/Initialize(mapload)
-	. = ..()
-	add_movespeed_modifier(/datum/movespeed_modifier/alien_quick)
-
-/** Repairs support structures, never bodies, eggs, cocoons or the passive-income core. */
-/datum/action/cooldown/alien/brood_repair
-	name = "Восстановить смолу"
-	desc = "Восстанавливает 40 прочности смоляной стены, двери или подготовленного гнезда за 3 секунды и 20 плазмы."
-	button_icon_state = "alien_resin"
-	plasma_cost = 20
-	cooldown_time = 8 SECONDS
-	click_to_activate = TRUE
-	/// Prevents a second channel while the first has not yet spent plasma.
-	var/repairing = FALSE
-	/// Kept short in the focused interruption scenario.
-	var/repair_time = 3 SECONDS
-
-/datum/action/cooldown/alien/brood_repair/proc/can_repair(mob/living/carbon/alien/brood/worker, obj/structure/target)
-	return !QDELETED(src) && !QDELETED(worker) && owner == worker && worker.type == /mob/living/carbon/alien/brood && !worker.incapacitated && worker.getPlasma() >= plasma_cost && !QDELETED(target) && (istype(target, /obj/structure/alien/resin) || istype(target, /obj/structure/bed/nest/banda)) && worker.Adjacent(target) && isturf(worker.loc) && target.get_integrity() < target.max_integrity
-
-/datum/action/cooldown/alien/brood_repair/Activate(atom/target)
-	var/mob/living/carbon/alien/brood/worker = owner
-	if(repairing || !can_repair(worker, target))
-		return FALSE
-	repairing = TRUE
-	var/ready = do_after(worker, repair_time, target = target, extra_checks = CALLBACK(src, PROC_REF(can_repair), worker, target))
-	repairing = FALSE
-	if(!ready || !can_repair(worker, target))
-		return FALSE
-	var/obj/structure/resin = target
-	resin.repair_damage(40)
-	worker.do_attack_animation(resin)
-	StartCooldown()
-	return TRUE
-
-/** A visible, temporary mark supports coordination without revealing prey through walls. */
-/datum/action/cooldown/alien/brood_mark
-	name = "Феромонная метка"
-	desc = "Отмечает живую добычу на 12 секунд и сообщает её область рою. Не раскрывает её через стены."
-	button_icon_state = "alien_whisper"
-	plasma_cost = 20
-	cooldown_time = 15 SECONDS
-	click_to_activate = TRUE
-
-/datum/action/cooldown/alien/brood_mark/Activate(atom/target)
-	if(!istype(owner, /mob/living/carbon/alien/brood/scout) || !isliving(target) || isalien(target) || !(target in view(6, owner)))
-		return FALSE
-	var/mob/living/prey = target
-	if(prey.stat == DEAD)
-		return FALSE
-	prey.apply_status_effect(/datum/status_effect/xeno_brood_mark)
-	var/mob/living/carbon/alien/scout = owner
-	scout.alien_talk("Отмечена добыча: [prey.name]. Область: [get_area(prey)].")
-	StartCooldown()
-	return TRUE
-
-/datum/status_effect/xeno_brood_mark
-	id = "xeno_brood_mark"
-	duration = 12 SECONDS
-	status_type = STATUS_EFFECT_REFRESH
-	alert_type = null
-	on_remove_on_mob_delete = TRUE
-
-/datum/status_effect/xeno_brood_mark/on_apply()
-	owner.add_filter("xeno_brood_mark", 2, outline_filter(size = 2, color = "#ef9655"))
-	owner.balloon_alert(owner, "феромонная метка!")
-	return TRUE
-
-/datum/status_effect/xeno_brood_mark/on_remove()
-	owner.remove_filter("xeno_brood_mark")
+/mob/living/carbon/alien/brood/baneling
+	name = "hive baneling"
+	desc = "Раздутый кислотой банелинг. После запуска подрыва десять секунд громко предупреждает о взрыве и продолжает двигаться."
+	icon = 'modular_bandastation/xeno_rework/icons/brood/baneling.dmi'
+	icon_state = "baneling"
+	maxHealth = 40
+	health = 40
+	melee_damage_lower = 1
+	melee_damage_upper = 1

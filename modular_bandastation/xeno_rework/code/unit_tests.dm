@@ -1,5 +1,10 @@
 #include "defines/evacuation.dm"
 #include "fortifications/unit_tests.dm"
+#include "feedback_unit_tests.dm"
+#include "territory_unit_tests.dm"
+#include "followup_unit_tests.dm"
+#include "hivemind/unit_tests.dm"
+#include "nov17_unit_tests.dm"
 
 /datum/unit_test/xeno_rework_melee/Run()
 	var/mob/living/carbon/alien/adult/banda/sentinel/xeno = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
@@ -28,7 +33,7 @@
 	TEST_ASSERT(!native_victim.is_holding(native_held), "Native aliens lost their normal disarm")
 
 /datum/unit_test/xeno_rework_spray_airlock/Run()
-	var/mob/living/carbon/alien/adult/banda/sentinel/xeno = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
+	var/mob/living/carbon/alien/adult/banda/spitter/xeno = allocate(/mob/living/carbon/alien/adult/banda/spitter)
 	var/datum/action/cooldown/alien/banda/acid_spray/spray = locate() in xeno.actions
 	var/turf/door_turf = get_step(xeno, NORTH)
 	var/turf/target = get_step(door_turf, NORTH)
@@ -139,30 +144,30 @@
 	TEST_ASSERT_EQUAL(xeno.getPlasma(), starting_plasma, "Interrupted construction charged plasma")
 
 /datum/unit_test/xeno_rework_evolution/Run()
-	var/mob/living/carbon/alien/adult/banda/spitter/spitter = allocate(/mob/living/carbon/alien/adult/banda/spitter)
 	var/mob/living/carbon/alien/adult/banda/sentinel/sentinel = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
-	TEST_ASSERT(spitter.can_evolve(), "An existing sentinel must not block another T2 evolution")
-	TEST_ASSERT(sentinel.can_evolve(), "Vacant T3 slot should permit evolution")
+	var/mob/living/carbon/alien/adult/banda/spitter/spitter = allocate(/mob/living/carbon/alien/adult/banda/spitter)
+	TEST_ASSERT(sentinel.can_evolve(), "An existing spitter must not block another T2 evolution")
+	TEST_ASSERT(spitter.can_evolve(), "Vacant T3 slot should permit evolution")
 	var/mob/living/carbon/alien/adult/banda/warrior/warrior = allocate(/mob/living/carbon/alien/adult/banda/warrior)
-	TEST_ASSERT(sentinel.can_evolve(), "Warrior must not occupy the independent Praetorian slot")
+	TEST_ASSERT(spitter.can_evolve(), "Warrior must not occupy the independent Praetorian slot")
 	var/mob/living/carbon/alien/adult/banda/praetorian/praetorian = allocate(/mob/living/carbon/alien/adult/banda/praetorian)
-	TEST_ASSERT(!sentinel.can_evolve(), "An existing Praetorian did not occupy its slot")
+	TEST_ASSERT(!spitter.can_evolve(), "An existing Praetorian did not occupy its slot")
 	qdel(praetorian)
 	qdel(warrior)
-	TEST_ASSERT(sentinel.can_evolve(), "Deleting a T3 must free its slot")
+	TEST_ASSERT(spitter.can_evolve(), "Deleting a T3 must free its slot")
 	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human/consistent)
-	var/obj/item/organ/stomach/alien_banda/old_stomach = spitter.get_organ_slot(ORGAN_SLOT_STOMACH)
+	var/obj/item/organ/stomach/alien_banda/old_stomach = sentinel.get_organ_slot(ORGAN_SLOT_STOMACH)
 	old_stomach.consume_thing(prey)
-	var/obj/item/organ/brain/old_brain = spitter.get_organ_slot(ORGAN_SLOT_BRAIN)
-	spitter.identifier = 321
-	spitter.name = "alien spitter (321)"
-	spitter.alien_evolve(sentinel)
-	var/obj/item/organ/stomach/alien_banda/new_stomach = sentinel.get_organ_slot(ORGAN_SLOT_STOMACH)
+	var/obj/item/organ/brain/old_brain = sentinel.get_organ_slot(ORGAN_SLOT_BRAIN)
+	sentinel.identifier = 321
+	sentinel.name = "alien sentinel (321)"
+	sentinel.alien_evolve(spitter)
+	var/obj/item/organ/stomach/alien_banda/new_stomach = spitter.get_organ_slot(ORGAN_SLOT_STOMACH)
 	TEST_ASSERT(prey in new_stomach.stomach_contents, "Evolution lost swallowed prey")
-	TEST_ASSERT_EQUAL(sentinel.get_organ_slot(ORGAN_SLOT_BRAIN), old_brain, "Evolution lost the original brain")
-	TEST_ASSERT(sentinel.has_evolved_recently, "Evolution did not apply its cooldown")
-	TEST_ASSERT_EQUAL(sentinel.identifier, 321, "Evolution lost the numerical identifier")
-	TEST_ASSERT_EQUAL(sentinel.name, "alien sentinel (321)", "Evolution retained the old caste's name")
+	TEST_ASSERT_EQUAL(spitter.get_organ_slot(ORGAN_SLOT_BRAIN), old_brain, "Evolution lost the original brain")
+	TEST_ASSERT(spitter.has_evolved_recently, "Evolution did not apply its cooldown")
+	TEST_ASSERT_EQUAL(spitter.identifier, 321, "Evolution lost the numerical identifier")
+	TEST_ASSERT_EQUAL(spitter.name, "alien spitter (321)", "Evolution retained the old caste's name")
 
 /datum/unit_test/xeno_rework_intoxication/Run()
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human/consistent)
@@ -208,11 +213,11 @@
 	TEST_ASSERT_NULL(target.has_status_effect(/datum/status_effect/xeno_overshield), "Depleted shield was not removed")
 
 /datum/unit_test/xeno_rework_ability_cost/Run()
-	var/mob/living/carbon/alien/adult/banda/spitter/spitter = allocate(/mob/living/carbon/alien/adult/banda/spitter)
+	var/mob/living/carbon/alien/adult/banda/sentinel/spitter = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
 	spitter.adjustPlasma(spitter.get_max_plasma())
 	var/starting_plasma = spitter.getPlasma()
 	var/datum/action/cooldown/alien/banda/toxic_claws/claws = locate() in spitter.actions
-	TEST_ASSERT_NOTNULL(claws, "Spitter was not granted toxic claws")
+	TEST_ASSERT_NOTNULL(claws, "Sentinel was not granted toxic claws")
 	TEST_ASSERT(claws.PreActivate(spitter), "Toxic claws failed to activate")
 	TEST_ASSERT_EQUAL(spitter.getPlasma(), starting_plasma - 100, "Toxic claws charged the wrong plasma cost")
 	TEST_ASSERT(claws.next_use_time >= world.time + 20 SECONDS, "Toxic claws did not start their cooldown")
@@ -314,8 +319,15 @@
 	TEST_ASSERT(evade.PreActivate(runner), "Evade failed to activate")
 	var/obj/projectile/bullet/bullet = allocate(/obj/projectile/bullet)
 	TEST_ASSERT_EQUAL(evade.on_projectile_hit(bullet), BULLET_ACT_FORCE_PIERCE, "First projectile was not evaded")
-	TEST_ASSERT_EQUAL(evade.on_projectile_hit(bullet), BULLET_ACT_FORCE_PIERCE, "A second projectile bypassed the same evade window")
-	sleep(0.7 SECONDS)
+	TEST_ASSERT_EQUAL(evade.on_projectile_hit(bullet), BULLET_ACT_HIT, "A second projectile was incorrectly protected by the same activation")
+	TEST_ASSERT(evade.IsAvailable(), "A successful dodge did not immediately reset cooldown")
+	TEST_ASSERT(evade.PreActivate(runner), "A success did not permit another precise dodge")
+	evade.window_expires = world.time
+	TEST_ASSERT_EQUAL(evade.on_projectile_hit(bullet), BULLET_ACT_HIT, "A late timer extended the dodge window")
+	TEST_ASSERT(!evade.IsAvailable(), "A missed dodge did not retain cooldown")
+	TEST_ASSERT_NOTNULL(runner.has_status_effect(/datum/status_effect/xeno_evade_miss), "A missed dodge did not punish the runner")
+	TEST_ASSERT(!evade.PreActivate(runner), "Spam bypassed a missed dodge cooldown")
+	evade.ResetCooldown()
 	TEST_ASSERT(evade.IsAvailable(), "A successful dodge did not reset the cooldown")
 
 /datum/unit_test/xeno_rework_stomach_weapons/Run()
@@ -354,7 +366,7 @@
 	TEST_ASSERT(screech.next_use_time >= world.time + 180 SECONDS, "Screech did not start its cooldown")
 
 /datum/unit_test/xeno_rework_sting/Run()
-	var/mob/living/carbon/alien/adult/banda/spitter/spitter = allocate(/mob/living/carbon/alien/adult/banda/spitter)
+	var/mob/living/carbon/alien/adult/banda/sentinel/spitter = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human/consistent)
 	spitter.adjust_brute_loss(50)
 	victim.apply_status_effect(/datum/status_effect/stacking/xeno_intoxication, 30)
@@ -589,7 +601,7 @@
 
 /datum/unit_test/xeno_rework_final_evolution/Run()
 	var/mob/living/carbon/alien/adult/banda/warrior/warrior = allocate(/mob/living/carbon/alien/adult/banda/warrior)
-	var/mob/living/carbon/alien/adult/banda/sentinel/sentinel = allocate(/mob/living/carbon/alien/adult/banda/sentinel)
+	var/mob/living/carbon/alien/adult/banda/spitter/sentinel = allocate(/mob/living/carbon/alien/adult/banda/spitter)
 	var/event_active = GLOB.xeno_evacuation.active
 	var/event_resolved = GLOB.xeno_evacuation.resolved
 	GLOB.xeno_evacuation.active = FALSE
@@ -625,18 +637,20 @@
 	TEST_ASSERT(!create.Activate(), "Boiler exceeded its seven-glob capacity")
 	TEST_ASSERT_EQUAL(boiler.get_max_plasma(), 1000, "Boiler does not have its artillery reservoir")
 	var/obj/effect/particle_effect/fluid/smoke/xeno_boiler/acid/cloud = allocate(/obj/effect/particle_effect/fluid/smoke/xeno_boiler/acid)
-	var/old_burn = victim.get_fire_loss()
-	cloud.smoke_mob(victim, 0.5)
-	cloud.smoke_mob(victim, 1.5)
+	// Stomp can saturate a random limb; smoke hitting it would legitimately lose damage.
+	var/mob/living/carbon/human/cloud_victim = allocate(/mob/living/carbon/human/consistent)
+	var/old_burn = cloud_victim.get_fire_loss()
+	cloud.smoke_mob(cloud_victim, 0.5)
+	cloud.smoke_mob(cloud_victim, 1.5)
 	cloud.smoke_mob(boiler, 2)
-	TEST_ASSERT_EQUAL(victim.get_fire_loss() - old_burn, 12, "Boiler cloud damage is not frame independent")
+	TEST_ASSERT_EQUAL(cloud_victim.get_fire_loss() - old_burn, 12, "Boiler cloud damage is not frame independent")
 	TEST_ASSERT_EQUAL(boiler.get_fire_loss(), 0, "Boiler cloud damaged an allied xeno")
 
 /datum/unit_test/xeno_rework_hunter_tools/Run()
 	var/mob/living/carbon/alien/adult/banda/final_caste/hunter/hunter = allocate(/mob/living/carbon/alien/adult/banda/final_caste/hunter)
 	var/old_alpha = hunter.alpha
 	hunter.apply_status_effect(/datum/status_effect/xeno_hunter_stealth)
-	TEST_ASSERT(hunter.alpha <= 128, "Hunter stealth did not camouflage its owner")
+	TEST_ASSERT(hunter.alpha == /obj/item/mod/module/stealth/ninja::stealth_alpha, "Hunter stealth did not camouflage its owner")
 	hunter.apply_damage(5, BRUTE)
 	TEST_ASSERT_NULL(hunter.has_status_effect(/datum/status_effect/xeno_hunter_stealth), "Damage did not break Hunter stealth")
 	TEST_ASSERT_EQUAL(hunter.alpha, old_alpha, "Hunter stealth did not restore the original alpha")
@@ -648,7 +662,7 @@
 	mirage.Activate(hunter)
 	TEST_ASSERT_EQUAL(length(mirage.decoys), 3, "Mirage did not create three decoys")
 	var/datum/weakref/reference = mirage.decoys[1]
-	var/obj/effect/temp_visual/decoy/illusion = reference.resolve()
+	var/mob/living/basic/illusion/xeno_mirage/illusion = reference.resolve()
 	TEST_ASSERT_NOTNULL(illusion, "Mirage immediately lost its decoy")
 	TEST_ASSERT_EQUAL(illusion.mouse_opacity, MOUSE_OPACITY_ICON, "Mirage cannot be clicked for swapping")
 	var/turf/destination = illusion.loc

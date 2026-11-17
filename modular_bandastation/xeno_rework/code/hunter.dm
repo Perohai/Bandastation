@@ -3,9 +3,19 @@
 	name = "alien hunter"
 	desc = "Охотник роя: маскируется, выслеживает отмеченную жертву и нападает из засады."
 	caste = "hunter"
+	evolution_tier = 2
 	inhand_caste = "runner"
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_adapted.dmi'
 	icon_state = "alienhunter"
+	base_pixel_x = 0
+	base_pixel_y = 0
+	pixel_x = 0
+	pixel_y = 0
+	sprite_scale = 1
+	sprite_pixel_y_offset = 0
+	maptext_width = 32
+	maptext_height = 32
+	hud_sprite_height = 30
 	health = 310
 	maxHealth = 310
 	melee_damage_lower = 25
@@ -59,20 +69,52 @@
 /** Toggle camouflage; plasma upkeep follows movement rather than polling the map. */
 /datum/action/cooldown/alien/banda/hunter_stealth
 	name = "Маскировка — Stealth"
-	desc = "В движении полупрозрачен, стоя почти невидим. Движение расходует плазму. После двух секунд маскировки удар парализует на секунду. Урон раскрывает охотника."
+	desc = "Вход в маскировку занимает 3 секунды: движение, урон или потеря сознания прерывают подготовку. Прозрачность как у ниндзя; движение расходует плазму. После двух секунд маскировки удар парализует на секунду. Урон раскрывает охотника."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "hunter_invisibility"
 	plasma_cost = 10
 	cooldown_time = 5 SECONDS
+	/// Serializes entry channels, including repeated direct activations.
+	var/preparing = FALSE
+	/// Camouflage is earned by an uninterrupted exposed preparation.
+	var/entry_time = 3 SECONDS
+	/// Damage interrupts even when healed before the next do_after check.
+	var/entry_interrupted = FALSE
+
+/datum/action/cooldown/alien/banda/hunter_stealth/proc/can_enter(mob/living/carbon/alien/adult/banda/final_caste/hunter/hunter)
+	return !QDELETED(src) && !QDELETED(hunter) && owner == hunter && !entry_interrupted && !hunter.has_status_effect(/datum/status_effect/xeno_hunter_stealth) && IsAvailable() && isturf(hunter.loc)
+
+/datum/action/cooldown/alien/banda/hunter_stealth/proc/on_entry_damage(datum/source, damage)
+	SIGNAL_HANDLER
+	if(damage > 0)
+		entry_interrupted = TRUE
 
 /datum/action/cooldown/alien/banda/hunter_stealth/Activate()
-	var/mob/living/hunter = owner
+	var/mob/living/carbon/alien/adult/banda/final_caste/hunter/hunter = owner
+	if(preparing || !istype(hunter) || !IsAvailable())
+		return FALSE
 	if(hunter.has_status_effect(/datum/status_effect/xeno_hunter_stealth))
 		hunter.remove_status_effect(/datum/status_effect/xeno_hunter_stealth)
 	else
+		preparing = TRUE
+		entry_interrupted = FALSE
+		RegisterSignal(hunter, COMSIG_MOB_AFTER_APPLY_DAMAGE, PROC_REF(on_entry_damage))
+		hunter.visible_message(span_warning("[hunter] замирает, сливаясь с окружением..."))
+		var/ready = do_after(hunter, entry_time, target = hunter, extra_checks = CALLBACK(src, PROC_REF(can_enter), hunter))
+		UnregisterSignal(hunter, COMSIG_MOB_AFTER_APPLY_DAMAGE)
+		if(QDELETED(src))
+			return FALSE
+		preparing = FALSE
+		if(!ready || !can_enter(hunter))
+			return FALSE
 		hunter.apply_status_effect(/datum/status_effect/xeno_hunter_stealth)
 	StartCooldown()
 	return TRUE
+
+/datum/action/cooldown/alien/banda/hunter_stealth/Remove(mob/living/remove_from)
+	entry_interrupted = TRUE
+	UnregisterSignal(remove_from, COMSIG_MOB_AFTER_APPLY_DAMAGE)
+	return ..()
 
 /** Camouflage stores its original alpha and releases all signals on teardown. */
 /datum/status_effect/xeno_hunter_stealth
@@ -83,14 +125,11 @@
 	var/original_alpha
 	/// Preparation timestamp for the ambush bonus.
 	var/entered_stealth
-	/// Last movement timestamp for stationary camouflage.
-	var/last_movement
 
 /datum/status_effect/xeno_hunter_stealth/on_apply()
 	original_alpha = owner.alpha
 	entered_stealth = world.time
-	last_movement = world.time
-	owner.alpha = min(original_alpha, 128)
+	owner.alpha = min(original_alpha, /obj/item/mod/module/stealth/ninja::stealth_alpha)
 	RegisterSignal(owner, COMSIG_MOVABLE_MOVED, PROC_REF(on_move))
 	RegisterSignal(owner, COMSIG_MOB_AFTER_APPLY_DAMAGE, PROC_REF(on_damage))
 	return TRUE
@@ -98,10 +137,9 @@
 /** Consume plasma and expose a moving silhouette. */
 /datum/status_effect/xeno_hunter_stealth/proc/on_move()
 	SIGNAL_HANDLER
-	last_movement = world.time
 	var/mob/living/carbon/alien/xeno = owner
 	xeno.adjustPlasma(-5)
-	owner.alpha = min(original_alpha, 128)
+	owner.alpha = min(original_alpha, /obj/item/mod/module/stealth/ninja::stealth_alpha)
 	if(xeno.getPlasma() <= 0)
 		qdel(src)
 
@@ -115,8 +153,6 @@
 	if(owner.incapacitated || owner.on_fire)
 		qdel(src)
 		return
-	if(world.time - last_movement >= 2 SECONDS)
-		owner.alpha = min(original_alpha, 25)
 
 /datum/status_effect/xeno_hunter_stealth/on_remove()
 	UnregisterSignal(owner, list(COMSIG_MOVABLE_MOVED, COMSIG_MOB_AFTER_APPLY_DAMAGE))
@@ -128,7 +164,7 @@
 	name = "Прыжок — Pounce"
 	desc = "Прыжок на семь клеток. Попадание опрокидывает противника на две секунды и снимает маскировку."
 	button_icon_state = "pounce"
-	plasma_cost = 20
+	plasma_cost = 75
 	cooldown_time = 10 SECONDS
 	click_to_activate = TRUE
 
@@ -184,18 +220,19 @@
 /** Silence affects a five-by-five visible area and lasts longer on the marked enemy. */
 /datum/action/cooldown/alien/banda/hunter_silence
 	name = "Безмолвие — Silence"
-	desc = "Видимые враги в области 5×5 теряют речь и слух на 10 секунд; отмеченная жертва — на 15 секунд."
+	desc = "Видимые враги в области 5×5 теряют речь и слух на 5 секунд; отмеченная жертва — на 10 секунд. Перезарядка 100 секунд."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "silence"
 	plasma_cost = 50
-	cooldown_time = 30 SECONDS
+	cooldown_time = 100 SECONDS
 
 /datum/action/cooldown/alien/banda/hunter_silence/Activate()
 	var/mob/living/carbon/alien/adult/banda/final_caste/hunter/hunter = owner
+	playsound(hunter, 'modular_bandastation/xeno_rework/sound/hunter_silence.ogg', 85, TRUE)
 	for(var/mob/living/carbon/victim in view(2, hunter))
 		if(isalien(victim))
 			continue
-		var/duration = victim == hunter.marked_prey?.resolve() ? 15 SECONDS : 10 SECONDS
+		var/duration = victim == hunter.marked_prey?.resolve() ? 10 SECONDS : 5 SECONDS
 		victim.adjust_silence(duration)
 		var/obj/item/organ/ears/ears = victim.get_organ_slot(ORGAN_SLOT_EARS)
 		ears?.adjust_temporary_deafness(duration)
@@ -205,7 +242,7 @@
 /** Three decoys with a validated swap to one of their visible positions. */
 /datum/action/cooldown/alien/banda/hunter_mirage
 	name = "Мираж — Mirage"
-	desc = "Создаёт три иллюзии на десять секунд. Пока они существуют, повторный клик по своей иллюзии меняет вас с ней местами в пределах видимости."
+	desc = "Создаёт три иллюзии на десять секунд: они преследуют ближайших противников и наносят 2 урона за удар. Пока они существуют, повторный клик по своей иллюзии меняет вас с ней местами в пределах видимости."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "mirror_image"
 	plasma_cost = 50
@@ -218,14 +255,14 @@
 	for(var/datum/weakref/reference as anything in decoys)
 		if(reference.resolve())
 			var/mob/living/carbon/alien/adult/banda/hunter = owner
-			return hunter && !hunter.incapacitated && !hunter.unable_to_use_abilities && isturf(hunter.loc)
+			return hunter && !hunter.incapacitated && !hunter.resting && !HAS_TRAIT(hunter, TRAIT_IMMOBILIZED) && !hunter.unable_to_use_abilities && isturf(hunter.loc)
 	return ..()
 
 /datum/action/cooldown/alien/banda/hunter_mirage/Activate(atom/target)
 	if(!isturf(owner.loc))
 		return FALSE
 	for(var/datum/weakref/reference as anything in decoys)
-		var/obj/effect/temp_visual/decoy/fading/illusion = reference.resolve()
+		var/mob/living/basic/illusion/xeno_mirage/illusion = reference.resolve()
 		if(!illusion)
 			continue
 		var/turf/destination = get_turf(illusion)
@@ -248,7 +285,7 @@
 		return FALSE
 	for(var/index in 1 to min(3, length(candidates)))
 		var/turf/location = pick_n_take(candidates)
-		var/obj/effect/temp_visual/decoy/fading/xeno_mirage/illusion = new(location, owner)
+		var/mob/living/basic/illusion/xeno_mirage/illusion = new(location, owner)
 		decoys += WEAKREF(illusion)
 	StartCooldown()
 	return TRUE
@@ -256,7 +293,7 @@
 /** Delete any remaining visuals when the action leaves its owner. */
 /datum/action/cooldown/alien/banda/hunter_mirage/proc/clear_decoys()
 	for(var/datum/weakref/reference as anything in decoys)
-		var/obj/effect/temp_visual/decoy/illusion = reference.resolve()
+		var/mob/living/basic/illusion/illusion = reference.resolve()
 		if(illusion)
 			qdel(illusion)
 	decoys.Cut()
@@ -265,11 +302,20 @@
 	clear_decoys()
 	return ..()
 
-/** Clickable visual without a combat AI or real damage. */
-/obj/effect/temp_visual/decoy/fading/xeno_mirage
-	duration = 10 SECONDS
-	mouse_opacity = MOUSE_OPACITY_ICON
+/** Native illusion AI acquires nearby enemies; fixed small damage cannot inherit Hunter claws. */
+/mob/living/basic/illusion/xeno_mirage
+	melee_damage_lower = 2
+	melee_damage_upper = 2
+	maxHealth = 15
+	health = 15
+	density = FALSE
 
-/obj/effect/temp_visual/decoy/fading/xeno_mirage/Initialize(mapload, atom/mimiced_atom, start_alpha)
+/mob/living/basic/illusion/xeno_mirage/Initialize(mapload, mob/living/original)
 	. = ..()
+	if(!original)
+		return INITIALIZE_HINT_QDEL
+	full_setup(original, life = 10 SECONDS, hp = 15, damage = 2, replicate = 0)
 	mouse_opacity = MOUSE_OPACITY_ICON
+	pixel_x = original.pixel_x
+	pixel_y = original.pixel_y
+	transform = original.transform

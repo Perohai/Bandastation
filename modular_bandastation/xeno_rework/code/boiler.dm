@@ -6,6 +6,7 @@
 	inhand_caste = "sentinel"
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_adapted.dmi'
 	icon_state = "alienboiler"
+	hud_sprite_height = 42
 	health = 350
 	maxHealth = 350
 	melee_damage_lower = 20
@@ -19,7 +20,7 @@
 
 /mob/living/carbon/alien/adult/banda/final_caste/boiler/Initialize(mapload)
 	default_organ_types_by_slot = default_organ_types_by_slot.Copy()
-	default_organ_types_by_slot[ORGAN_SLOT_XENO_PLASMAVESSEL] = /obj/item/organ/alien/plasmavessel/large/boiler
+	default_organ_types_by_slot[ORGAN_SLOT_XENO_PLASMAVESSEL] = /obj/item/organ/alien/plasmavessel/banda/large/boiler
 	. = ..()
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/boiler_toggle)
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/boiler_create)
@@ -33,7 +34,7 @@
 	add_movespeed_modifier(/datum/movespeed_modifier/alien_heavy)
 
 /** Boiler's artillery reservoir, sized for seven stockpiled globs and active abilities. */
-/obj/item/organ/alien/plasmavessel/large/boiler
+/obj/item/organ/alien/plasmavessel/banda/large/boiler
 	max_plasma = 1000
 	plasma_rate = 15
 
@@ -232,8 +233,10 @@
 
 /** Boiler acid spray with the caste-specific cooldown. */
 /datum/action/cooldown/alien/banda/acid_spray/boiler
+	desc = "Покрывает кислотой полосу шириной одну и длиной до четырёх клеток в направлении курсора."
 	cooldown_time = 9 SECONDS
 	plasma_cost = 100
+	spray_length = 4
 
 /** Resin well supporting allies; placed on weeds and limited to one well per turf. */
 /datum/action/cooldown/alien/banda/boiler_well

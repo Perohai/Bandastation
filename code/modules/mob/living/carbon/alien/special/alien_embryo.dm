@@ -108,7 +108,7 @@
 	if(QDELETED(owner))
 		return
 	// BANDASTATION ADDITION START - xeno_rework preserves prey bodies after birth.
-	if(ghost && banda_birth(ghost))
+	if(banda_birth(ghost))
 		return
 	// BANDASTATION ADDITION END
 

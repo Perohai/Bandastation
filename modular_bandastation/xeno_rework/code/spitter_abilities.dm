@@ -134,7 +134,7 @@
 	/// Remaining empowered claw hits before expiration.
 	var/hits_remaining = 3
 
-/mob/living/carbon/alien/adult/banda/spitter/resolve_unarmed_attack(atom/attack_target, list/modifiers)
+/mob/living/carbon/alien/adult/banda/sentinel/resolve_unarmed_attack(atom/attack_target, list/modifiers)
 	if(!isliving(attack_target))
 		return ..()
 	var/mob/living/victim = attack_target

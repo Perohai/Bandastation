@@ -1,8 +1,11 @@
 /// Read-only roster of the current Banda xeno hive.
 /datum/xeno_rework_hive_status
 
+/datum/xeno_rework_hive_status/proc/can_view(mob/user)
+	return !QDELETED(user) && user.stat != DEAD && (istype(user, /mob/living/carbon/alien/adult/banda) || istype(user, /mob/living/carbon/alien/hivemind))
+
 /datum/xeno_rework_hive_status/ui_interact(mob/user, datum/tgui/ui)
-	if(!istype(user, /mob/living/carbon/alien/adult/banda))
+	if(!can_view(user))
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -13,26 +16,31 @@
 	return GLOB.always_state
 
 /datum/xeno_rework_hive_status/ui_status(mob/user, datum/ui_state/state)
-	if(!istype(user, /mob/living/carbon/alien/adult/banda) || user.stat == DEAD)
+	if(!can_view(user))
 		return UI_CLOSE
 	return ..()
 
 /datum/xeno_rework_hive_status/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
-	if(. || !istype(ui.user, /mob/living/carbon/alien/adult/banda))
+	if(. || !can_view(ui.user))
 		return
 	if(action == "refresh")
 		return TRUE
 
 /datum/xeno_rework_hive_status/ui_data(mob/user)
 	var/list/members = list()
-	for(var/mob/living/carbon/alien/adult/banda/xeno in GLOB.alive_mob_list)
+	for(var/mob/living/carbon/alien/xeno in GLOB.alive_mob_list)
+		if(!istype(xeno, /mob/living/carbon/alien/adult/banda) && !istype(xeno, /mob/living/carbon/alien/hivemind))
+			continue
 		var/status = "В строю"
 		if(!xeno.client)
 			status = "Нет связи"
 		else if(IS_UNCONSCIOUS(xeno))
 			status = "Без сознания"
-		var/caste_name = xeno.caste
+		var/caste_name = "Hivemind · T0"
+		if(istype(xeno, /mob/living/carbon/alien/adult/banda))
+			var/mob/living/carbon/alien/adult/banda/adult = xeno
+			caste_name = adult.caste
 		members += list(list(
 			"name" = xeno.name,
 			"caste" = caste_name,
@@ -40,10 +48,3 @@
 			"health" = xeno.maxHealth > 0 ? clamp(round(xeno.health / xeno.maxHealth * 100), 0, 100) : 0,
 		))
 	return list("members" = members, "count" = length(members))
-
-/mob/living/carbon/alien/adult/banda/verb/hive_status()
-	set name = "Состав улья"
-	set category = "Alien"
-	if(!hive_status_panel)
-		hive_status_panel = new
-	hive_status_panel.ui_interact(src)

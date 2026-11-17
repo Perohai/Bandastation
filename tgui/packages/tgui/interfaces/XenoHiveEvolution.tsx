@@ -28,9 +28,18 @@ type Upgrade = {
 
 type Data = {
   biomass: number;
+  territoryTiles: number;
+  territoryPending: number;
+  territoryBatch: number;
+  territoryEarned: number;
+  crew: number;
+  broodRate: number;
+  canDebug: boolean;
+  debugUsed: boolean;
   broodPoints: number;
   broodCost: number;
   broodPlaces: number;
+  broodBlocked: boolean;
   core: boolean;
   busy: boolean;
   canPlace: boolean;
@@ -43,10 +52,6 @@ const branches = [
   { name: 'Количество', icon: 'egg', color: '#e7b674' },
   { name: 'Функциональность', icon: 'sitemap', color: '#79c9bb' },
 ];
-const cardWidth = 168;
-const cardHeight = 132;
-const nodeX = (node: Upgrade) => 120 + node.x * 195;
-const nodeY = (node: Upgrade) => 24 + node.y * 164;
 const complete = (node: Upgrade) =>
   node.maxLevel !== null && node.level >= node.maxLevel;
 
@@ -58,9 +63,28 @@ export function XenoHiveEvolution() {
   const nodes = data.nodes.filter((node) => node.branch === branch.name);
   const selected = nodes.find((node) => node.id === selectedId) || nodes[0];
   const byId = Object.fromEntries(data.nodes.map((node) => [node.id, node]));
-  const width = 315 + Math.max(0, ...nodes.map((node) => node.x)) * 195;
-  const height = 170 + Math.max(0, ...nodes.map((node) => node.y)) * 164;
-  const rootY = height / 2;
+  const centered = branch.name === 'Количество';
+  const vertical = branch.name === 'Функциональность';
+  const cardWidth = vertical ? 144 : 168;
+  const cardHeight = vertical ? 108 : 132;
+  const nodeX = (node: Upgrade) =>
+    vertical
+      ? 24 + node.x * 180
+      : centered
+        ? 32 + node.x * 245
+        : 120 + node.x * 195;
+  const nodeY = (node: Upgrade) =>
+    vertical ? 104 + node.y * 140 : 24 + node.y * 164;
+  const width = vertical
+    ? 732
+    : centered
+      ? 722
+      : 315 + Math.max(0, ...nodes.map((node) => node.x)) * 195;
+  const height = vertical
+    ? 800
+    : 170 + Math.max(0, ...nodes.map((node) => node.y)) * 164;
+  const rootY = vertical ? 28 : centered ? 254 : height / 2;
+  const rootX = vertical || centered ? width / 2 : 43;
 
   return (
     <Window width={1220} height={800} title="Эволюция улья" theme="abductor">
@@ -72,9 +96,27 @@ export function XenoHiveEvolution() {
                 <Icon name="leaf" /> {data.biomass} биомассы
               </Box>
               <Box color="label" mt={0.5}>
-                Выводок: {data.broodPoints} / {data.broodCost} · Мест в кладке:{' '}
+                Выводок: {data.broodPoints} / {data.broodCost} · Мест в яйцах:{' '}
                 {data.broodPlaces}
               </Box>
+              <Box color="label" mt={0.5}>
+                Рост: {data.broodRate} очков/мин · Живой экипаж: {data.crew}
+              </Box>
+              <Box color="label" mt={0.5}>
+                Территория: {data.territoryTiles} клеток · Заработано:{' '}
+                {data.territoryEarned} · Прогресс выплаты:{' '}
+                {data.territoryPending}/{data.territoryBatch}
+              </Box>
+              {data.canDebug && (
+                <Button.Checkbox
+                  checked={data.debugUsed}
+                  disabled={data.debugUsed}
+                  onClick={() => act('debug')}
+                  mt={0.5}
+                >
+                  Debug: 99999 биомассы
+                </Button.Checkbox>
+              )}
             </Stack.Item>
             <Stack.Item>
               <Box mb={0.5}>
@@ -98,6 +140,17 @@ export function XenoHiveEvolution() {
             </Stack.Item>
           </Stack>
         </Section>
+        {data.core && data.crew === 0 && (
+          <NoticeBox>
+            Нет живого экипажа, учитываемого экономикой: рост выводка
+            остановлен. Призраки и ксеноморфы не увеличивают этот доход.
+          </NoticeBox>
+        )}
+        {data.broodBlocked && (
+          <NoticeBox>
+            Вокруг ядра нет места для яиц. Накопленные очки сохраняются.
+          </NoticeBox>
+        )}
         <Tabs fluid>
           {branches.map((entry, index) => (
             <Tabs.Tab
@@ -144,18 +197,36 @@ export function XenoHiveEvolution() {
                         .filter(Boolean);
                       const sources = parents.length
                         ? parents.map((parent) => ({
-                            x: nodeX(parent) + cardWidth,
-                            y: nodeY(parent) + cardHeight / 2,
+                            x:
+                              nodeX(parent) +
+                              (vertical ? cardWidth / 2 : cardWidth),
+                            y:
+                              nodeY(parent) +
+                              (vertical ? cardHeight : cardHeight / 2),
                             owned: parent.level > 0,
                           }))
-                        : [{ x: 72, y: rootY, owned: true }];
+                        : [
+                            {
+                              x: vertical || centered ? rootX : 72,
+                              y: vertical ? rootY + 32 : rootY,
+                              owned: true,
+                            },
+                          ];
                       return sources.map((source, index) => (
                         <path
                           key={`${node.id}-${index}`}
                           d={
-                            !parents.length && node.x > 0
-                              ? `M ${source.x} ${source.y} L 92 ${source.y} L 92 ${height - 8} L ${nodeX(node) - 16} ${height - 8} L ${nodeX(node) - 16} ${nodeY(node) + cardHeight / 2} L ${nodeX(node)} ${nodeY(node) + cardHeight / 2}`
-                              : `M ${source.x} ${source.y} C ${source.x + 24} ${source.y}, ${nodeX(node) - 24} ${nodeY(node) + cardHeight / 2}, ${nodeX(node)} ${nodeY(node) + cardHeight / 2}`
+                            vertical
+                              ? parents.length
+                                ? nodeY(node) - source.y > 60
+                                  ? `M ${source.x} ${source.y} V ${source.y + 16} H ${nodeX(node) + cardWidth / 2} V ${nodeY(node)}`
+                                  : `M ${source.x} ${source.y} C ${source.x} ${source.y + 26}, ${nodeX(node) + cardWidth / 2} ${nodeY(node) - 26}, ${nodeX(node) + cardWidth / 2} ${nodeY(node)}`
+                                : `M ${source.x} ${source.y} L ${source.x} 80 L ${nodeX(node) + cardWidth / 2} 80 L ${nodeX(node) + cardWidth / 2} ${nodeY(node)}`
+                              : centered
+                                ? `M ${source.x} ${source.y} L ${nodeX(node) + cardWidth / 2} ${nodeY(node) + (nodeY(node) > rootY ? 0 : cardHeight)}`
+                                : !parents.length && node.x > 0
+                                  ? `M ${source.x} ${source.y} L 92 ${source.y} L 92 ${height - 8} L ${nodeX(node) - 16} ${height - 8} L ${nodeX(node) - 16} ${nodeY(node) + cardHeight / 2} L ${nodeX(node)} ${nodeY(node) + cardHeight / 2}`
+                                  : `M ${source.x} ${source.y} C ${source.x + 24} ${source.y}, ${nodeX(node) - 24} ${nodeY(node) + cardHeight / 2}, ${nodeX(node)} ${nodeY(node) + cardHeight / 2}`
                           }
                           stroke={source.owned ? branch.color : '#68768b'}
                           strokeWidth={3}
@@ -168,7 +239,7 @@ export function XenoHiveEvolution() {
                   <Box
                     style={{
                       position: 'absolute',
-                      left: 14,
+                      left: rootX - 29,
                       top: rootY - 28,
                       width: 58,
                       textAlign: 'center',
@@ -209,7 +280,11 @@ export function XenoHiveEvolution() {
                             color={complete(node) ? '#79bc8e' : branch.color}
                           />
                         </Box>
-                        <Box bold lineHeight={1.2}>
+                        <Box
+                          bold
+                          lineHeight={1.2}
+                          fontSize={vertical ? 0.9 : 1}
+                        >
                           {node.name}
                         </Box>
                         <Box

@@ -22,7 +22,7 @@
 	var/mob/living/carbon/alien/adult/banda/queen/queen = allocate(/mob/living/carbon/alien/adult/banda/queen)
 	hive.biomass = 10000
 	hive.purchase_time = 0
-	TEST_ASSERT(hive.can_buy(queen, "hunter"), "Hunter was gated behind another purchase")
+	TEST_ASSERT_NULL(hive.upgrades["hunter"], "Ordinary Hunter still requires a hive purchase")
 	TEST_ASSERT(!hive.can_buy(queen, "claws") && !hive.can_buy(queen, "crusher"), "A tree prerequisite was bypassed")
 	var/list/positions = list()
 	var/list/icons = list()
@@ -36,7 +36,7 @@
 		positions += position
 		for(var/requirement in upgrade.requires)
 			var/datum/xeno_hive_upgrade/parent = hive.upgrades[requirement]
-			TEST_ASSERT(parent && parent.branch == upgrade.branch && parent.tree_x < upgrade.tree_x, "The tree has a missing, cyclic or backward dependency")
+			TEST_ASSERT(parent && parent.branch == upgrade.branch && (upgrade.branch == "Функциональность" ? parent.tree_y < upgrade.tree_y : parent.tree_x < upgrade.tree_x), "The tree has a missing, cyclic or backward dependency")
 	for(var/id in list("carapace", "claws", "tier3", "tier4"))
 		TEST_ASSERT(hive.buy(queen, id), "A valid tier adaptation failed")
 	TEST_ASSERT(hive.can_buy(queen, "crusher") && hive.can_buy(queen, "boiler"), "T3 adaptation did not open its specializations")
@@ -56,28 +56,29 @@
 		TEST_ASSERT_EQUAL(member.maxHealth, initial(member.maxHealth) + expected_health, "Reapplying tier health stacked it")
 
 /datum/unit_test/xeno_rework_hive/brood_support/Run()
-	var/mob/living/carbon/alien/brood/worker = allocate(/mob/living/carbon/alien/brood)
-	var/datum/action/cooldown/alien/brood_repair/repair = locate() in worker.actions
-	TEST_ASSERT_NOTNULL(repair, "Microdrone has no repair ability")
-	var/obj/structure/alien/resin/wall/resin = allocate(/obj/structure/alien/resin/wall)
-	resin.update_integrity(100)
-	repair.repair_time = 0
-	var/old_plasma = worker.getPlasma()
-	TEST_ASSERT(repair.PreActivate(resin), "The worker could not repair damaged resin")
-	TEST_ASSERT_EQUAL(resin.get_integrity(), 140, "Repair restored the wrong integrity")
-	TEST_ASSERT_EQUAL(worker.getPlasma(), old_plasma - 20, "Repair did not spend plasma exactly once")
-	TEST_ASSERT(!repair.can_repair(worker, allocate(/obj/structure/xeno_hive_egg)), "Microdrone may repair destructible eggs")
-	var/mob/living/carbon/alien/brood/scout/scout = allocate(/mob/living/carbon/alien/brood/scout)
-	var/datum/action/cooldown/alien/brood_mark/mark = locate() in scout.actions
-	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human/consistent)
-	TEST_ASSERT(mark.PreActivate(prey), "The scout could not mark visible prey")
-	var/datum/status_effect/xeno_brood_mark/effect = prey.has_status_effect(/datum/status_effect/xeno_brood_mark)
-	TEST_ASSERT_NOTNULL(effect, "Scout mark created no timed status")
-	TEST_ASSERT_NOTNULL(prey.get_filter("xeno_brood_mark"), "Scout mark has no visible indication")
-	qdel(effect)
-	TEST_ASSERT_NULL(prey.get_filter("xeno_brood_mark"), "Expired mark left its outline")
-	TEST_ASSERT(!mark.Activate(worker), "The scout can mark a hive member as prey")
-	TEST_ASSERT_EQUAL(hive.biomass, 0, "Brood support generated biomass")
+	var/mob/living/carbon/alien/adult/banda/queen/queen = allocate(/mob/living/carbon/alien/adult/banda/queen)
+	var/mob/living/carbon/alien/brood/beetle = allocate(/mob/living/carbon/alien/brood)
+	var/mob/living/carbon/alien/brood/mantis/mantis = allocate(/mob/living/carbon/alien/brood/mantis)
+	var/mob/living/carbon/alien/brood/scorpion/scorpion = allocate(/mob/living/carbon/alien/brood/scorpion)
+	TEST_ASSERT_NULL(locate(/datum/action/cooldown/alien/brood_charge) in beetle.actions, "Basic beetle starts with its full ability")
+	TEST_ASSERT_NULL(locate(/datum/action/cooldown/alien/brood_ravage) in mantis.actions, "Basic mantis starts with its full ability")
+	TEST_ASSERT_NOTNULL(locate(/datum/action/cooldown/alien/brood_spit) in scorpion.actions, "Basic scorpion has no weak spit")
+	hive.purchase_time = 0
+	hive.biomass = 5000
+	for(var/id in list("construction", "brood_vigor", "brood_mantis", "brood_scorpion", "beetle_charge", "mantis_ravage", "scorpion_spit", "brood_baneling"))
+		TEST_ASSERT(hive.buy(queen, id), "Minion tree purchase [id] failed")
+	TEST_ASSERT_NOTNULL(locate(/datum/action/cooldown/alien/brood_charge) in beetle.actions, "Existing beetle missed its unlocked charge")
+	TEST_ASSERT_NOTNULL(locate(/datum/action/cooldown/alien/brood_ravage) in mantis.actions, "Existing mantis missed its unlocked ravage")
+	TEST_ASSERT_NOTNULL(locate(/datum/action/cooldown/alien/brood_spit) in scorpion.actions, "Existing scorpion missed its unlocked spit")
+	var/mob/living/carbon/alien/brood/baneling/baneling = allocate(/mob/living/carbon/alien/brood/baneling)
+	TEST_ASSERT_NOTNULL(locate(/datum/action/cooldown/alien/brood_detonate) in baneling.actions, "Future baneling missed its detonation")
+	TEST_ASSERT(hive.brood_type_available(baneling.type), "Unlocked baneling is unavailable")
+	hive.next_baneling_at = world.time + hive.baneling_interval
+	TEST_ASSERT(!hive.brood_type_available(baneling.type), "A second observer can bypass the shared cooldown")
+	TEST_ASSERT(!("Банелинг" in hive.brood_options()), "Cooling-down baneling remains in the choice list")
+	hive.next_baneling_at = world.time
+	TEST_ASSERT(hive.brood_type_available(baneling.type), "Baneling did not unlock at the cooldown boundary")
+	TEST_ASSERT(!hive.brood_type_available(/mob/living/carbon/alien/adult/banda/queen), "Forged minion type was accepted")
 
 /datum/unit_test/xeno_rework_hive/body_rewards/Run()
 	var/mob/living/carbon/human/captured = allocate(/mob/living/carbon/human/consistent)
@@ -176,18 +177,18 @@
 	hive.advance_brood(60, 50)
 	TEST_ASSERT_EQUAL(hive.brood_points, 50, "Passive income did not scale with population and seconds")
 	hive.advance_brood(60, 50)
-	TEST_ASSERT_EQUAL(core.clutch.spawner.uses, 1, "Enough points did not produce one persistent role")
+	TEST_ASSERT_EQUAL(core.available_brood(), 1, "Enough points did not produce one persistent role")
 	TEST_ASSERT_EQUAL(hive.biomass, 0, "Passive brood generated biomass")
-	var/obj/structure/xeno_hive_egg/clutch = core.clutch
+	var/obj/structure/xeno_hive_egg/clutch = core.brood_eggs[1]
 	qdel(clutch)
-	TEST_ASSERT_NULL(core.clutch, "Clutch destruction retained the core's reference")
+	TEST_ASSERT_EQUAL(length(core.brood_eggs), 0, "Egg destruction retained the core's reference")
 	hive.advance_brood(600, 60)
-	TEST_ASSERT_EQUAL(core.clutch.spawner.uses, 6, "The clutch silently capped unclaimed places")
+	TEST_ASSERT_EQUAL(core.available_brood(), 6, "The clutch silently capped unclaimed places")
 	hive.brood_points = 20
 	queen.death()
 	hive.advance_brood(60, 60)
 	TEST_ASSERT_EQUAL(hive.brood_points, 20, "Brood accumulated without a living queen")
-	TEST_ASSERT_EQUAL(core.clutch.spawner.uses, 6, "Queen death destroyed stored brood")
+	TEST_ASSERT_EQUAL(core.available_brood(), 6, "Queen death destroyed stored brood")
 	qdel(core)
 	TEST_ASSERT_NULL(hive.core, "Core destruction retained the active core")
 	TEST_ASSERT_EQUAL(hive.brood_points, 0, "Core destruction retained fractional brood points")
@@ -235,19 +236,25 @@
 /datum/unit_test/xeno_rework_hive/specializations/Run()
 	var/mob/living/carbon/alien/adult/banda/runner/runner = allocate(/mob/living/carbon/alien/adult/banda/runner)
 	var/hunter_type = /mob/living/carbon/alien/adult/banda/final_caste/hunter
-	TEST_ASSERT(!runner.can_evolve(hunter_type), "A locked Hunter evolution was accepted")
-	hive.purchased["hunter"] = 1
-	TEST_ASSERT(runner.can_evolve(hunter_type), "Purchased Hunter did not open from Runner")
-	TEST_ASSERT(runner.can_evolve(/mob/living/carbon/alien/adult/banda/ravager), "Buying Hunter removed the ordinary Ravager branch")
-	allocate(hunter_type)
-	TEST_ASSERT(!runner.can_evolve(hunter_type), "Two Hunters bypassed the separate slot")
+	var/ravager_type = /mob/living/carbon/alien/adult/banda/ravager
+	TEST_ASSERT(runner.can_evolve(hunter_type), "Ordinary Hunter is locked")
+	TEST_ASSERT(!runner.can_evolve(ravager_type), "Unpurchased Ravager was available")
+	var/mob/living/carbon/alien/adult/banda/hunter = allocate(hunter_type)
+	TEST_ASSERT(!runner.can_evolve(hunter_type), "A living Hunter did not reserve its separate slot")
+	hive.purchased["ravager"] = 1
+	TEST_ASSERT(runner.can_evolve(ravager_type) && !runner.can_evolve(hunter_type), "Ravager unlock bypassed the occupied Hunter slot")
+	hunter.death()
+	TEST_ASSERT(runner.can_evolve(hunter_type), "A dead Hunter did not release its slot")
+	allocate(ravager_type)
+	TEST_ASSERT(!runner.can_evolve(ravager_type) && runner.can_evolve(hunter_type), "Occupied Ravager slot blocked ordinary Hunter")
 	var/mob/living/carbon/alien/adult/banda/defender/defender = allocate(/mob/living/carbon/alien/adult/banda/defender)
 	allocate(/mob/living/carbon/alien/adult/banda/warrior)
 	TEST_ASSERT(!defender.can_evolve(), "A Warrior did not occupy the Warrior slot")
 	hive.purchased["warrior_slot"] = 1
 	TEST_ASSERT(defender.can_evolve(), "A bought Warrior slot had no effect")
 	TEST_ASSERT(!defender.can_evolve(/mob/living/carbon/alien/adult/banda/queen), "A forged evolution bypassed the caste allowlist")
-	TEST_ASSERT_EQUAL(hive.slot_limit(/mob/living/carbon/alien/adult/banda/final_caste/crusher), 1, "Ordinary slots expanded Crusher availability")
+	TEST_ASSERT_EQUAL(hive.slot_limit(ravager_type), 1, "Ordinary slots expanded Ravager availability")
+	TEST_ASSERT_NULL(hive.upgrades["ravager_slot"], "T4 Ravager retained cheap additional slots")
 
 /datum/unit_test/xeno_rework_hive/weak_brood/Run()
 	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human/consistent)
@@ -262,42 +269,7 @@
 		hive.purchased["brood_vigor"] = 1
 		brood.apply_hive_upgrade()
 		brood.apply_hive_upgrade()
-		TEST_ASSERT_EQUAL(brood.maxHealth, initial(brood.maxHealth) + 20, "Brood upgrades stack or miss future brood")
-
-/datum/unit_test/xeno_rework_hive/mechs/Run()
-	hive.purchased["mech"] = 1
-	var/mob/living/carbon/alien/adult/banda/warrior/first = allocate(/mob/living/carbon/alien/adult/banda/warrior)
-	var/mob/living/carbon/alien/adult/banda/warrior/second = allocate(/mob/living/carbon/alien/adult/banda/warrior)
-	var/mob/living/carbon/alien/adult/banda/warrior/third = allocate(/mob/living/carbon/alien/adult/banda/warrior)
-	var/mob/living/carbon/alien/adult/banda/warrior/fourth = allocate(/mob/living/carbon/alien/adult/banda/warrior)
-	for(var/mech_type in list(/obj/vehicle/sealed/mecha/ripley, /obj/vehicle/sealed/mecha/gygax, /obj/vehicle/sealed/mecha/durand))
-		var/obj/vehicle/sealed/mecha/mech = allocate(mech_type)
-		var/original_armor = mech.get_armor_rating(MELEE)
-		var/normal_hit = mech.run_atom_armor(20, BRUTE, MELEE, null, 0)
-		var/datum/component/xeno_mech_rend/rend = mech.LoadComponent(/datum/component/xeno_mech_rend)
-		rend.contribute(first)
-		rend.contribute(first)
-		TEST_ASSERT_EQUAL(rend.penetration(), 0, "One xeno farmed cooperative penetration")
-		rend.contribute(second)
-		TEST_ASSERT_EQUAL(rend.penetration(), 15, "Two different adults did not open armor")
-		TEST_ASSERT(mech.run_atom_armor(20, BRUTE, MELEE, null, rend.penetration()) > normal_hit, "[mech_type] ignored the purchased penetration")
-		TEST_ASSERT_EQUAL(mech.get_armor_rating(MELEE), original_armor, "The upgrade permanently mutated shared armor")
-		third.forceMove(mech.loc)
-		fourth.forceMove(mech.loc)
-		rend.contribute(third)
-		rend.contribute(fourth)
-		TEST_ASSERT_EQUAL(rend.penetration(), 30, "More helpers exceeded the cooperative penetration cap")
-		third.forceMove(get_step(get_step(mech, SOUTH), SOUTH))
-		fourth.forceMove(third.loc)
-		first.forceMove(get_step(get_step(mech, NORTH), NORTH))
-		TEST_ASSERT_EQUAL(rend.penetration(), 0, "A retreating pilot still suffered cooperative penetration")
-		first.forceMove(mech.loc)
-		mech.take_damage(20, BRUTE, MELEE)
-		var/before_repair = mech.get_integrity()
-		mech.repair_damage(10)
-		TEST_ASSERT_EQUAL(mech.get_integrity(), min(mech.max_integrity, before_repair + 10), "The adaptation disabled ordinary repair")
-		qdel(rend)
-		TEST_ASSERT_NULL(mech.get_filter("xeno_mech_rend"), "Temporary corrosion left a permanent visual")
+		TEST_ASSERT_EQUAL(brood.maxHealth, initial(brood.maxHealth) + 15, "Brood upgrades stack or miss future brood")
 
 /datum/unit_test/xeno_rework_hive/larval_eggs/Run()
 	var/mob/living/carbon/alien/adult/banda/queen/queen = allocate(/mob/living/carbon/alien/adult/banda/queen)
@@ -311,7 +283,7 @@
 	TEST_ASSERT(hive.buy(queen, "larva"), "A full larval egg could not be bought")
 	TEST_ASSERT_EQUAL(hive.biomass, 0, "Full larva did not cost four complete human bodies")
 	TEST_ASSERT_EQUAL(hive.brood_points, 75, "Buying a larva spent the passive currency")
-	var/obj/structure/xeno_hive_egg/larva/egg = locate() in queen.loc
+	var/obj/structure/xeno_hive_egg/larva/egg = locate() in range(2, core)
 	TEST_ASSERT_NOTNULL(egg, "Purchase created no physical egg")
 	TEST_ASSERT_EQUAL(egg.spawner.mob_type, /mob/living/carbon/alien/larva, "Paid egg creates weak brood instead of a full larva")
 	TEST_ASSERT_EQUAL(egg.spawner.uses, 1, "A single purchase created multiple larval places")
@@ -350,7 +322,7 @@
 	var/obj/structure/xeno_hive_core/core = allocate(/obj/structure/xeno_hive_core)
 	STOP_PROCESSING(SSobj, core)
 	hive.advance_brood(120, 60)
-	var/obj/structure/xeno_hive_egg/clutch = core.clutch
+	var/obj/structure/xeno_hive_egg/clutch = core.brood_eggs[1]
 	var/obj/effect/mob_spawn/ghost_role/xeno_hive/spawner = clutch.spawner
 	core.forceMove(get_step(core, NORTH))
 	TEST_ASSERT(QDELETED(core) && QDELETED(clutch) && QDELETED(spawner), "Moving a core retained unused brood")
@@ -359,35 +331,11 @@
 	hive.advance_brood(60, 60)
 	TEST_ASSERT_EQUAL(hive.brood_points, 0, "Brood accumulated after the core was lost")
 
-/datum/unit_test/xeno_rework_hive/mech_action/Run()
-	hive.purchased["mech"] = 1
-	var/mob/living/carbon/alien/adult/banda/warrior/xeno = allocate(/mob/living/carbon/alien/adult/banda/warrior)
-	var/obj/item/organ/alien/plasmavessel/vessel = xeno.get_organ_slot(ORGAN_SLOT_XENO_PLASMAVESSEL)
-	vessel.plasma_rate = 0
-	xeno.adjustPlasma(xeno.get_max_plasma())
-	var/obj/vehicle/sealed/mecha/ripley/mech = allocate(/obj/vehicle/sealed/mecha/ripley)
-	var/datum/action/cooldown/alien/banda/mech_rend/rend_action = locate() in xeno.actions
-	TEST_ASSERT_NOTNULL(rend_action, "An existing purchase did not grant the action to a future adult")
-	rend_action.rend_time = 0.3 SECONDS
-	var/starting_plasma = xeno.getPlasma()
-	INVOKE_ASYNC(rend_action, TYPE_PROC_REF(/datum/action/cooldown/alien/banda/mech_rend, PreActivate), mech)
-	sleep(0.1 SECONDS)
-	xeno.forceMove(get_step(get_step(mech, NORTH), NORTH))
-	sleep(0.4 SECONDS)
-	TEST_ASSERT_EQUAL(xeno.getPlasma(), starting_plasma, "An interrupted rend spent plasma")
-	TEST_ASSERT_NULL(mech.GetComponent(/datum/component/xeno_mech_rend), "Interrupted preparation applied corrosion")
-	xeno.forceMove(mech.loc)
-	rend_action.rend_time = 0
-	TEST_ASSERT(rend_action.PreActivate(mech), "A valid bought mech action failed")
-	TEST_ASSERT_EQUAL(xeno.getPlasma(), starting_plasma - 30, "The action did not pay exactly once")
-	var/datum/component/xeno_mech_rend/rend = mech.GetComponent(/datum/component/xeno_mech_rend)
-	TEST_ASSERT_NOTNULL(rend, "A completed rend did not contribute to cooperative damage")
-	TEST_ASSERT_EQUAL(rend.penetration(), 0, "A single actor received the cooperative bonus")
-	rend.contribution_duration = 0.1 SECONDS
-	rend.contribute(xeno)
-	sleep(0.3 SECONDS)
-	TEST_ASSERT(QDELETED(rend), "Expired corrosion did not release the component")
-	TEST_ASSERT_NULL(mech.get_filter("xeno_mech_rend"), "Expired corrosion retained its visual")
+/datum/unit_test/xeno_rework_hive/no_queen_emp/Run()
+	TEST_ASSERT_NULL(hive.upgrades["mech"], "Removed EMP remains purchasable")
+	var/mob/living/carbon/alien/adult/banda/queen/queen = allocate(/mob/living/carbon/alien/adult/banda/queen)
+	for(var/datum/action/action as anything in queen.actions)
+		TEST_ASSERT(!findtext("[action.type]", "queen_emp"), "Queen retained the removed EMP")
 
 /datum/unit_test/xeno_rework_hive/cocoon_interruption/Run()
 	var/mob/living/carbon/alien/adult/banda/drone/adult = allocate(/mob/living/carbon/alien/adult/banda/drone)

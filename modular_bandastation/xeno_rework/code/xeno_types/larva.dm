@@ -7,7 +7,7 @@
 	/// The first castes available to a fully grown larva.
 	var/static/list/caste_options = list(
 		"Runner" = /mob/living/carbon/alien/adult/banda/runner,
-		"Spitter" = /mob/living/carbon/alien/adult/banda/spitter,
+		"Sentinel" = /mob/living/carbon/alien/adult/banda/sentinel,
 		"Defender" = /mob/living/carbon/alien/adult/banda/defender,
 		"Drone" = /mob/living/carbon/alien/adult/banda/drone,
 	)
@@ -36,13 +36,7 @@
 	var/turf/start = larva.loc
 	evolving = TRUE
 	larva.visible_message(span_notice("[larva] начинает сбрасывать личиночную оболочку."))
-	playsound(larva, 'sound/mobs/non-humanoids/alien/alien_organ_cut.ogg', 50, TRUE)
-	larva.add_filter("xeno_evolution", 2, drop_shadow_filter(size = 2, color = "#b070e8"))
-	larva.transition_filter_chain(
-		"xeno_evolution", INDEFINITE,
-		filter_chain_step(list("size" = 5), 0.5 SECONDS, SINE_EASING),
-		filter_chain_step(list("size" = 2), 0.5 SECONDS, SINE_EASING),
-	)
+	larva.start_hive_evolution_visual()
 	var/ready = do_after(larva, evolution_time, target = larva)
 	if(!QDELETED(larva))
 		larva.remove_filter("xeno_evolution")
@@ -57,3 +51,15 @@
 	new_xeno.has_just_evolved()
 	larva.alien_evolve(new_xeno)
 	return TRUE
+
+/datum/action/cooldown/alien/larva_evolve/Remove(mob/living/remove_from)
+	remove_from?.remove_filter("xeno_evolution")
+	return ..()
+
+/** One shedding visual for larval and adult evolution. */
+/mob/living/carbon/alien/proc/start_hive_evolution_visual()
+	playsound(src, 'sound/mobs/non-humanoids/alien/alien_organ_cut.ogg', 50, TRUE)
+	add_filter("xeno_evolution", 2, drop_shadow_filter(size = 2, color = "#b070e8"))
+	transition_filter_chain("xeno_evolution", INDEFINITE,
+		filter_chain_step(list("size" = 5), 0.5 SECONDS, SINE_EASING),
+		filter_chain_step(list("size" = 2), 0.5 SECONDS, SINE_EASING))

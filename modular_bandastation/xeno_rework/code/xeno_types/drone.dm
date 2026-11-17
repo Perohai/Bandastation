@@ -7,6 +7,7 @@
 	maxHealth = 200
 	health = 200
 	icon_state = "aliendrone"
+	hud_sprite_height = 36
 	melee_damage_lower = 10
 	melee_damage_upper = 10
 	next_evolution = /mob/living/carbon/alien/adult/banda/queen
@@ -19,12 +20,13 @@
 		ORGAN_SLOT_LIVER = /obj/item/organ/liver/alien,
 		ORGAN_SLOT_EARS = /obj/item/organ/ears,
 		ORGAN_SLOT_STOMACH = /obj/item/organ/stomach/alien_banda,
-		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel,
+		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/banda,
 		ORGAN_SLOT_XENO_RESINSPINNER = /obj/item/organ/alien/resinspinner_banda,
 	)
 
 /mob/living/carbon/alien/adult/banda/drone/Initialize(mapload)
 	. = ..()
+	GRANT_ACTION(/datum/action/cooldown/alien/make_structure/plant_weeds)
 	var/datum/component/itempicky/picky = GetComponent(/datum/component/itempicky)
 	var/static/list/fruit_types = typecacheof(/obj/item/xeno_fruit)
 	picky.whitelist = picky.whitelist | fruit_types

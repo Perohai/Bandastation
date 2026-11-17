@@ -3,6 +3,7 @@ import re
 from PIL import Image
 
 from pack_sprites import write_dmi, ICONS
+from pack_feedback_assets import fit
 
 
 def main():
@@ -33,8 +34,10 @@ def main():
         for suffix, original in (("", "Walking"), ("_sleep", "Sleeping"),
                                  ("_unconscious", "Knocked Down"), ("_dead", "Dead"), ("_husked", "Dead")):
             tiles, directions = frames_by_state[f"{caste.title()} {original}"]
+            if caste == "hunter":
+                tiles = [fit(tile, 32, 30, opaque_bounds=True) for tile in tiles]
             states.append((f"alien{caste}{suffix}", tiles, directions))
-        write_dmi(f"tgmc/{caste}_adapted.dmi", 64, states)
+        write_dmi(f"tgmc/{caste}_adapted.dmi", 32 if caste == "hunter" else 64, states)
 
 
 if __name__ == "__main__":

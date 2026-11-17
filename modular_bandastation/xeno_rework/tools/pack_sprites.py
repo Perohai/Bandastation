@@ -9,7 +9,8 @@ ICONS = Path(__file__).resolve().parents[1] / "icons"
 
 
 def cells(name, size=32, columns=4, rows=3):
-    source = Image.open(ICONS / "source" / f"{name}.png").convert("RGBA")
+    source_name = f"fix15_{name}" if name in ("actions", "combat") else name
+    source = Image.open(ICONS / "source" / f"{source_name}.png").convert("RGBA")
     width, height = source.size
     return [
         source.crop((column * width // columns, row * height // rows,
@@ -19,7 +20,7 @@ def cells(name, size=32, columns=4, rows=3):
     ]
 
 
-def write_dmi(name, size, states, *, height=None, delay=2):
+def write_dmi(name, size, states, *, height=None, delay=2, movement_states=()):
     height = height or size
     count = sum(len(frames) for _, frames, _ in states)
     columns = min(8, count)
@@ -29,8 +30,11 @@ def write_dmi(name, size, states, *, height=None, delay=2):
     for state, frames, directions in states:
         animation_frames = len(frames) // directions
         description += [f'state = "{state}"', f"\tdirs = {directions}", f"\tframes = {animation_frames}"]
+        if state in movement_states:
+            description.append("\tmovement = 1")
         if animation_frames > 1:
-            description += ["\tdelay = " + ",".join([str(delay)] * animation_frames), "\tloop = 0"]
+            state_delay = delay[state] if isinstance(delay, dict) else delay
+            description += ["\tdelay = " + ",".join([str(state_delay)] * animation_frames), "\tloop = 0"]
         for frame in frames:
             image.paste(frame, ((index % columns) * size, (index // columns) * height))
             index += 1

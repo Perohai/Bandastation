@@ -35,22 +35,6 @@ def read_states(path):
 
 def generated():
     (ICONS / "brood").mkdir(exist_ok=True)
-    # ImageGen supplies SOUTH,NORTH,EAST,WEST; BYOND orders SOUTH,NORTH,EAST,WEST too.
-    for caste in ("microdrone", "scout", "carrier"):
-        source = Image.open(ICONS / "source" / f"brood_{caste}.png").convert("RGBA")
-        cells = [source.crop((column * source.width // 4, row * source.height // 2,
-                              (column + 1) * source.width // 4, (row + 1) * source.height // 2))
-                 for row in range(2) for column in range(4)]
-        crops = [cell.crop(cell.getbbox()) for cell in cells]
-        scale = min(28 / max(cell.width for cell in crops), 28 / max(cell.height for cell in crops))
-        frames = []
-        for crop in crops:
-            crop = crop.resize((max(1, round(crop.width * scale)), max(1, round(crop.height * scale))), Image.Resampling.NEAREST)
-            canvas = Image.new("RGBA", (32, 32))
-            canvas.paste(crop, ((32 - crop.width) // 2, 30 - crop.height))
-            frames.append(canvas)
-        write_dmi(f"brood/{caste}.dmi", 32, [(caste, frames[:4], 4),
-                  (f"{caste}_sleep", frames[4:], 4), (f"{caste}_dead", frames[4:], 4)])
     source = Image.open(ICONS / "source" / "hive_core.png").convert("RGBA")
     cells = [source.crop((column * source.width // 4, 0, (column + 1) * source.width // 4, source.height)) for column in range(4)]
     boxes = [cell.getbbox() for cell in cells]

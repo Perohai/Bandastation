@@ -27,9 +27,13 @@ Doesn't work on other aliens/AI.*/
 	. = ..()
 	if(!.)
 		return FALSE
+	// BANDASTATION EDIT START - reworked xenos must stand up before powers; Rest remains available.
+	var/mob/living/carbon/carbon_owner = owner
+	if((istype(owner, /mob/living/carbon/alien/adult/banda) || istype(owner, /mob/living/carbon/alien/brood)) && carbon_owner.resting && !istype(src, /datum/action/cooldown/alien/banda/sleepytime))
+		return FALSE
 	if(!iscarbon(owner))
 		return FALSE
-	var/mob/living/carbon/carbon_owner = owner
+	// BANDASTATION EDIT END
 	if(carbon_owner.getPlasma() < plasma_cost)
 		return FALSE
 
@@ -120,6 +124,8 @@ Doesn't work on other aliens/AI.*/
 	plasma_cost = 10
 
 /datum/action/cooldown/alien/whisper/Activate(atom/target)
+	// BANDASTATION ADDITION - preserve the actor across both asynchronous inputs.
+	var/mob/whisperer = owner
 	var/list/possible_recipients = list()
 	for(var/mob/living/recipient in oview(owner))
 		possible_recipients += recipient
@@ -129,11 +135,13 @@ Doesn't work on other aliens/AI.*/
 		return FALSE
 
 	var/mob/living/chosen_recipient = tgui_input_list(owner, "Select whisper recipient", "Whisper", sort_names(possible_recipients))
-	if(!chosen_recipient)
+	// BANDASTATION EDIT - recipients must still be visible after selection.
+	if(QDELETED(src) || QDELETED(whisperer) || owner != whisperer || !IsAvailable() || QDELETED(chosen_recipient) || !(chosen_recipient in possible_recipients) || !(chosen_recipient in oview(7, whisperer)))
 		return FALSE
 
 	var/to_whisper = tgui_input_text(owner, title = "Alien Whisper", max_length = MAX_MESSAGE_LEN)
-	if(QDELETED(chosen_recipient) || QDELETED(src) || QDELETED(owner) || !IsAvailable(feedback = TRUE) || !to_whisper)
+	// BANDASTATION EDIT - movement or possession during text input invalidates the whisper.
+	if(QDELETED(chosen_recipient) || QDELETED(src) || QDELETED(whisperer) || owner != whisperer || !IsAvailable(feedback = TRUE) || !(chosen_recipient in oview(7, whisperer)) || !to_whisper)
 		return FALSE
 	if(chosen_recipient.can_block_magic(MAGIC_RESISTANCE_MIND, charge_cost = 0))
 		to_chat(owner, span_warning("As you reach into [chosen_recipient]'s mind, you are stopped by a mental blockage. It seems you've been foiled."))

@@ -7,6 +7,7 @@
 	maxHealth = 150
 	health = 150
 	icon_state = "alienrunner"
+	hud_sprite_height = 22
 
 	/// Holds the ability to be granted to the runner later
 	var/datum/action/cooldown/alien/banda/pounce_runner/pounce_ability
@@ -15,7 +16,7 @@
 
 	melee_damage_lower = 10
 	melee_damage_upper = 10
-	next_evolution = /mob/living/carbon/alien/adult/banda/ravager
+	next_evolution = /mob/living/carbon/alien/adult/banda/final_caste/hunter
 	on_fire_pixel_y = 0
 
 	default_organ_types_by_slot = list(
@@ -26,7 +27,7 @@
 		ORGAN_SLOT_LIVER = /obj/item/organ/liver/alien,
 		ORGAN_SLOT_EARS = /obj/item/organ/ears,
 		ORGAN_SLOT_STOMACH = /obj/item/organ/stomach/alien_banda,
-		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/small/tiny,
+		ORGAN_SLOT_XENO_PLASMAVESSEL = /obj/item/organ/alien/plasmavessel/banda/tiny,
 	)
 
 /mob/living/carbon/alien/adult/banda/runner/Initialize(mapload)

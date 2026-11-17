@@ -24,8 +24,8 @@
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "grow_fruit"
 	name = "Вырастить смоляной фрукт"
-	desc = "Выращивает на траве плод для поддержки улья. Только дроны могут собирать плоды и кормить ими союзников."
-	plasma_cost = 100
+	desc = "Сажает плод за 200 плазмы. Созревает за 90 секунд; собирать и скармливать плоды могут только дроны."
+	plasma_cost = 200
 	click_to_activate = TRUE
 	/// Player-facing fruit choices and their server-side type allowlist.
 	var/static/list/fruit_types = list(
@@ -68,7 +68,7 @@
 	/// Whether the fruit can be harvested or consumed.
 	var/ripe = FALSE
 	/// Delay between planting and ripening.
-	var/growth_time = 30 SECONDS
+	var/growth_time = 90 SECONDS
 	/// Owned healing component, removed when the fruit leaves its turf.
 	var/datum/component/aura_healing/pheromones
 	/// Prevents simultaneous consumption of one fruit.
@@ -145,7 +145,6 @@
 	icon_state = "unstable_immature"
 	inhand_icon_state = "unstable"
 	name = "unstable resin fruit"
-	growth_time = 45 SECONDS
 
 /obj/item/xeno_fruit/unstable/feed(mob/living/carbon/alien/adult/banda/target)
 	target.apply_status_effect(/datum/status_effect/xeno_overshield/fruit, min(200, target.maxHealth * 0.3))
@@ -156,7 +155,6 @@
 	icon_state = "greater_immature"
 	inhand_icon_state = "greater"
 	name = "greater resin fruit"
-	growth_time = 30 SECONDS
 
 /obj/item/xeno_fruit/greater/feed(mob/living/carbon/alien/adult/banda/target)
 	target.heal_ordered_damage(75, list(BRUTE, BURN))
@@ -167,7 +165,6 @@
 	icon_state = "spore_immature"
 	inhand_icon_state = "spore"
 	name = "spore resin fruit"
-	growth_time = 15 SECONDS
 
 /obj/item/xeno_fruit/spore/feed(mob/living/carbon/alien/adult/banda/target)
 	target.apply_status_effect(/datum/status_effect/xeno_fruit_haste)
@@ -177,7 +174,6 @@
 	icon_state = "alacrity_immature"
 	inhand_icon_state = "alacrity"
 	name = "alacrity resin fruit"
-	growth_time = 35 SECONDS
 
 /obj/item/xeno_fruit/alacrity/feed(mob/living/carbon/alien/adult/banda/target)
 	target.apply_status_effect(/datum/status_effect/xeno_fruit_speed)
@@ -187,7 +183,6 @@
 	icon_state = "cruor_immature"
 	inhand_icon_state = "cruor"
 	name = "cruor resin fruit"
-	growth_time = 25 SECONDS
 
 /obj/item/xeno_fruit/cruor/feed(mob/living/carbon/alien/adult/banda/target)
 	target.apply_status_effect(/datum/status_effect/xeno_fruit_regen/plasma, 0, 16, 15 SECONDS)

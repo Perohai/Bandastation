@@ -12,7 +12,7 @@
 
 /** Validate both before and after preparing the shell, including the physical body. */
 /obj/structure/bed/nest/banda/proc/can_cocoon(mob/living/carbon/prey, mob/living/carbon/alien/adult/banda/user)
-	return !QDELETED(src) && !QDELETED(prey) && !QDELETED(user) && istype(user) && !user.incapacitated && isturf(user.loc) && user.Adjacent(src) && prey.loc == loc && !prey.buckled && !has_buckled_mobs() && ishuman(prey)
+	return !QDELETED(src) && !QDELETED(prey) && !QDELETED(user) && istype(user) && !user.incapacitated && !user.resting && isturf(user.loc) && user.Adjacent(src) && prey.loc == loc && !prey.buckled && !has_buckled_mobs() && ishuman(prey)
 
 /obj/structure/bed/nest/banda/user_buckle_mob(mob/living/being_buckled, mob/user, check_loc = TRUE)
 	if(preparing || !can_cocoon(being_buckled, user))

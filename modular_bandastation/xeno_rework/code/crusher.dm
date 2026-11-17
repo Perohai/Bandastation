@@ -6,19 +6,26 @@
 	inhand_caste = "warrior"
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_adapted.dmi'
 	icon_state = "aliencrusher"
+	hud_sprite_height = 40
 	health = 445
 	maxHealth = 445
 	damage_resistance = 35
 	melee_damage_lower = 25
 	melee_damage_upper = 25
 	/// Whether straight-line movement builds momentum.
-	var/charge_enabled = FALSE
+	var/charge_enabled = TRUE
 	/// Consecutive unforced steps in the same cardinal direction.
 	var/momentum = 0
 	/// Direction and timestamp used to discard interrupted runs.
 	var/charge_direction = NONE
 	/// Absolute timestamp of the last unforced charge step.
 	var/last_charge_step = 0
+	/// TGMC charge parameters; native movement applies the same negative slowdown.
+	var/speed_per_step = 0.15
+	/// Crushing begins after seven consecutive cardinal steps.
+	var/steps_for_charge = 7
+	/// Maximum speed is reached at fourteen steps.
+	var/max_steps_buildup = 14
 
 /mob/living/carbon/alien/adult/banda/final_caste/crusher/Initialize(mapload)
 	. = ..()
@@ -27,50 +34,148 @@
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/crusher_toss)
 	REMOVE_TRAIT(src, TRAIT_VENTCRAWLER_ALWAYS, INNATE_TRAIT)
 
+/** Same buildup, timing and plasma rules as TGMC; collision damage uses native TG armor. */
 /mob/living/carbon/alien/adult/banda/final_caste/crusher/Moved(atom/old_loc, movement_dir, forced, list/old_locs, momentum_change)
 	. = ..()
-	var/was_fast = momentum >= 3
-	if(!charge_enabled || forced || !(movement_dir in GLOB.cardinals) || incapacitated)
-		momentum = 0
-	else
-		momentum = movement_dir == charge_direction && world.time - last_charge_step < 1 SECONDS ? min(momentum + 1, 5) : 1
+	if(forced || old_loc == loc)
+		return
+	if(!can_build_momentum(movement_dir, old_loc))
+		stop_momentum()
+		return
 	charge_direction = movement_dir
 	last_charge_step = world.time
-	if(momentum >= 3 && !was_fast)
-		add_movespeed_modifier(/datum/movespeed_modifier/xeno_crusher_charge)
-	else if(momentum < 3 && was_fast)
+	momentum++
+	update_charge_speed()
+	if(momentum > steps_for_charge)
+		adjustPlasma(-round(charge_speed()))
+		if(momentum % 4 == 0)
+			playsound(src, 'sound/effects/bang.ogg', 50, TRUE)
+		for(var/mob/living/victim in loc)
+			if(!isalien(victim) && victim.stat != DEAD && victim.body_position == LYING_DOWN && !victim.buckled)
+				victim.apply_damage(charge_speed() * 10, BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
+				log_combat(src, victim, "crusher ran over")
+
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/charge_speed()
+	return min(momentum, max_steps_buildup) * speed_per_step
+
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/can_build_momentum(movement_dir, atom/old_loc)
+	return charge_enabled && !HAS_TRAIT(src, TRAIT_PACIFISM) && !resting && !incapacitated && !(HAS_TRAIT(src, TRAIT_IMMOBILIZED)) && isturf(loc) && isturf(old_loc) && !isspaceturf(old_loc) && !isspaceturf(loc) && !pulling && !pulledby && !throwing && (movement_dir in GLOB.cardinals) && movement_dir == dir && (!momentum || movement_dir == charge_direction) && (!momentum || world.time <= last_charge_step + 0.5 SECONDS) && getPlasma() >= speed_per_step * max_steps_buildup
+
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/update_charge_speed()
+	if(momentum <= 0)
 		remove_movespeed_modifier(/datum/movespeed_modifier/xeno_crusher_charge)
+	else
+		add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/xeno_crusher_charge, multiplicative_slowdown = -charge_speed())
+
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/stop_momentum()
+	momentum = 0
+	charge_direction = NONE
+	last_charge_step = 0
+	update_charge_speed()
+
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/lose_momentum(steps)
+	momentum = max(0, momentum - steps)
+	update_charge_speed()
 
 /mob/living/carbon/alien/adult/banda/final_caste/crusher/Bump(atom/obstacle)
-	if(charge_enabled && momentum >= 3 && charge_direction == dir && world.time - last_charge_step < 1 SECONDS && !incapacitated && isturf(loc))
-		if(isliving(obstacle) && !isalien(obstacle))
-			var/mob/living/victim = obstacle
-			victim.apply_damage(10 * momentum, BRUTE)
-			victim.Knockdown(2 SECONDS)
-			victim.throw_at(get_ranged_target_turf(src, dir, 3), 3, 2, src)
-		else if(isobj(obstacle))
-			var/obj/structure_target = obstacle
-			structure_target.take_damage(30 * momentum, BRUTE, MELEE)
-		momentum = 0
-		remove_movespeed_modifier(/datum/movespeed_modifier/xeno_crusher_charge)
+	if(momentum < steps_for_charge || !can_build_momentum(dir, loc))
+		stop_momentum()
+		return ..()
+	var/impact_speed = charge_speed()
+	if(isliving(obstacle))
+		var/mob/living/victim = obstacle
+		if(victim.anchored || victim.mob_size >= mob_size)
+			stop_momentum()
+			return ..()
+		if(!isalien(victim) && victim.stat != DEAD)
+			victim.buckled?.unbuckle_mob(victim)
+			victim.apply_damage(impact_speed * 20, BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
+			victim.Paralyze(impact_speed * 20)
+			log_combat(src, victim, "crusher charged")
+		knock_aside(victim, impact_speed)
+		lose_momentum(1)
+	else if(isobj(obstacle))
+		var/obj/target = obstacle
+		if(target.resistance_flags & INDESTRUCTIBLE)
+			stop_momentum()
+			return ..()
+		var/was_anchored = target.anchored
+		var/border = target.flags_1 & ON_BORDER_1
+		var/front_border = border && target.dir == REVERSE_DIR(dir)
+		var/damage_multiplier = !was_anchored ? 20 : border ? (front_border ? 80 : 160) : 240
+		target.take_damage(impact_speed * damage_multiplier, BRUTE, MELEE)
+		lose_momentum(front_border ? 3 : border ? 1 : 2)
+		if(!QDELETED(target) && target.density)
+			if(was_anchored || target.move_resist >= move_force || !knock_aside(target, impact_speed))
+				stop_momentum()
+	else if(isturf(obstacle))
+		if(istype(obstacle, /turf/closed/wall))
+			var/turf/closed/wall/wall = obstacle
+			wall.xeno_charge_impact(momentum >= max_steps_buildup)
+		else
+			obstacle.ex_act(momentum >= max_steps_buildup ? EXPLODE_HEAVY : EXPLODE_LIGHT)
+		stop_momentum()
 	return ..()
 
-/** Movement bonus applied only while the Crusher has built momentum. */
-/datum/movespeed_modifier/xeno_crusher_charge
-	multiplicative_slowdown = -1
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/knock_aside(atom/movable/target, impact_speed)
+	var/side = pick(dir & (NORTH|SOUTH) ? list(EAST, WEST) : list(NORTH, SOUTH))
+	var/steps = min(round(impact_speed) + 1, 3)
+	var/moved = FALSE
+	for(var/index in 1 to steps)
+		if(!step(target, side))
+			break
+		moved = TRUE
+	return moved
 
-/** Toggle the Crusher's straight-line momentum mechanic. */
+/datum/movespeed_modifier/xeno_crusher_charge
+	variable = TRUE
+
+/** TG walls have no cumulative HP. Remember impacts on this physical wall until native dismantling. */
+/turf/closed/wall
+	/// Reinforced walls need four ordinary charge impacts, or two maximum-speed ones.
+	var/xeno_charge_impacts = 0
+
+/turf/closed/wall/proc/xeno_charge_impact(maximum_speed)
+	xeno_charge_impacts += maximum_speed ? 2 : 1
+	add_dent(WALL_DENT_HIT)
+	playsound(src, 'sound/effects/bang.ogg', 80, TRUE)
+	if(xeno_charge_impacts >= (istype(src, /turf/closed/wall/r_wall) ? 4 : 2))
+		dismantle_wall(TRUE)
+
 /datum/action/cooldown/alien/banda/crusher_charge
 	name = "Разгон — Ready Charge"
-	desc = "Движение по прямой разгоняет Crusher. После трёх шагов ускоряется и таранит врагов и конструкции; поворот, пауза и столкновение сбрасывают разгон."
+	desc = "Разгон TGMC: таран с 7-го шага, максимум с 14-го. Шаг +0,15 скорости; поворот, пауза свыше 0,5 секунды, захват и отдых сбрасывают разгон. Столкновения отнимают импульс. Укреплённая стена выдерживает 4 обычных или 2 максимальных тарана."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_actions.dmi'
 	button_icon_state = "ready_charge"
+
+/datum/action/cooldown/alien/banda/crusher_charge/Grant(mob/grant_to)
+	. = ..()
+	RegisterSignal(grant_to, COMSIG_ATOM_DIR_CHANGE, PROC_REF(on_charge_turn))
+	RegisterSignal(grant_to, COMSIG_LIVING_RESTING, PROC_REF(on_charge_rest))
+
+/datum/action/cooldown/alien/banda/crusher_charge/proc/on_charge_turn(datum/source, old_dir, new_dir)
+	SIGNAL_HANDLER
+	if(old_dir == new_dir)
+		return
+	var/mob/living/carbon/alien/adult/banda/final_caste/crusher/crusher = owner
+	crusher.stop_momentum()
+
+/datum/action/cooldown/alien/banda/crusher_charge/proc/on_charge_rest(datum/source, is_resting)
+	SIGNAL_HANDLER
+	if(is_resting)
+		var/mob/living/carbon/alien/adult/banda/final_caste/crusher/crusher = owner
+		crusher.stop_momentum()
+
+/datum/action/cooldown/alien/banda/crusher_charge/Remove(mob/living/remove_from)
+	UnregisterSignal(remove_from, list(COMSIG_ATOM_DIR_CHANGE, COMSIG_LIVING_RESTING))
+	var/mob/living/carbon/alien/adult/banda/final_caste/crusher/crusher = remove_from
+	crusher.stop_momentum()
+	return ..()
 
 /datum/action/cooldown/alien/banda/crusher_charge/Activate()
 	var/mob/living/carbon/alien/adult/banda/final_caste/crusher/crusher = owner
 	crusher.charge_enabled = !crusher.charge_enabled
-	crusher.momentum = 0
-	crusher.remove_movespeed_modifier(/datum/movespeed_modifier/xeno_crusher_charge)
+	crusher.stop_momentum()
 	return TRUE
 
 /** Area stomp, stronger against an enemy directly underneath the Crusher. */
