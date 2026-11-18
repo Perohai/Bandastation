@@ -2,7 +2,7 @@
 /** Чужой, выглядящий как нечто среднее между королевой и дроном — и, вероятно, именно так оно и есть. */
 /mob/living/carbon/alien/adult/banda/praetorian
 	name = "alien praetorian"
-	desc = "Чужой, выглядящий как нечто среднее между королевой и дроном — и, вероятно, именно так оно и есть."
+	desc = "Чужой, похожий на помесь Королевы и Дрона. Вероятно, так оно и есть."
 	caste = "praetorian"
 	mob_size = MOB_SIZE_LARGE
 	maxHealth = 250
@@ -37,7 +37,7 @@
 /mob/living/carbon/alien/adult/banda/praetorian/add_tts_component()
 	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/tyrande_hs)
 
-/** Organ granting the Praetorian's spit and two-column acid spray. */
+/** Organ granting the Praetorian's spit and cone-shaped acid spray. */
 /obj/item/organ/alien/neurotoxin/praetorian_banda
 	name = "large neurotoxin gland"
 	icon_state = "neurotox"

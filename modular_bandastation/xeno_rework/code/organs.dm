@@ -2,7 +2,7 @@
 /obj/item/organ/alien/resinspinner_banda
 	parent_type = /obj/item/organ/alien/resinspinner
 	name = "resin spinner"
-	desc = "An organ that secretes resin for constructing alien structures."
+	desc = "Железа, выделяющая смолу для возведения построек улья."
 	icon_state = "spinner-x"
 	zone = BODY_ZONE_PRECISE_MOUTH
 	slot = ORGAN_SLOT_XENO_RESINSPINNER
@@ -15,7 +15,7 @@
 /obj/item/organ/stomach/alien_banda
 	parent_type = /obj/item/organ/stomach/alien
 	name = "alien stomach"
-	desc = "A robust stomach capable of holding and digesting various contents."
+	desc = "Вместительный желудок, способный удерживать и переваривать самое разное содержимое."
 	icon_state = "stomach-x"
 	w_class = WEIGHT_CLASS_BULKY
 	actions_types = list(/datum/action/cooldown/alien/regurgitate_banda, /datum/action/cooldown/alien/hive_swallow)
@@ -132,7 +132,7 @@
 	if (!attacker)
 		return
 	if ((attacker in stomach_contents) && target == owner)
-		to_chat(attacker, span_warning("Вы не можете напрямую атаковать ксеноморфа из желудка! Используйте клавиши движения для сопротивления."))
+		to_chat(attacker, span_warning("Из желудка нельзя атаковать ксеноморфа напрямую! Используйте клавиши движения, чтобы сопротивляться."))
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 
 /** Block weapon firing from a swallowed occupant. */
@@ -169,7 +169,7 @@
 	// Check for gun
 	var/obj/item/pokie = user.get_active_held_item()
 	if (pokie && isgun(pokie))
-		to_chat(user, span_warning("You cannot use firearms inside the stomach!"))
+		to_chat(user, span_warning("Внутри желудка нельзя пользоваться огнестрельным оружием!"))
 		return
 
 	if (!prob(20))
@@ -265,8 +265,8 @@
 
 /// An action that allows the alien to regurgitate stomach contents.
 /datum/action/cooldown/alien/regurgitate_banda
-	name = "Regurgitate"
-	desc = "Empties the contents of your stomach."
+	name = "Изрыгнуть"
+	desc = "Извергает всё содержимое желудка."
 	button_icon_state = "alien_barf"
 	/// Angle range for ejecting contents (degrees).
 	var/angle_delta = 45
@@ -282,14 +282,14 @@
 	var/mob/living/carbon/alien/adult/alieninated_owner = owner
 	var/obj/item/organ/stomach/alien_banda/melting_pot = alieninated_owner.get_organ_slot(ORGAN_SLOT_STOMACH)
 	if (!melting_pot)
-		owner.visible_message(span_clown("[alieninated_owner] gags, and spits up a bit of purple liquid. Ewwww."), \
-			span_alien("You feel a pain in your... chest? There's nothing there there's nothing there no no n-"))
+		owner.visible_message(span_clown("[alieninated_owner] давится и выплёвывает немного фиолетовой жидкости. Фу-у-у!"), \
+			span_alien("Вы чувствуете боль в... груди? Там ничего нет, ничего нет, нет, нет, н-"))
 		return
 
 	if (!length(melting_pot.stomach_contents))
-		to_chat(owner, span_alien("There's nothing in your stomach, what exactly do you plan on spitting up?"))
+		to_chat(owner, span_alien("Желудок пуст. Что именно вы собираетесь изрыгнуть?"))
 		return
-	owner.visible_message(span_danger("[owner] hurls out the contents of their stomach!"))
+	owner.visible_message(span_danger("[owner] извергает содержимое своего желудка!"))
 	var/dir_angle = dir2angle(owner.dir)
 
 	playsound(owner, 'sound/mobs/non-humanoids/alien/alien_york.ogg', 100)

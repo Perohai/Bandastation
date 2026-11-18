@@ -23,17 +23,17 @@
 /datum/action/cooldown/alien/banda/grow_fruit
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "grow_fruit"
-	name = "Вырастить смоляной фрукт"
-	desc = "Сажает плод за 200 плазмы. Созревает за 90 секунд; собирать и скармливать плоды могут только дроны."
+	name = "Вырастить смоляной плод"
+	desc = "Выращивает плод за 200 плазмы. Он созревает через 90 секунд. Собирать плоды и кормить ими союзников могут только дроны."
 	plasma_cost = 200
 	click_to_activate = TRUE
 	/// Player-facing fruit choices and their server-side type allowlist.
 	var/static/list/fruit_types = list(
 		"Нестабильный" = /obj/item/xeno_fruit/unstable,
-		"Большой" = /obj/item/xeno_fruit/greater,
+		"Крупный" = /obj/item/xeno_fruit/greater,
 		"Споровый" = /obj/item/xeno_fruit/spore,
-		"Алакрита" = /obj/item/xeno_fruit/alacrity,
-		"Круора" = /obj/item/xeno_fruit/cruor,
+		"Стремительности" = /obj/item/xeno_fruit/alacrity,
+		"Крови" = /obj/item/xeno_fruit/cruor,
 	)
 
 /** Validate the selected weeded turf against overlapping fruit growth. */
@@ -56,7 +56,7 @@
 /obj/item/xeno_fruit
 	abstract_type = /obj/item/xeno_fruit
 	name = "resin fruit"
-	desc = "Питательный плод из смолы ксеноморфов."
+	desc = "Питательный плод, выращенный из смолы ксеноморфов."
 	icon = 'modular_bandastation/xeno_rework/icons/resin_fruits.dmi'
 	icon_state = "unstable_immature"
 	inhand_icon_state = "unstable"
@@ -113,7 +113,7 @@
 	if(being_consumed || !ripe || !istype(user, /mob/living/carbon/alien/adult/banda/drone) || !istype(target, /mob/living/carbon/alien/adult/banda) || !user.is_holding(src) || !user.Adjacent(target))
 		return
 	being_consumed = TRUE
-	user.visible_message(span_notice("[user] begins feeding [src] to [target]."), span_notice("You begin feeding [src] to [target]."))
+	user.visible_message(span_notice("[user] подносит [src] к [target], собираясь накормить."), span_notice("Вы подносите [src] к [target], собираясь накормить."))
 	if(!do_after(user, 2 SECONDS, target = target) || QDELETED(src))
 		if(!QDELETED(src))
 			being_consumed = FALSE

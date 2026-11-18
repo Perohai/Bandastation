@@ -1,7 +1,7 @@
 /** A portable barrier retains its remaining integrity when folded and deployed. */
 /obj/item/folding_barricade
 	name = "folded field barricade"
-	desc = "Складная полевая баррикада. Используйте в руке, чтобы установить перед собой; пустой рукой сложите установленную баррикаду."
+	desc = "Переносная складная баррикада. Используйте предмет в руке, чтобы развернуть баррикаду перед собой. Чтобы сложить установленную баррикаду, нажмите на неё пустой рукой."
 	icon = 'modular_bandastation/xeno_rework/icons/fortifications/barricades.dmi'
 	icon_state = "folding_3"
 	w_class = WEIGHT_CLASS_BULKY
@@ -48,7 +48,7 @@
 /** TG's railing supplies directional collision, projectiles passing overhead and climbing. */
 /obj/structure/railing/folding
 	name = "field barricade"
-	desc = "Складная боевая баррикада. Останавливает движение через край клетки, но позволяет стрелять поверх и перелезать. Ремонтируется сваркой. Пустая рука — сложить."
+	desc = "Складная полевая баррикада. Перекрывает проход между клетками, но позволяет стрелять поверх и перелезать через неё. Ремонтируется сварочным аппаратом. Чтобы сложить, нажмите пустой рукой."
 	icon = 'modular_bandastation/xeno_rework/icons/fortifications/barricades.dmi'
 	icon_state = "folding_0"
 	max_integrity = 180
@@ -111,11 +111,11 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/railing/folding/wrench_act(mob/living/user, obj/item/tool)
-	balloon_alert(user, "сначала сложите баррикаду")
+	balloon_alert(user, "Сначала сложите баррикаду")
 	return ITEM_INTERACT_BLOCKING
 
 /obj/structure/railing/folding/wirecutter_act(mob/living/user, obj/item/tool)
-	balloon_alert(user, "сначала сложите баррикаду")
+	balloon_alert(user, "Сначала сложите баррикаду")
 	return ITEM_INTERACT_BLOCKING
 
 /obj/structure/railing/folding/atom_deconstruct(disassembled)
@@ -134,7 +134,7 @@
 /** Reusable field instruction, using the native book-granted recipe machinery. */
 /obj/item/book/granter/crafting_recipe/folding_barricade
 	name = "field barricade instruction"
-	desc = "Листок с инструкцией по складным баррикадам. Прочтите, чтобы изучить рецепт: четыре листа стали, сварка и гаечный ключ."
+	desc = "Инструкция по изготовлению складной баррикады. Для сборки нужны четыре листа стали, сварочный аппарат и гаечный ключ."
 	icon = 'icons/obj/service/bureaucracy.dmi'
 	icon_state = "paper"
 	pages_to_mastery = 1
@@ -146,7 +146,7 @@
 /** One shared initial stock per team; the reusable instruction permits later manufacture. */
 /obj/structure/closet/crate/field_fortifications
 	name = "field fortification supply crate"
-	desc = "Общий запас отряда: 50 складных баррикад и инструкция по их изготовлению."
+	desc = "В ящике 50 складных баррикад для отряда и инструкция по их изготовлению."
 	storage_capacity = 51
 
 /obj/structure/closet/crate/field_fortifications/PopulateContents()

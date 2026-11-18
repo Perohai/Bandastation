@@ -5,7 +5,7 @@
 /** The former brood-core sprite becomes the vulnerable body of the Hivemind. */
 /obj/structure/xeno_hivemind_anchor
 	name = "hivemind core"
-	desc = "Пульсирующая привязка разума улья. Её уничтожение убивает связанный с ней Hivemind."
+	desc = "Пульсирующий смоляной узел, к которому привязан Разум улья. Разрушение узла приведёт к гибели связанного с ним духа."
 	icon = 'modular_bandastation/xeno_rework/icons/brood/hive_core.dmi'
 	icon_state = "core"
 	pixel_x = -16
@@ -50,21 +50,21 @@
 /obj/structure/xeno_hivemind_anchor/examine(mob/user)
 	. = ..()
 	if(isalien(user) || isobserver(user))
-		var/occupancy = hivemind_ref?.resolve() ? "Разум улья связан с этой привязкой." : "Привязка ожидает призрака."
+		var/occupancy = hivemind_ref?.resolve() ? "Разум улья связан с этим узлом." : "Узел разума улья ожидает призрака."
 		. += span_notice(occupancy)
 
 /** Uses native bans, prompt, use reservation, job assignment and possession. */
 /obj/effect/mob_spawn/ghost_role/xeno_hivemind
-	name = "Разум улья — Hivemind"
+	name = "Разум улья"
 	prompt_name = "разумом улья"
 	mob_type = /mob/living/carbon/alien/hivemind
 	uses = 1
 	deletes_on_zero_uses_left = FALSE
 	role_ban = ROLE_ALIEN
 	spawner_job_path = /datum/job/xenomorph
-	you_are_text = "Вы — Hivemind, разум улья."
-	flavour_text = "Двигайтесь духом по траве, воплощайтесь для строительства и поддержки. Возвращайтесь к своей привязке или прыгайте к союзникам на траве. Общайтесь через :a."
-	important_text = "Уничтожение вашей привязки убивает вас. Вы не эволюционируете, не учитываетесь в пороге финала и не взламываете шаттл."
+	you_are_text = "Вы — Разум улья."
+	flavour_text = "В форме духа перемещайтесь по траве. Воплощайтесь, чтобы возводить постройки и поддерживать улей; возвращайтесь к узлу или переноситесь к союзникам на траве. Для общения используйте :a."
+	important_text = "Разрушение узла убьёт Разум улья. Эволюция недоступна. Разум улья не учитывается при подсчёте численности роя для финала и не может взламывать шаттл."
 	/// Released during teardown; role and physical anchor have the same lifetime.
 	var/obj/structure/xeno_hivemind_anchor/anchor
 
@@ -99,7 +99,7 @@
 		if(QDELETED(ghost) || ghost.ckey != ghost_ckey || !allow_spawn(ghost) || !(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER))
 			continue
 		ghost.spawners_menu?.update_static_data(ghost)
-		notify_ghosts("Улей вырастил привязку Hivemind. Станьте разумом улья!", source = src, header = "Hivemind", click_interact = TRUE, ignore_key = POLL_IGNORE_ALIEN_LARVA, notify_flags = NOTIFY_CATEGORY_NOFLASH, recipients = list(ghost))
+		notify_ghosts("Улей вырастил узел разума. Роль Разума улья свободна!", source = src, header = "Hivemind", click_interact = TRUE, ignore_key = POLL_IGNORE_ALIEN_LARVA, notify_flags = NOTIFY_CATEGORY_NOFLASH, recipients = list(ghost))
 
 /datum/xeno_hive/proc/hivemind_location(mob/living/carbon/alien/adult/banda/queen/queen)
 	if(!can_manage(queen) || !(queen.dir in GLOB.cardinals))

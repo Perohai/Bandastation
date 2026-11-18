@@ -1,7 +1,7 @@
-["hivemind core"]
-nominative = "привязка разума улья"
-genitive = "привязки разума улья"
-dative = "привязке разума улья"
-accusative = "привязку разума улья"
-instrumental = "привязкой разума улья"
-prepositional = "привязке разума улья"
+["Узел разума улья"]
+nominative = "узел разума улья"
+genitive = "узла разума улья"
+dative = "узлу разума улья"
+accusative = "узел разума улья"
+instrumental = "узлом разума улья"
+prepositional = "узлу разума улья"

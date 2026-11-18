@@ -7,8 +7,8 @@
 	return istype(hivemind) && hivemind.operational() && !hivemind.channeling && (!requires_body || hivemind.manifested) && ..()
 
 /datum/action/cooldown/alien/hivemind/form
-	name = "Воплощение / рассеивание"
-	desc = "Воплотиться за секунду или вернуться в духа. Требует полного здоровья. Дух перемещается только по траве; физическая оболочка уязвима."
+	name = "Воплотиться / вернуться в дух"
+	desc = "Позволяет за секунду обрести физическую оболочку или вернуться в форму духа. Для воплощения необходимо полное здоровье. Дух может двигаться только по траве; физическая оболочка уязвима."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hivemind_source/actions.dmi'
 	button_icon_state = "manifest"
 	/// Native do_after keeps the transition cancellable and visibly timed.
@@ -41,8 +41,8 @@
 	return TRUE
 
 /datum/action/cooldown/alien/hivemind/return_core
-	name = "Вернуться к привязке"
-	desc = "Дух мгновенно возвращается к своей привязке. Воплощение не может использовать этот переход."
+	name = "Вернуться к узлу"
+	desc = "Дух мгновенно возвращается к своему узлу. В физической оболочке способность недоступна."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hivemind_source/actions.dmi'
 	button_icon_state = "lay_hivemind"
 	cooldown_time = 5 SECONDS
@@ -64,7 +64,7 @@
 
 /datum/action/cooldown/alien/hivemind/jump
 	name = "К союзнику"
-	desc = "Дух прыгает к выбранному живому союзнику на траве того же уровня."
+	desc = "Дух перемещается к выбранному живому союзнику, находящемуся на траве того же уровня."
 	button_icon_state = "alien_transfer"
 	cooldown_time = 10 SECONDS
 
@@ -87,7 +87,7 @@
 
 /datum/action/cooldown/alien/hivemind/teleport
 	name = "Скольжение по траве"
-	desc = "Дух перемещается на видимую траву в пределах семи клеток."
+	desc = "Дух перемещается к видимому участку травы на расстоянии до семи клеток."
 	button_icon_state = "alien_plant"
 	click_to_activate = TRUE
 	cooldown_time = 3 SECONDS
@@ -104,8 +104,8 @@
 	return TRUE
 
 /datum/action/cooldown/alien/hivemind/plant
-	name = "Удалённая посадка травы"
-	desc = "Воплощение сажает узел травы на видимой открытой клетке в радиусе четырёх. 75 плазмы."
+	name = "Посадить траву на расстоянии"
+	desc = "В физической оболочке выращивает узел травы на видимой свободной клетке в пределах четырёх клеток. Стоимость — 75 плазмы."
 	button_icon_state = "alien_plant"
 	requires_body = TRUE
 	plasma_cost = 75
@@ -145,7 +145,7 @@
 /datum/action/cooldown/alien/hivemind/heal
 	parent_type = /datum/action/cooldown/alien/hivemind/support
 	name = "Смоляной бальзам"
-	desc = "Лечит до 50 ушибов, затем ожогов союзнику в трёх клетках. Подготовка секунду, 150 плазмы."
+	desc = "Восстанавливает союзнику в пределах трёх клеток до 50 единиц урона от ушибов, затем — от ожогов. Подготовка занимает секунду, стоимость — 150 плазмы."
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "grow_fruit"
 	plasma_cost = 150
@@ -157,6 +157,7 @@
 		return FALSE
 	var/heal_brute = min(50, ally.get_brute_loss())
 	ally.heal_overall_damage(heal_brute, 50 - heal_brute)
+	new /obj/effect/temp_visual/hivemind_support(get_turf(owner), ally, COLOR_PALE_GREEN_GRAY)
 	playsound(ally, 'modular_bandastation/xeno_rework/sound/alien_resin_move2.ogg', 45, TRUE)
 	StartCooldown()
 	return TRUE
@@ -164,7 +165,7 @@
 /datum/action/cooldown/alien/hivemind/plasma
 	parent_type = /datum/action/cooldown/alien/hivemind/support
 	name = "Передать плазму"
-	desc = "Передаёт до 200 плазмы союзнику в двух клетках за две секунды."
+	desc = "За две секунды передаёт союзнику в пределах двух клеток до 200 плазмы."
 	button_icon_state = "alien_transfer"
 	channel_time = 2 SECONDS
 	support_range = 2
@@ -183,12 +184,26 @@
 		return FALSE
 	hivemind.adjustPlasma(-amount)
 	ally.adjustPlasma(amount)
+	new /obj/effect/temp_visual/hivemind_support(get_turf(owner), ally, COLOR_PURPLE)
 	StartCooldown()
 	return TRUE
 
+/// Cosmetic pulse. Its destination is sampled on a successful transfer.
+/obj/effect/temp_visual/hivemind_support
+	name = "hive support pulse"
+	icon_state = "heal"
+	layer = ABOVE_MOB_LAYER
+	duration = 0.4 SECONDS
+
+/obj/effect/temp_visual/hivemind_support/Initialize(mapload, atom/recipient, pulse_color)
+	. = ..()
+	color = pulse_color
+	animate(src, pixel_x = (recipient.x - x) * ICON_SIZE_X, pixel_y = (recipient.y - y) * ICON_SIZE_Y, time = 0.3 SECONDS)
+	animate(alpha = 0, time = 0.1 SECONDS)
+
 /datum/action/cooldown/alien/hivemind/pheromones
 	name = "Восстановительные феромоны"
-	desc = "Общая адаптация улья: лечит по 5 ушибов и ожогов союзникам в пяти клетках."
+	desc = "Общая адаптация улья: восстанавливает союзникам в пределах пяти клеток по 5 единиц урона от ушибов и ожогов."
 	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
 	button_icon_state = "pheromones"
 	requires_body = TRUE
@@ -206,8 +221,8 @@
 	return TRUE
 
 /datum/action/cooldown/alien/hivemind/rally
-	name = "Приказ улью: точка сбора"
-	desc = "Назначить видимую клетку общей точкой сбора; игроки выводка услышат приказ через связь улья."
+	name = "Созвать улей"
+	desc = "Назначить свою точку сбора на видимой клетке. После покупки связи охотников её можно выбрать в составе улья."
 	button_icon = 'modular_bandastation/xeno_rework/icons/brood_actions.dmi'
 	button_icon_state = "rally"
 	click_to_activate = TRUE
@@ -218,6 +233,7 @@
 	if(!IsAvailable() || !location || !(location in view(7, owner)))
 		return FALSE
 	var/datum/xeno_hive/hive = get_xeno_hive()
-	hive.set_rally_point(owner, location)
+	if(!hive.set_rally_point(owner, location))
+		return FALSE
 	StartCooldown()
 	return TRUE

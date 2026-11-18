@@ -80,8 +80,8 @@
 /datum/action/cooldown/alien/banda/toxic_spit
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toxic_spit"
-	name = "Токсичный плевок"
-	desc = "Наносит 5 ожогового урона и добавляет 5 стаков интоксикации."
+	name = "Плевок токсином"
+	desc = "Наносит 5 ожогового урона и добавляет 5 уровней интоксикации."
 	plasma_cost = 30
 	cooldown_time = 0.5 SECONDS
 	click_to_activate = TRUE
@@ -113,8 +113,8 @@
 /datum/action/cooldown/alien/banda/toxic_claws
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toxic_claws"
-	name = "Токсичный удар"
-	desc = "Следующие три удара в течение четырёх секунд добавляют по 5 стаков интоксикации."
+	name = "Удар с токсином"
+	desc = "Следующие три удара за четыре секунды добавляют по 5 уровней интоксикации."
 	plasma_cost = 100
 	cooldown_time = 20 SECONDS
 
@@ -153,7 +153,7 @@
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toxic_sting"
 	name = "Жалящий удар"
-	desc = "Снимает 30% интоксикации, опрокидывает цель и восстанавливает здоровье и плазму."
+	desc = "Снимает 30% накопленной интоксикации, сбивает цель с ног и восстанавливает здоровье и плазму."
 	click_to_activate = TRUE
 
 /datum/action/cooldown/alien/banda/toxic_sting/Activate(atom/target)

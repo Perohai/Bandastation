@@ -2,8 +2,8 @@
 /datum/action/cooldown/alien/banda/spit
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "neuro_spit"
-	name = "Плевок ксеноморфа"
-	desc = "Выплёвывает нейротоксин. Режим кислоты наносит ожоговый урон."
+	name = "Плевок"
+	desc = "Выплёвывает сгусток нейротоксина. Переключившись на кислоту, можно обжигать противников."
 	plasma_cost = 40
 	click_to_activate = TRUE
 	unset_after_click = FALSE
@@ -62,8 +62,8 @@
 /datum/action/cooldown/alien/banda/toggle_spit
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "toggle_spit"
-	name = "Переключить плевок"
-	desc = "Переключает нейротоксин и кислоту. Текущая цена указана на кнопке плевка."
+	name = "Сменить тип плевка"
+	desc = "Переключает плевок с нейротоксина на кислоту и обратно. Стоимость указана на кнопке способности."
 
 /datum/action/cooldown/alien/banda/toggle_spit/Activate()
 	var/datum/action/cooldown/alien/banda/spit/spit = locate() in owner.actions
@@ -72,7 +72,7 @@
 	spit.acid_mode = !spit.acid_mode
 	spit.plasma_cost = spit.acid_mode ? spit.acid_plasma_cost : spit.neuro_plasma_cost
 	spit.button_icon_state = spit.acid_mode ? "acid_spit" : "neuro_spit"
-	spit.name = "[spit.acid_mode ? "Кислотный плевок" : "Нейротоксин"] ([spit.plasma_cost]P)"
+	spit.name = "[spit.acid_mode ? "Плевок кислотой" : "Нейротоксин"] ([spit.plasma_cost]P)"
 	spit.build_all_button_icons(UPDATE_BUTTON_STATUS)
 	return TRUE
 
@@ -80,8 +80,8 @@
 /datum/action/cooldown/alien/banda/acid_volley
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "acid_volley"
-	name = "Разбросанный плевок"
-	desc = "После короткой подготовки выпускает три кислотных снаряда, оставляющих лужи на две секунды."
+	name = "Залп кислотой"
+	desc = "После короткой подготовки выпускает три сгустка кислоты. На месте попадания каждого остаётся лужа, исчезающая через две секунды."
 	plasma_cost = 100
 	cooldown_time = 15 SECONDS
 	click_to_activate = TRUE
@@ -128,72 +128,98 @@
 		new /obj/effect/xeno_acid_pool(loc)
 	return ..()
 
-/** Покрывает кислотой до трёх клеток в направлении курсора, сбивая врагов с ног и гася огонь на союзниках. */
+#define ACID_SPRAY_STEP (0.1 SECONDS)
+
+/** Выпускает быструю волну кислоты, сбивая врагов с ног и гася огонь на союзниках. */
 /datum/action/cooldown/alien/banda/acid_spray
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "acid_line"
-	name = "Кислотный спрей"
-	desc = "Покрывает кислотой до трёх клеток в направлении курсора, сбивая врагов с ног и гася огонь на союзниках."
+	name = "Струя кислоты"
+	desc = "Выпускает волну кислоты на расстояние до трёх клеток в сторону курсора. Сбивает врагов с ног и тушит горящих союзников."
 	plasma_cost = 300
 	cooldown_time = 40 SECONDS
 	click_to_activate = TRUE
-	/// Whether spray covers a second column beside its cursor line.
-	var/cone = FALSE
-	/// Maximum center-line length; caste overrides do not change the other sprays.
+	/// Maximum length of the line or straight cone.
 	var/spray_length = 3
 
 /datum/action/cooldown/alien/banda/acid_spray/Activate(atom/target)
+	var/turf/origin = owner?.loc
 	var/turf/target_turf = get_turf(target)
-	if(!isturf(owner.loc) || !target_turf || owner.z != target_turf.z || target_turf == owner.loc)
+	if(!isturf(origin) || !target_turf || origin.z != target_turf.z || target_turf == origin || !IsAvailable())
 		return FALSE
-	var/direction = get_dir(owner, target_turf)
-	var/list/centers = get_line(get_turf(owner), target_turf)
-	centers -= get_turf(owner)
-	if(length(centers) > spray_length)
-		centers.Cut(spray_length + 1)
-	if(!length(centers))
-		return FALSE
-	var/turf/previous_center = get_turf(owner)
-	for(var/turf/center as anything in centers)
-		var/row_direction = get_dir(previous_center, center) || direction
-		if(cone)
-			// Keep the two-column spray to the cursor-facing side of its center line.
-			for(var/side in 0 to 1)
-				var/turf/location = side ? get_step(center, turn(row_direction, -90)) : center
-				if(!spray_tile(location))
-					break
-		else if(!spray_tile(center))
-			break
-		previous_center = center
 	playsound(owner, 'modular_bandastation/xeno_rework/sound/alien_spitacid2.ogg', 75, TRUE)
 	owner.do_attack_animation(target_turf)
 	StartCooldown()
+	release_spray(origin, target_turf)
 	return TRUE
 
-/// Acid must not pass through walls or dense structures, including the sides of the cone.
-/datum/action/cooldown/alien/banda/acid_spray/proc/spray_tile(turf/location)
-	if(!location)
+/// The released spray starts at the cast position even if the caster moves.
+/datum/action/cooldown/alien/banda/acid_spray/proc/release_spray(turf/origin, turf/target_turf)
+	set waitfor = FALSE
+	var/list/line = get_line(origin, target_turf)
+	var/distance = min(spray_length, length(line) - 1)
+	for(var/step in 1 to distance)
+		var/turf/location = line[step + 1]
+		if(QDELETED(src) || !can_cover(location))
+			break
+		new /obj/effect/xeno_acid_pool/spray(location)
+		if(step < distance)
+			sleep(ACID_SPRAY_STEP)
+
+/// Walls and dense objects stop the part of the wave that reaches them.
+/datum/action/cooldown/alien/banda/acid_spray/proc/can_cover(turf/location)
+	if(!location || isclosedturf(location))
 		return FALSE
-	for(var/turf/path_tile as anything in get_line(owner, location))
-		if(isclosedturf(path_tile))
+	for(var/obj/blocker in location)
+		if(blocker.density)
 			return FALSE
-		for(var/obj/blocker in path_tile)
-			if(blocker.density)
-				return FALSE
-	new /obj/effect/xeno_acid_pool/spray(location)
 	return TRUE
 
 /datum/action/cooldown/alien/banda/acid_spray/spitter
 	plasma_cost = 120
 	cooldown_time = 30 SECONDS
 
-/** Покрывает узкую область шириной две и длиной до трёх клеток по направлению курсора. Кислота опрокидывает и обжигает врагов. */
 /datum/action/cooldown/alien/banda/acid_spray/cone
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "acid_cone"
-	desc = "Покрывает узкую область шириной две и длиной до трёх клеток по направлению курсора. Кислота опрокидывает и обжигает врагов."
+	desc = "После подготовки в полсекунды выплёвывает волну кислоты конусом 1–3–5. Подготовку нельзя прервать движением или оглушением."
 	cooldown_time = 60 SECONDS
-	cone = TRUE
+	spray_length = 3
+
+/datum/action/cooldown/alien/banda/acid_spray/cone/release_spray(turf/origin, turf/target_turf)
+	set waitfor = FALSE
+	var/mob/living/caster = owner
+	var/facing = angle2dir(delta_to_angle(target_turf.x - origin.x, target_turf.y - origin.y))
+	caster.setDir(facing)
+	sleep(0.5 SECONDS)
+	// Movement and incapacitation do not cancel the committed cast. Release it from the caster's new tile.
+	if(QDELETED(src) || QDELETED(caster) || owner != caster || caster.stat == DEAD || !isturf(caster.loc) || caster.z != origin.z)
+		return
+	var/turf/center = caster.loc
+	var/wing_angle = ISDIAGONALDIR(facing) ? 135 : 90
+	var/list/previous_row = list(center)
+	for(var/row in 1 to spray_length)
+		if(QDELETED(src))
+			break
+		center = get_step(center, facing)
+		if(!center)
+			break
+		var/list/hit_row = list()
+		for(var/offset in (1 - row) to (row - 1))
+			var/turf/location = get_ranged_target_turf(center, turn(facing, offset < 0 ? -wing_angle : wing_angle), abs(offset))
+			if(!location || (offset && get_dist(center, location) != abs(offset)) || !can_cover(location))
+				continue
+			for(var/turf/previous as anything in previous_row)
+				if(get_dist(previous, location) == 1)
+					hit_row += location
+					new /obj/effect/xeno_acid_pool/spray(location)
+					break
+		if(!length(hit_row) || row == spray_length)
+			break
+		previous_row = hit_row
+		sleep(ACID_SPRAY_STEP)
+
+#undef ACID_SPRAY_STEP
 
 /** Timed acid pool with location exposure and frame-independent damage. */
 /obj/effect/xeno_acid_pool

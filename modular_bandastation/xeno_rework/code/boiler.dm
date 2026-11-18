@@ -1,7 +1,7 @@
 /** Siege caste with stockpiled corrosive/neurotoxin globs and stationary bombardment. */
 /mob/living/carbon/alien/adult/banda/final_caste/boiler
 	name = "alien boiler"
-	desc = "Осадный ксеноморф. Накапливает газовые шары и ведёт дальний огонь из неподвижного положения."
+	desc = "Осадная каста ксеноморфов. Накапливает сгустки газа и обстреливает врагов из неподвижной позиции."
 	caste = "boiler"
 	inhand_caste = "sentinel"
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_adapted.dmi'
@@ -40,21 +40,21 @@
 
 /** Common icon source for the artillery controls. */
 /datum/action/cooldown/alien/banda/boiler_toggle
-	name = "Тип газа — Toggle Bombard Type"
-	desc = "Переключает создание и стрельбу между нейротоксичным и коррозионным газом. Запас каждого типа хранится отдельно."
+	name = "Выбрать тип газа"
+	desc = "Меняет тип газа, из которого создаются снаряды: едкий или нейротоксичный. Запас снарядов каждого вида хранится отдельно."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_actions.dmi'
 	button_icon_state = "corrosive_glob"
 
 /datum/action/cooldown/alien/banda/boiler_toggle/Activate()
 	var/mob/living/carbon/alien/adult/banda/final_caste/boiler/boiler = owner
 	boiler.corrosive = !boiler.corrosive
-	to_chat(boiler, span_notice("Выбран [boiler.corrosive ? "коррозионный" : "нейротоксичный"] газ. Запасы: кислота [boiler.acid_globs], нейротоксин [boiler.neuro_globs]."))
+	to_chat(boiler, span_notice("Выбран [boiler.corrosive ? "коррозионный" : "нейротоксичный"] газ. Снарядов: кислотных — [boiler.acid_globs], нейротоксичных — [boiler.neuro_globs]."))
 	return TRUE
 
 /** Create ammunition without allowing concurrent channelled creation. */
 /datum/action/cooldown/alien/banda/boiler_create
-	name = "Создать шар — Create Bomb"
-	desc = "За 200 плазмы и две секунды создаёт газовый шар выбранного типа. Вместимость — семь шаров."
+	name = "Создать газовый шар"
+	desc = "За 200 плазмы создаёт за две секунды газовый шар выбранного типа. Можно хранить до семи шаров."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_actions.dmi'
 	button_icon_state = "create_bomb"
 	plasma_cost = 200
@@ -78,8 +78,8 @@
 
 /** Stationary artillery; ammunition is consumed only after both preparation phases. */
 /datum/action/cooldown/alien/banda/boiler_bombard
-	name = "Бомбардировка — Bombard"
-	desc = "Три секунды окопаться, затем две секунды на выстрел. Дальность 5–20 клеток. Газ распространяется по проходам; стены преграждают его путь."
+	name = "Бомбардировка"
+	desc = "Для обстрела нужно три секунды на подготовку и ещё две секунды на выстрел. Дальность — 5–20 клеток. Газ распространяется по проходам, но не проходит сквозь стены."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_actions.dmi'
 	button_icon_state = "bombard"
 	cooldown_time = 32 SECONDS
@@ -166,8 +166,8 @@
 
 /** Local gas curtain shares bombardment's cooldown without consuming ammunition. */
 /datum/action/cooldown/alien/banda/boiler_shroud
-	name = "Кислотная завеса — Acid Shroud"
-	desc = "За 200 плазмы создаёт вокруг себя газовую завесу. Не расходует запас шаров; откладывает следующую бомбардировку на 40,5 секунды."
+	name = "Завеса едкого газа"
+	desc = "За 200 плазмы окутывает пространство вокруг себя облаком едкого газа. Запас снарядов не расходуется, но следующая бомбардировка станет доступна лишь через 40,5 секунды."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_actions.dmi'
 	button_icon_state = "acid_shroud"
 	plasma_cost = 200
@@ -182,8 +182,8 @@
 
 /** Stationary expanded vision uses the client's existing view packet. */
 /datum/action/cooldown/alien/banda/boiler_sight
-	name = "Дальний обзор — Long Range Sight"
-	desc = "После секунды концентрации расширяет обзор. Движение или повторное нажатие возвращает обычный обзор."
+	name = "Дальний обзор"
+	desc = "Через секунду сосредоточения расширяет область обзора. Движение или повторное нажатие возвращает обычный обзор."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_actions.dmi'
 	button_icon_state = "toggle_long_range"
 	plasma_cost = 20
@@ -233,15 +233,15 @@
 
 /** Boiler acid spray with the caste-specific cooldown. */
 /datum/action/cooldown/alien/banda/acid_spray/boiler
-	desc = "Покрывает кислотой полосу шириной одну и длиной до четырёх клеток в направлении курсора."
+	desc = "Выпускает волну кислоты по прямой на расстояние до четырёх клеток в сторону курсора."
 	cooldown_time = 9 SECONDS
 	plasma_cost = 100
 	spray_length = 4
 
 /** Resin well supporting allies; placed on weeds and limited to one well per turf. */
 /datum/action/cooldown/alien/banda/boiler_well
-	name = "Кислотный колодец — Acid Well"
-	desc = "Создаёт на траве противопожарный кислотный колодец. Гасит загоревшегося ксеноморфа и выпускает защитный кислотный газ; содержит один заряд."
+	name = "Колодец с кислотой"
+	desc = "Создаёт на траве колодец с кислотой. Он тушит загоревшихся ксеноморфов и выпускает защитное облако кислотного газа. Запас — один заряд."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_actions.dmi'
 	button_icon_state = "acid_shroud"
 	plasma_cost = 400

@@ -1,7 +1,7 @@
 /** One installed physical core. Moving or deleting it destroys unused weak brood. */
 /obj/structure/xeno_hive_core
 	name = "hive core"
-	desc = "Живой маточный мешок с выводковой горловиной и хранилищами биомассы. Его уничтожение прерывает рост потомства и уничтожает невостребованные яйца."
+	desc = "Живое сердце улья — огромный маточный мешок с выводковой горловиной и запасами биомассы. Если его уничтожить, рост потомства остановится, а невостребованные яйца погибнут."
 	icon = 'modular_bandastation/xeno_rework/icons/brood/brood_core.dmi'
 	icon_state = "core"
 	bound_width = 64
@@ -120,7 +120,7 @@
 		flick("core_birth", src)
 		playsound(src, 'sound/mobs/non-humanoids/alien/alien_eat.ogg', 45, TRUE)
 	if(created && (GLOB.ghost_role_flags & GHOSTROLE_SPAWNER))
-		INVOKE_ASYNC(last_egg.spawner, TYPE_PROC_REF(/obj/effect/mob_spawn/ghost_role/xeno_hive, notify_available), "В яйцах вокруг ядра доступно мест: [available_brood()].", "Слабое потомство улья")
+		INVOKE_ASYNC(last_egg.spawner, TYPE_PROC_REF(/obj/effect/mob_spawn/ghost_role/xeno_hive, notify_available), "Свободных мест в яйцах рядом с ядром: [available_brood()].", "Слабое потомство улья")
 	return created
 
 /** Only the visual crosses tiles; the role and its final location exist synchronously. */
@@ -137,12 +137,12 @@
 /obj/structure/xeno_hive_core/examine(mob/user)
 	. = ..()
 	if(isalien(user) || isobserver(user))
-		. += span_notice("Общий запас улья: [round(GLOB.xeno_hive?.biomass || 0, 0.1)] биомассы. Яиц выводка: [available_brood()].")
+		. += span_notice("Запасы улья: [round(GLOB.xeno_hive?.biomass || 0, 0.1)] биомассы. Доступных яиц выводка: [available_brood()].")
 
 /** Reusable destructible shell for both weak brood and purchased full larvae. */
 /obj/structure/xeno_hive_egg
 	name = "brood egg"
-	desc = "Слабое потомство ждёт пробуждения. Призрак может выбрать открытый вид выводка. Уничтожение яйца теряет одно место."
+	desc = "Внутри яйца дремлет представитель младшего выводка. Призрак может выбрать доступный вид существа. Если яйцо уничтожат, одно место в выводке будет потеряно."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "eggs"
 	anchored = TRUE
@@ -176,13 +176,13 @@
 
 /obj/structure/xeno_hive_egg/examine(mob/user)
 	. = ..()
-	. += span_notice("Невостребованных мест: [spawner?.uses || 0].")
+	. += span_notice("Свободных мест: [spawner?.uses || 0].")
 
 /obj/structure/xeno_hive_egg/larva
 	name = "larval egg"
 	icon = 'icons/mob/nonhuman-player/alien.dmi'
 	icon_state = "egg"
-	desc = "Крупное яйцо с полноценной личинкой. При уничтожении биомасса не возвращается."
+	desc = "Крупное яйцо с полноценной личинкой. Если его уничтожить, потраченная биомасса не вернётся."
 	spawner_type = /obj/effect/mob_spawn/ghost_role/xeno_hive/larva
 
 /** Native ghost-role reservation handles simultaneous claims before any input. */
@@ -195,9 +195,9 @@
 	prompt_ghost = FALSE
 	role_ban = ROLE_ALIEN
 	spawner_job_path = /datum/job/xenomorph
-	you_are_text = "Вы — бруд, помощник улья."
-	flavour_text = "Вы — слабый миньон. Королева открывает новые виды и их способности в дереве развития. Общайтесь через :a."
-	important_text = "Вы не можете эволюционировать и не добываете биомассу. После смерти можно снова занять свободное место."
+	you_are_text = "Вы — младший помощник улья."
+	flavour_text = "Младший выводок служит улью с первых минут жизни. Королева открывает новые виды и способности в дереве развития. Для общения используйте :a."
+	important_text = "Младшее потомство не эволюционирует и не добывает биомассу. После смерти можно занять новое свободное место."
 	/// Physical owner; released when either side is destroyed.
 	var/obj/structure/xeno_hive_egg/egg
 	/// Full larvae are independent of subsequent core loss.
@@ -257,10 +257,10 @@
 /obj/effect/mob_spawn/ghost_role/xeno_hive/pre_ghost_take(mob/dead/observer/user)
 	reservations[REF(user)] = TRUE
 	if(larval_egg)
-		var/accepted = tgui_alert(user, "Стать полноценной личинкой? После входа прежнее тело нельзя будет воскресить.", "Улей", list("Да", "Нет"), 10 SECONDS) == "Да"
+		var/accepted = tgui_alert(user, "Стать полноценной личинкой? Прежнее тело после переселения уже нельзя будет воскресить.", "Улей", list("Да", "Нет"), 10 SECONDS) == "Да"
 		return accepted && !QDELETED(src) && !QDELETED(user) && allow_spawn(user)
 	var/list/options = GLOB.xeno_hive.brood_options()
-	var/choice = tgui_input_list(user, "Выберите слабое потомство. После входа прежнее тело нельзя будет воскресить.", "Улей", options)
+	var/choice = tgui_input_list(user, "Выберите существо младшего выводка. После переселения прежнее тело нельзя будет воскресить.", "Улей", options)
 	if(QDELETED(src) || QDELETED(user) || !user.client || !allow_spawn(user) || !(choice in options))
 		return FALSE
 	// String keys do not retain observers across a cancelled prompt.
@@ -294,7 +294,7 @@
 	uses = 1
 	larval_egg = TRUE
 	you_are_text = "Вы — полноценная личинка улья."
-	flavour_text = "Растите и эволюционируйте. Королева потратила на ваше яйцо биомассу нескольких жертв. Общайтесь через :a."
+	flavour_text = "Растите и эволюционируйте! На создание яйца королева потратила биомассу нескольких жертв. Для общения используйте :a."
 	important_text = "После вылупления яйцо исчезнет."
 
 /obj/effect/mob_spawn/ghost_role/xeno_hive/check_uses()

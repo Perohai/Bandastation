@@ -3,7 +3,7 @@
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "empower"
 	name = "Усиление (50P)"
-	desc = "Первое нажатие даёт щит. Повторное нажатие в течение шести секунд усиливает его за каждого врага рядом."
+	desc = "Первое нажатие создаёт защитный барьер. Повторное нажатие в течение шести секунд усиливает барьер в зависимости от числа врагов поблизости."
 	/// Whether the Ravager can amplify its initial shield.
 	var/awaiting_second_activation = FALSE
 	/// Absolute expiry timestamp of the second-activation window.
@@ -70,7 +70,7 @@
 /** Рывок на пять клеток. При усилении опрокидывает, рассекает и отбрасывает противника. */
 /datum/action/cooldown/alien/banda/ravager_charge
 	name = "Рывок"
-	desc = "Рывок на пять клеток. При усилении опрокидывает, рассекает и отбрасывает противника."
+	desc = "Бросается вперёд на пять клеток. В усиленном состоянии сбивает врага с ног, рассекает и отбрасывает."
 	button_icon_state = "ravager_charge"
 	plasma_cost = 25
 	cooldown_time = 14 SECONDS
@@ -121,18 +121,21 @@
 /datum/action/cooldown/alien/banda/ravager_cut
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "scissor_cut"
-	name = "Резкий удар"
-	desc = "После предупреждения рассекает линию длиной четыре клетки. При усилении замедляет поражённых врагов."
+	name = "Стремительный удар"
+	desc = "После подготовки рассекает линию длиной четыре клетки. Движение прерывает удар, но перезарядка всё равно начинается. При усилении замедляет поражённых врагов."
 	plasma_cost = 25
 	cooldown_time = 10 SECONDS
 	click_to_activate = TRUE
 	/// Guards overlapping channelled activations.
 	var/preparing = FALSE
+	/// Remembers a deselection even if the action is reselected before the windup ends.
+	var/cut_cancelled = FALSE
 
 /datum/action/cooldown/alien/banda/ravager_cut/Activate(atom/target)
-	var/turf/start = get_turf(owner)
+	var/mob/living/attacker = owner
+	var/turf/start = attacker?.loc
 	var/turf/target_turf = get_turf(target)
-	if(preparing || !isturf(owner.loc) || !target_turf || start == target_turf || start.z != target_turf.z)
+	if(preparing || !IsAvailable() || !isturf(start) || !target_turf || start == target_turf || start.z != target_turf.z)
 		return FALSE
 	var/list/attack_line = list()
 	var/direction = get_dir(start, target_turf)
@@ -144,13 +147,18 @@
 		attack_line += location
 		new /obj/effect/temp_visual/smartgun_target/xeno_cut(location)
 	preparing = TRUE
-	playsound(owner, 'sound/effects/magic/tail_swing.ogg', 55, TRUE)
-	var/ready = do_after(owner, 0.5 SECONDS, target = start)
+	cut_cancelled = FALSE
+	playsound(attacker, 'sound/effects/magic/tail_swing.ogg', 55, TRUE)
+	var/ready = do_after(attacker, 0.5 SECONDS, target = start, extra_checks = CALLBACK(src, PROC_REF(can_finish_cut), attacker, start))
 	preparing = FALSE
-	if(!ready || QDELETED(src) || QDELETED(owner) || owner.loc != start || !IsAvailable())
+	if(QDELETED(src) || QDELETED(attacker) || owner != attacker)
 		return FALSE
-	playsound(owner, 'modular_bandastation/xeno_rework/sound/bloodyslice.ogg', 70, TRUE)
-	owner.do_attack_animation(target_turf, ATTACK_EFFECT_SLASH)
+	var/finished = ready && can_finish_cut(attacker, start)
+	StartCooldown()
+	if(!finished)
+		return FALSE
+	playsound(attacker, 'modular_bandastation/xeno_rework/sound/bloodyslice.ogg', 70, TRUE)
+	attacker.do_attack_animation(target_turf, ATTACK_EFFECT_SLASH)
 	for(var/turf/hit_turf as anything in attack_line)
 		if(isclosedturf(hit_turf))
 			break
@@ -158,10 +166,18 @@
 			if(isalien(victim))
 				continue
 			victim.apply_damage(25, BRUTE, BODY_ZONE_CHEST, sharpness = SHARP_EDGED)
-			if(owner.has_status_effect(/datum/status_effect/xeno_super_empowered) && !QDELETED(victim))
+			if(attacker.has_status_effect(/datum/status_effect/xeno_super_empowered) && !QDELETED(victim))
 				victim.apply_status_effect(/datum/status_effect/xeno_hamstrung)
-	StartCooldown()
 	return TRUE
+
+/// Recheck the original caster and selection throughout the windup.
+/datum/action/cooldown/alien/banda/ravager_cut/proc/can_finish_cut(mob/living/attacker, turf/start)
+	return !cut_cancelled && !QDELETED(attacker) && owner == attacker && attacker.loc == start && IsAvailable()
+
+/datum/action/cooldown/alien/banda/ravager_cut/unset_click_ability(mob/on_who, refund_cooldown = TRUE)
+	if(preparing && on_who == owner)
+		cut_cancelled = TRUE
+	return ..()
 
 /** Brief visible warning for the Ravager line cleave. */
 /obj/effect/temp_visual/smartgun_target/xeno_cut

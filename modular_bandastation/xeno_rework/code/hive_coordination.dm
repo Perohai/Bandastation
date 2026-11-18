@@ -12,7 +12,7 @@
 
 /datum/action/cooldown/alien/banda/hive_pheromones
 	name = "Восстановительные феромоны"
-	desc = "После покупки адаптации лечит по 5 ушибов и ожогов союзникам в радиусе пяти клеток."
+	desc = "После покупки адаптации восстанавливает союзникам в радиусе пяти клеток по 5 единиц урона от ушибов и ожогов."
 	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
 	button_icon_state = "pheromones"
 	cooldown_time = 30 SECONDS
@@ -29,22 +29,43 @@
 	return TRUE
 
 /datum/xeno_hive
-	/// One round-owned marker lets native pinpointers follow changes without retaining turfs.
-	var/obj/effect/xeno_rally_point/rally_point
+	/// Each setter owns at most one rally point, indexed by the setter's ref.
+	var/list/rally_points = list()
 
 /** Invisible world anchor; only hive members enabling the HUD can locate it. */
 /obj/effect/xeno_rally_point
 	invisibility = INVISIBILITY_ABSTRACT
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	/// Used to remove the precise entry on deletion, even if the active hive changes.
+	var/datum/weakref/hive_ref
+	var/datum/weakref/setter_ref
+	var/setter_key
+
+/obj/effect/xeno_rally_point/Initialize(mapload, datum/xeno_hive/hive, mob/living/carbon/alien/setter)
+	. = ..()
+	hive_ref = WEAKREF(hive)
+	setter_ref = WEAKREF(setter)
+	setter_key = REF(setter)
+	RegisterSignals(setter, list(COMSIG_QDELETING, COMSIG_LIVING_DEATH), PROC_REF(on_setter_gone))
+
+/obj/effect/xeno_rally_point/proc/on_setter_gone()
+	SIGNAL_HANDLER
+	qdel(src)
 
 /obj/effect/xeno_rally_point/Destroy()
-	if(GLOB.xeno_hive?.rally_point == src)
-		GLOB.xeno_hive.rally_point = null
+	var/datum/xeno_hive/hive = hive_ref?.resolve()
+	if(hive?.rally_points[setter_key] == src)
+		hive.rally_points -= setter_key
+	var/mob/living/setter = setter_ref?.resolve()
+	if(setter)
+		UnregisterSignal(setter, list(COMSIG_QDELETING, COMSIG_LIVING_DEATH))
+	hive_ref = null
+	setter_ref = null
 	return ..()
 
 /datum/action/cooldown/alien/banda/hive_rally
 	name = "Точка сбора"
-	desc = "Укажите видимую клетку в пределах семи клеток. Она станет общей точкой сбора для включённых указателей улья."
+	desc = "Укажите видимую клетку в пределах семи клеток. Ваша точка появится в составе улья. Новая точка заменит вашу предыдущую."
 	button_icon = 'modular_bandastation/xeno_rework/icons/brood_actions.dmi'
 	button_icon_state = "rally"
 	cooldown_time = 15 SECONDS
@@ -54,18 +75,23 @@
 	var/turf/location = get_turf(target)
 	if(!GLOB.xeno_hive?.purchased["coordination"] || !GLOB.xeno_hive.can_set_rally(owner) || !IsAvailable() || !location || !(location in view(7, owner)))
 		return FALSE
-	GLOB.xeno_hive.set_rally_point(owner, location)
+	if(!GLOB.xeno_hive.set_rally_point(owner, location))
+		return FALSE
 	StartCooldown()
 	return TRUE
 
 /datum/xeno_hive/proc/set_rally_point(mob/living/carbon/alien/member, turf/location)
-	if(!can_set_rally(member) || !location || !(location in view(7, member)))
+	if(!purchased["coordination"] || !can_set_rally(member) || !location || !(location in view(7, member)))
 		return FALSE
-	if(QDELETED(rally_point))
-		rally_point = new(location)
+	var/key = REF(member)
+	var/obj/effect/xeno_rally_point/point = rally_points[key]
+	if(QDELETED(point))
+		point = new(location, src, member)
 	else
-		rally_point.forceMove(location)
-	member.alien_talk("Место сбора: [get_area(location)], [location.x], [location.y]. Включите указатель, чтобы найти направление.")
+		point.forceMove(location)
+		rally_points -= key
+	rally_points[key] = point
+	member.alien_talk("Точка сбора: [get_area(location)], [location.x], [location.y]. Выберите точку в составе улья.")
 	return TRUE
 
 /datum/xeno_hive/proc/can_set_rally(mob/living/carbon/alien/member)
@@ -82,7 +108,7 @@
 /** Personal native HUD image follows the character, rather than a corner alert. */
 /datum/action/cooldown/alien/banda/hive_rally_track
 	name = "К месту сбора"
-	desc = "Включает или выключает постоянный указатель направления к общей точке сбора. Обновляется раз в секунду."
+	desc = "Включает указатель к последней точке сбора или выключает текущее слежение. Другие цели выбираются в составе улья."
 	button_icon = 'modular_bandastation/xeno_rework/icons/rally_track.dmi'
 	button_icon_state = "track"
 
@@ -96,8 +122,10 @@
 	if(member.has_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally))
 		member.remove_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
 	else
-		var/datum/status_effect/agent_pinpointer/xeno_rally/tracker = member.apply_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
-		tracker?.tick(0)
+		var/list/points = GLOB.xeno_hive.rally_points
+		var/atom/target = length(points) ? points[points[length(points)]] : null
+		if(!GLOB.xeno_hive.follow_rally_target(member, target))
+			return FALSE
 	build_all_button_icons()
 	return TRUE
 
@@ -116,7 +144,7 @@
 	var/image/direction_arrow
 
 /datum/status_effect/agent_pinpointer/xeno_rally/on_apply()
-	if((!istype(owner, /mob/living/carbon/alien/adult/banda) && !istype(owner, /mob/living/carbon/alien/hivemind)) || !GLOB.xeno_hive?.purchased["coordination"])
+	if(!is_hive_roster_member(owner) || !GLOB.xeno_hive?.purchased["coordination"])
 		return FALSE
 	direction_arrow = image('modular_bandastation/xeno_rework/icons/rally_pointer.dmi', owner, "arrow", ABOVE_MOB_LAYER)
 	direction_arrow.color = "#bd7af0"
@@ -141,28 +169,45 @@
 	direction_arrow.dir = get_dir(here, there)
 	direction_arrow.alpha = 220
 
-/datum/status_effect/agent_pinpointer/xeno_rally/scan_for_target()
-	var/obj/effect/xeno_rally_point/current = GLOB.xeno_hive?.rally_point
-	if(scan_target == current)
-		return
-	if(scan_target)
-		UnregisterSignal(scan_target, COMSIG_QDELETING)
-	scan_target = current
-	if(QDELETED(scan_target))
-		scan_target = null
+/// Validate before changing the personal pointer, for both HUD and roster callers.
+/datum/xeno_hive/proc/follow_rally_target(mob/living/carbon/alien/member, atom/target)
+	if(!purchased["coordination"] || !is_hive_roster_member(member))
+		return FALSE
+	if(target && (target == member || (!is_hive_roster_member(target) && !owns_rally_point(target))))
+		return FALSE
+	var/datum/status_effect/agent_pinpointer/xeno_rally/tracker = member.has_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
+	if(tracker && tracker.scan_target == target)
+		member.remove_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
 	else
-		RegisterSignal(scan_target, COMSIG_QDELETING, PROC_REF(on_marker_deleted))
+		tracker ||= member.apply_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
+		tracker?.set_follow_target(target)
+	return TRUE
 
-/datum/status_effect/agent_pinpointer/xeno_rally/proc/on_marker_deleted()
+/datum/xeno_hive/proc/owns_rally_point(atom/target)
+	if(!istype(target, /obj/effect/xeno_rally_point) || QDELETED(target))
+		return FALSE
+	var/obj/effect/xeno_rally_point/point = target
+	return rally_points[point.setter_key] == point
+
+/datum/status_effect/agent_pinpointer/xeno_rally/scan_for_target()
+	return
+
+/datum/status_effect/agent_pinpointer/xeno_rally/proc/set_follow_target(atom/target)
+	if(scan_target)
+		UnregisterSignal(scan_target, list(COMSIG_QDELETING, COMSIG_LIVING_DEATH))
+	scan_target = target
+	if(target)
+		RegisterSignal(target, COMSIG_QDELETING, PROC_REF(on_target_gone))
+		if(isliving(target))
+			RegisterSignal(target, COMSIG_LIVING_DEATH, PROC_REF(on_target_gone))
+	point_to_target()
+
+/datum/status_effect/agent_pinpointer/xeno_rally/proc/on_target_gone()
 	SIGNAL_HANDLER
-	scan_target = null
-	if(direction_arrow)
-		direction_arrow.alpha = 0
+	set_follow_target(null)
 
 /datum/status_effect/agent_pinpointer/xeno_rally/on_remove()
-	if(scan_target)
-		UnregisterSignal(scan_target, COMSIG_QDELETING)
-	scan_target = null
+	set_follow_target(null)
 	owner?.remove_alt_appearance("xeno_rally_direction")
 	direction_arrow = null
 	return ..()

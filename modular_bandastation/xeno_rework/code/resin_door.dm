@@ -1,7 +1,7 @@
 /** A thick resin secretion that can be parted by xenomorphs. */
 /obj/structure/alien/resin/door
 	name = "resin door"
-	desc = "A thick resin secretion that can be parted by xenomorphs."
+	desc = "Плотная смоляная перегородка, которую ксеноморфы могут раздвигать."
 	icon = 'modular_bandastation/xeno_rework/icons/resin_door.dmi'
 	icon_state = "resin_door-0"
 	base_icon_state = "resin_door"
@@ -78,7 +78,7 @@
 /obj/structure/alien/resin/door/attack_alien(mob/living/carbon/alien/user, list/modifiers)
 	if (!user.combat_mode)
 		return try_to_operate(user)
-	to_chat(user, span_notice("You begin tearing down this resin structure."))
+	to_chat(user, span_notice("Вы начинаете разбирать смоляную постройку."))
 	if (!do_after(user, 4 SECONDS, target = src) || QDELETED(src) || QDELETED(user) || !user.Adjacent(src) || user.incapacitated || !user.combat_mode)
 		return
 	qdel(src)
@@ -94,7 +94,7 @@
 		if (!carbon_user.handcuffed)
 			operate(bumped_open)
 		return
-	to_chat(user, span_notice("Your lack of connection to the hive prevents the resin door from opening."))
+	to_chat(user, span_notice("Связь с ульем отсутствует, поэтому смоляная дверь не открывается."))
 
 /// Determines if the door is vertical based on its icon_state.
 /obj/structure/alien/resin/door/proc/is_vertical()

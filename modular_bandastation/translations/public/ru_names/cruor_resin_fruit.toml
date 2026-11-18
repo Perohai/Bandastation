@@ -1,8 +1,8 @@
-["cruor resin fruit"]
-nominative = "плод круора"
-genitive = "плода круора"
-dative = "плоду круора"
-accusative = "плод круора"
-instrumental = "плодом круора"
-prepositional = "плоде круора"
+["Плод крови"]
+nominative = "плод крови"
+genitive = "плода крови"
+dative = "плоду крови"
+accusative = "плод крови"
+instrumental = "плодом крови"
+prepositional = "плоде крови"
 gender = "male"

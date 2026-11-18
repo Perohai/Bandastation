@@ -1,4 +1,4 @@
 /datum/modpack/xeno_rework
-	name = "Xeno Rework"
-	desc = "Полностью перерабатывает режим ксеноморфов."
+	name = "Переработка ксеноморфов"
+	desc = "Полная переработка игрового режима ксеноморфов."
 	author = "Artfish, Paxilmaniac"

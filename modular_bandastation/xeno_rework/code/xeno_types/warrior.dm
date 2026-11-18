@@ -2,7 +2,7 @@
 /** Если среди чужих и есть ходячие танки, то этот — один из них, с тяжёлой бронёй и мощными руками, подтверждающими этот статус. */
 /mob/living/carbon/alien/adult/banda/warrior
 	name = "alien warrior"
-	desc = "Если среди чужих и есть ходячие танки, то этот — один из них, с тяжёлой бронёй и мощными руками, подтверждающими этот статус."
+	desc = "Если среди Чужих есть живые танки, то перед вами один из них: толстая броня и могучие лапы не оставляют сомнений."
 	caste = "warrior"
 	mob_size = MOB_SIZE_LARGE
 	evolution_tier = 3
@@ -104,11 +104,17 @@
 	if(agility)
 		return
 	agility = TRUE
+	break_warrior_grab(show_message = FALSE)
 	icon_state = "alien[caste]_mobility"
 	add_movespeed_modifier(/datum/movespeed_modifier/warrior_agility)
 	playsound(src, 'modular_bandastation/xeno_rework/sound/alien_hiss.ogg', 45, TRUE)
 	new /obj/effect/temp_visual/decoy/fading/halfsecond(loc, src, 100)
-	balloon_alert(src, "agility active")
+	balloon_alert(src, "Режим ловкости включён.")
+
+/mob/living/carbon/alien/adult/banda/warrior/start_pulling(atom/movable/pulled_atom, state, force = pull_force, supress_message = FALSE)
+	if(agility && isliving(pulled_atom))
+		return FALSE
+	return ..()
 
 /** Disable agility and release its movement modifier. */
 /mob/living/carbon/alien/adult/banda/warrior/proc/exit_agility()
@@ -118,7 +124,7 @@
 	icon_state = "alien[caste]"
 	remove_movespeed_modifier(/datum/movespeed_modifier/warrior_agility)
 	playsound(src, 'modular_bandastation/xeno_rework/sound/alien_resin_move1.ogg', 35, TRUE)
-	balloon_alert(src, "agility ended")
+	balloon_alert(src, "Режим ловкости выключен.")
 
 /** Return the Warrior-held living victim if the grab is still valid. */
 /mob/living/carbon/alien/adult/banda/warrior/proc/get_warrior_grab_target()
@@ -133,8 +139,8 @@
 
 	if(show_message && isliving(pulling))
 		visible_message(
-			span_warning("[src] loses [src.p_their()] grip!"),
-			span_alertalien("Pain forces us to release our prey!"),
+			span_warning("[src] теряет [src.p_their()] хватку!"),
+			span_alertalien("Боль заставляет нас отпустить добычу!"),
 		)
 
 	if(isliving(pulling))

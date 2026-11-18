@@ -9,7 +9,7 @@
 			Knockdown(3 SECONDS)
 			apply_damage(disarm_damage, STAMINA)
 			visible_message(span_danger("[user] валит [src] на землю!"), \
-				span_userdanger("[user] валит вас на землю!"), span_hear("Вы слышите яростное шарканье, за которым следует громкий глухой удар!"), null, user)
+				span_userdanger("[user] валит вас на землю!"), span_hear("Раздаётся торопливый топот когтистых лап, за которым следует тяжёлый глухой удар!"), null, user)
 			to_chat(user, span_danger("Вы опрокидываете [src] на землю!"))
 			return TRUE
 
@@ -18,7 +18,7 @@
 			apply_damage(disarm_damage, STAMINA)
 			log_combat(user, src, "tackled")
 			visible_message(span_danger("[user] сбивает [src] с ног!"), \
-							span_userdanger("[user] сбивает вас с ног!"), span_hear("Вы слышите яростное шарканье!"), null, user)
+							span_userdanger("[user] сбивает вас с ног!"), span_hear("Раздаётся торопливый топот когтистых лап!"), null, user)
 			to_chat(user, span_danger("Вы валите [src] на землю!"))
 
 		return TRUE
@@ -36,9 +36,9 @@
 		var/armor_block = run_armor_check(affecting, MELEE, "", "", 10)
 
 		playsound(loc, 'sound/items/weapons/slice.ogg', 25, TRUE, -1)
-		visible_message(span_danger("[user] наносит когтями удар по [src]!"), \
-						span_userdanger("[user] наносит вам удар когтями!"), span_hear("Вы слышите мерзкий звук разрезаемой плоти!"), null, user)
-		to_chat(user, span_danger("Вы наносите удар когтями по [src]!"))
+		visible_message(span_danger("[user] полосует [src] когтями!"), \
+						span_userdanger("[user] полосует вас когтями!"), span_hear("Слышится омерзительный звук рвущейся плоти!"), null, user)
+		to_chat(user, span_danger("Вы полосуете [src] когтями!"))
 		log_combat(user, src, "attacked")
 
 		if(!dismembering_strike(user, user.zone_selected)) //Dismemberment successful

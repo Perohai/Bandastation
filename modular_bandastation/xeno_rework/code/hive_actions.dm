@@ -13,7 +13,7 @@
 
 /datum/action/cooldown/alien/hive_roster
 	name = "Состав улья"
-	desc = "Показывает живых взрослых ксеноморфов и их состояние."
+	desc = "Показывает всех живых взрослых ксеноморфов и их текущее состояние."
 	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
 	button_icon_state = "roster"
 
@@ -50,7 +50,7 @@
 /** The same stomach transport as before, with a channel instead of grab combinations. */
 /datum/action/cooldown/alien/hive_swallow
 	name = "Проглотить"
-	desc = "Проглатывает соседнюю живую жертву за 13,5 секунды. Движение жертвы, её смерть или потеря сознания ксеноморфа прерывают действие."
+	desc = "Заглатывает стоящую рядом живую жертву за 13,5 секунды. Движение жертвы, её смерть или потеря сознания ксеноморфа прерывают процесс."
 	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
 	button_icon_state = "swallow"
 	click_to_activate = TRUE

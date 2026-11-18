@@ -6,10 +6,10 @@
 	var/evolution_time = 5 SECONDS
 	/// The first castes available to a fully grown larva.
 	var/static/list/caste_options = list(
-		"Runner" = /mob/living/carbon/alien/adult/banda/runner,
-		"Sentinel" = /mob/living/carbon/alien/adult/banda/sentinel,
-		"Defender" = /mob/living/carbon/alien/adult/banda/defender,
-		"Drone" = /mob/living/carbon/alien/adult/banda/drone,
+		"Бегун" = /mob/living/carbon/alien/adult/banda/runner,
+		"Страж" = /mob/living/carbon/alien/adult/banda/sentinel,
+		"Защитник" = /mob/living/carbon/alien/adult/banda/defender,
+		"Дрон" = /mob/living/carbon/alien/adult/banda/drone,
 	)
 
 /datum/action/cooldown/alien/larva_evolve/Activate(atom/target)

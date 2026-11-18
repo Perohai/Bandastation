@@ -1,6 +1,6 @@
 /** A prepared resin nest uses native buckling, rescue and embryo sustenance. */
 /obj/structure/bed/nest/banda
-	desc = "Подготовленное смоляное гнездо. Взрослый ксеноморф может заключить здесь добычу в кокон."
+	desc = "Смоляное гнездо, готовое к использованию. Здесь взрослый ксеноморф может оплести жертву коконом."
 	/// Owned shell, released as soon as the prey is freed.
 	var/obj/structure/xeno_cocoon/cocoon
 	/// A second adult cannot replace the captive during preparation.
@@ -37,7 +37,7 @@
 /** The shell never owns the body: destroying it rescues the captive. */
 /obj/structure/xeno_cocoon
 	name = "resin cocoon"
-	desc = "Смоляная оболочка удерживает тело на гнезде. Её можно разрушить или разорвать рукой, освободив пленника."
+	desc = "Смоляная оболочка удерживает пленника на гнезде. Разрушьте кокон или разорвите его руками, чтобы освободить жертву."
 	icon = 'icons/mob/nonhuman-player/alien.dmi'
 	icon_state = "nestoverlay"
 	anchored = TRUE
@@ -115,5 +115,5 @@
 	prey.drop_all_held_items()
 	for(var/obj/item/item as anything in prey.get_equipped_items())
 		prey.dropItemToGround(item, force = TRUE)
-	prey.visible_message(span_warning("Тело в [src] растворяется в смоле."))
+	prey.visible_message(span_warning("Тело внутри [src] медленно растворяется в смоле."))
 	qdel(prey)

@@ -1,6 +1,6 @@
 /datum/action/cooldown/alien/brood_charge
 	name = "Таран жука"
-	desc = "Неточный рывок на четыре клетки. Попадание наносит 15 урона и опрокидывает на секунду."
+	desc = "Рывок на четыре клетки без точного прицеливания. При попадании наносит 15 урона и сбивает цель с ног на секунду."
 	button_icon = 'modular_bandastation/xeno_rework/icons/brood_actions.dmi'
 	button_icon_state = "beetle_charge"
 	plasma_cost = 80
@@ -25,7 +25,7 @@
 	warning.pixel_y = 20
 	warning.layer = ABOVE_ALL_MOB_LAYER
 	warning.plane = ABOVE_GAME_PLANE
-	beetle.visible_message(span_warning("[beetle] припадает к полу, готовясь к тарану!"))
+	beetle.visible_message(span_warning("[beetle] прижимается к полу, готовясь к тарану!"))
 	playsound(beetle, 'modular_bandastation/xeno_rework/sound/alien_hiss.ogg', 55, TRUE)
 	var/ready = do_after(beetle, windup_time, target = beetle, extra_checks = CALLBACK(src, PROC_REF(can_charge), destination))
 	qdel(warning)
@@ -47,8 +47,8 @@
 	return TRUE
 
 /datum/action/cooldown/alien/brood_ravage
-	name = "Размах богомола"
-	desc = "Поражает трёхклеточную дугу перед собой: 12 урона каждой цели."
+	name = "Взмах серпами"
+	desc = "Взмахом серпов поражает цели по дуге шириной три клетки перед собой. Каждая получает 12 урона."
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "scissor_cut"
 	plasma_cost = 200
@@ -68,7 +68,7 @@
 	var/mob/living/carbon/alien/brood/mantis/mantis = owner
 	preparing = TRUE
 	owner.setDir(get_dir(owner, target))
-	owner.visible_message(span_warning("[owner] широко заносит серповидные когти!"))
+	owner.visible_message(span_warning("[owner] заносит серповидные когти для широкого удара!"))
 	var/ready = do_after(owner, windup_time, target = owner, extra_checks = CALLBACK(src, PROC_REF(can_ravage), target))
 	if(QDELETED(src))
 		return FALSE
@@ -86,7 +86,7 @@
 		slash.setDir(arc_direction)
 	owner.do_attack_animation(target, ATTACK_EFFECT_CLAW)
 	playsound(owner, 'sound/items/weapons/slice.ogg', 65, TRUE)
-	owner.visible_message(span_danger("[owner] проводит широкий размах серпами!"))
+	owner.visible_message(span_danger("[owner] с размаху рассекает воздух серповидными когтями!"))
 	for(var/mob/living/victim in view(1, owner))
 		if(isalien(victim) || !(get_dir(owner, victim) in arc))
 			continue
@@ -97,8 +97,8 @@
 	return TRUE
 
 /datum/action/cooldown/alien/brood_spit
-	name = "Плевок скорпиона"
-	desc = "Кислотный плевок на семь клеток: 5 ожогов, после улучшения 10."
+	name = "Плевок кислотой"
+	desc = "Плевок кислотой на расстояние до семи клеток: наносит 5 ожогового урона, после улучшения — 10."
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "neuro_spit"
 	plasma_cost = 75
@@ -120,7 +120,7 @@
 /** The slot cooldown is shared by the hive; this one life can detonate only once. */
 /datum/action/cooldown/alien/brood_detonate
 	name = "Самоподрыв"
-	desc = "Замирание на 1,5 секунды с предупреждением, миганием и рычанием, затем кислотный взрыв до трёх клеток. Банелинг погибает; убийство во время подготовки останавливает подрыв."
+	desc = "Банелинг замирает на 1,5 секунды, мигает и рычит, предупреждая окружающих. Затем взрывается, разбрызгивая кислоту в радиусе трёх клеток, и погибает. Если банелинга убьют во время подготовки, взрыва не будет."
 	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
 	button_icon_state = "emp"
 	/// The live fuse cannot be restarted or extended by repeated clicks.
@@ -143,7 +143,7 @@
 		return FALSE
 	primed = TRUE
 	var/mob/living/carbon/alien/brood/baneling/baneling = owner
-	baneling.visible_message(span_userdanger("[baneling] замирает и раздувается — сейчас взорвётся!"), span_userdanger("Вы замираете. Кислотные мешки лопнут через 1,5 секунды!"))
+	baneling.visible_message(span_userdanger("[baneling] замирает и угрожающе раздувается — сейчас рванёт!"), span_userdanger("Вы замираете. Кислотные мешки разорвутся через 1,5 секунды!"))
 	ADD_TRAIT(baneling, TRAIT_IMMOBILIZED, REF(src))
 	detonate_at = world.time + fuse_time
 	RegisterSignal(baneling, COMSIG_LIVING_DEATH, PROC_REF(on_baneling_death))

@@ -6,14 +6,10 @@
 	var/name
 	/// Full description shown beside the selected node.
 	var/desc
-	/// The three freely mixable development branches.
-	var/branch = "Функциональность"
+	/// Tab in the evolution UI. Prerequisites may belong to any tab.
+	var/category
 	/// FontAwesome symbol from the existing TGUI icon set.
 	var/icon = "dna"
-	/// Column within this branch, increasing along prerequisite edges.
-	var/tree_x = 0
-	/// Row within this branch.
-	var/tree_y = 0
 	/// Biomass before repeatable level scaling.
 	var/cost = 100
 	/// Repeatable purchases use INFINITY.
@@ -36,26 +32,22 @@
 
 /datum/xeno_hive_upgrade/carapace
 	id = "carapace"
+	category = "Эволюция"
 	name = "Адаптация T1"
-	desc = "Все боевые касты T1: +15 здоровья и +2 урона когтей. Королева и потомство не затрагиваются."
-	branch = "Качество"
+	desc = "Все боевые касты T1 получают +15 здоровья и +2 к урону когтей. Королева и выводок не получают усиления."
 	cost = 150
 	icon = "dna"
-	tree_x = 0
-	tree_y = 1
 	target_tier = 1
 	health_bonus = 15
 	claw_bonus = 2
 
 /datum/xeno_hive_upgrade/claws
 	id = "claws"
+	category = "Эволюция"
 	name = "Адаптация T2"
-	desc = "Все касты T2: +25 здоровья и +3 урона когтей."
-	branch = "Качество"
+	desc = "Все касты T2 получают +25 здоровья и +3 к урону когтей."
 	cost = 200
 	icon = "shield-halved"
-	tree_x = 1
-	tree_y = 1
 	requires = list("carapace")
 	target_tier = 2
 	health_bonus = 25
@@ -63,13 +55,11 @@
 
 /datum/xeno_hive_upgrade/tier3
 	id = "tier3"
+	category = "Эволюция"
 	name = "Адаптация T3"
-	desc = "Все касты T3: +35 здоровья и +4 урона когтей."
-	branch = "Качество"
+	desc = "Все касты T3 получают +35 здоровья и +4 к урону когтей."
 	cost = 250
 	icon = "hand-fist"
-	tree_x = 2
-	tree_y = 1
 	requires = list("claws")
 	target_tier = 3
 	health_bonus = 35
@@ -77,13 +67,11 @@
 
 /datum/xeno_hive_upgrade/tier4
 	id = "tier4"
+	category = "Эволюция"
 	name = "Адаптация T4"
-	desc = "Все специальные касты T4: +40 здоровья и +5 урона когтей."
-	branch = "Качество"
+	desc = "Все особые касты T4 получают +40 здоровья и +5 к урону когтей."
 	cost = 300
 	icon = "crown"
-	tree_x = 3
-	tree_y = 1
 	requires = list("tier3")
 	target_tier = 4
 	health_bonus = 40
@@ -91,227 +79,220 @@
 
 /datum/xeno_hive_upgrade/crusher
 	id = "crusher"
-	name = "Крушитель · Crusher"
-	desc = "Воин может эволюционировать в Крушителя. Один одновременный слот; сама покупка не создаёт касту."
-	branch = "Качество"
+	category = "Эволюция"
+	name = "Крушитель"
+	desc = "Позволяет воину эволюционировать в Крушителя. Одновременно может существовать только один. Покупка адаптации не создаёт Крушителя автоматически."
 	cost = 300
 	icon = "meteor"
-	tree_x = 3
-	tree_y = 0
 	requires = list("tier3")
 
 /datum/xeno_hive_upgrade/boiler
 	id = "boiler"
-	name = "Кислотная артиллерия · Boiler"
-	desc = "Плеватель может эволюционировать в Бойлера. Один одновременный слот."
-	branch = "Качество"
+	category = "Эволюция"
+	name = "Кислотная артиллерия"
+	desc = "Позволяет плевуну эволюционировать в Бойлера. Одновременно может существовать только один."
 	cost = 350
 	icon = "flask"
-	tree_x = 3
-	tree_y = 2
 	requires = list("tier3")
 
 /datum/xeno_hive_upgrade/ravager
 	id = "ravager"
-	name = "Разоритель · Ravager T4"
-	desc = "Открывает Runner выбор Ravager T4 вместо обычного Hunter T2. Один одновременный слот; покупка не превращает ксеноморфа автоматически."
-	branch = "Качество"
+	category = "Эволюция"
+	name = "Разоритель (T4)"
+	desc = "Открывает для Бегуна эволюцию в Разорителя T4 вместо обычного Охотника T2. Одновременно может существовать только один Разоритель. Покупка адаптации не превращает Бегуна автоматически."
 	cost = 300
 	icon = "khanda"
-	tree_x = 3
-	tree_y = 3
 	requires = list("tier3")
 
 /datum/xeno_hive_upgrade/larva
 	id = "larva"
+	category = "Популяция"
 	name = "Вырастить личинку"
-	desc = "У ядра создаётся разрушаемое яйцо полноценной личинки. 400 биомассы, возврата нет. Повторяемая покупка."
-	branch = "Количество"
+	desc = "Создаёт у ядра уязвимое яйцо с полноценной личинкой. Стоимость — 400 биомассы, возврата нет. Адаптацию можно покупать повторно."
 	cost = 400
 	icon = "egg"
-	tree_x = 0
-	tree_y = 0
 	max_level = INFINITY
 
 /datum/xeno_hive_upgrade/warrior_slot
 	id = "warrior_slot"
+	category = "Популяция"
 	name = "Резерв воинов"
-	desc = "+1 одновременный слот Warrior. До трёх дополнительных слотов; цена растёт."
-	branch = "Количество"
+	desc = "Добавляет одно место для воина. Можно открыть до трёх дополнительных мест; каждое следующее обходится дороже."
 	cost = 180
 	icon = "people-group"
-	tree_x = 2
-	tree_y = 0
 	max_level = 3
 	scaling_cost = TRUE
 	slot_type = /mob/living/carbon/alien/adult/banda/warrior
 
 /datum/xeno_hive_upgrade/praetorian_slot
 	id = "praetorian_slot"
+	category = "Популяция"
 	name = "Резерв преторианцев"
-	desc = "+1 одновременный слот Praetorian. До трёх дополнительных слотов; цена растёт."
-	branch = "Количество"
+	desc = "Добавляет одно место для преторианца. Можно открыть до трёх дополнительных мест; каждое следующее обходится дороже."
 	cost = 180
 	icon = "chess-rook"
-	tree_x = 0
-	tree_y = 2
 	max_level = 3
 	scaling_cost = TRUE
 	slot_type = /mob/living/carbon/alien/adult/banda/praetorian
 
 /datum/xeno_hive_upgrade/construction
 	id = "construction"
+	category = "Биоструктуры"
 	name = "Живая смола"
-	desc = "Строительство смолы вдвое быстрее; сворачивание ядра за 3 секунды вместо 10."
-	branch = "Функциональность"
+	desc = "Сокращает время строительства смолы дроном и королевой на 20%. Сворачивание ядра занимает 3 секунды вместо 10."
 	cost = 100
 	icon = "trowel"
-	tree_x = 1
-	tree_y = 0
 
 /datum/xeno_hive_upgrade/brood_vigor
 	id = "brood_vigor"
+	category = "Выводок"
 	name = "Крепкий выводок"
-	desc = "+15 здоровья и +2 урона когтей живому и будущему выводку. Эволюции во взрослых нет."
-	branch = "Функциональность"
+	desc = "Младшее потомство получает +15 здоровья и +2 к урону когтей. Усиление действует на существующих и будущих особей. Эволюция во взрослые касты недоступна."
 	cost = 100
 	icon = "heart-pulse"
-	tree_x = 1
-	tree_y = 1
 	requires = list("construction")
 
 /datum/xeno_hive_upgrade/brood_mantis
 	id = "brood_mantis"
+	category = "Выводок"
 	name = "Выводок богомолов"
-	desc = "Открывает слабого богомола: 25 здоровья, 4 урона когтей. Размах открывается отдельно."
+	desc = "Открывает младшего Богомола с 25 здоровья и 4 урона когтей. Взмах серпами приобретается отдельно."
 	cost = 80
 	icon = "scissors"
-	tree_x = 1
-	tree_y = 2
 	requires = list("brood_vigor")
 
 /datum/xeno_hive_upgrade/brood_scorpion
 	id = "brood_scorpion"
+	category = "Выводок"
 	name = "Выводок скорпионов"
-	desc = "Открывает слабого скорпиона: 25 здоровья, 2 урона когтей. Кислотный плевок открывается отдельно."
+	desc = "Открывает младшего Скорпиона с 25 здоровья и 2 урона когтей. Плевок кислотой приобретается отдельно."
 	cost = 80
 	icon = "locust"
-	tree_x = 2
-	tree_y = 2
 	requires = list("brood_vigor")
 
 /datum/xeno_hive_upgrade/beetle_charge
 	id = "beetle_charge"
-	name = "Жук: таран"
-	desc = "Жуки получают рывок на 4 клетки: 15 урона и опрокидывание на секунду. Подготовка 0,5 секунды; 80 плазмы, перезарядка 30 секунд. Запас плазмы 320, восстановление 10."
+	category = "Выводок"
+	name = "Таран жука"
+	desc = "Жуки получают таранный рывок на четыре клетки: 15 урона и опрокидывание на секунду. Подготовка — 0,5 секунды, стоимость — 80 плазмы, перезарядка — 30 секунд. Максимум плазмы — 320, восстановление — 10."
 	cost = 120
 	icon = "angles-right"
-	tree_x = 0
-	tree_y = 3
 	requires = list("brood_vigor")
 
 /datum/xeno_hive_upgrade/mantis_ravage
 	id = "mantis_ravage"
-	name = "Богомол: размах"
-	desc = "Богомолы получают удар по трём клеткам перед собой: 12 урона. Подготовка 0,5 секунды; 200 плазмы, перезарядка 30 секунд. Запас плазмы 600, восстановление 20."
+	category = "Выводок"
+	name = "Взмах серпами богомола"
+	desc = "Богомолы получают удар по трём клеткам перед собой: 12 урона. Подготовка — 0,5 секунды, стоимость — 200 плазмы, перезарядка — 30 секунд. Максимум плазмы — 600, восстановление — 20."
 	cost = 120
 	icon = "fan"
-	tree_x = 1
-	tree_y = 3
 	requires = list("brood_mantis")
 
 /datum/xeno_hive_upgrade/scorpion_spit
 	id = "scorpion_spit"
-	name = "Скорпион: кислота"
-	desc = "Скорпионы получают кислотный плевок на 7 клеток: 10 ожогов. 75 плазмы, перезарядка 1,8 секунды. Усиливает базовый плевок с 5 до 10 урона. Запас плазмы 500, восстановление 10."
+	category = "Выводок"
+	name = "Плевок скорпиона"
+	desc = "Скорпионы получают плевок кислотой на расстояние до 7 клеток: 10 ожогового урона. Стоимость — 75 плазмы, перезарядка — 1,8 секунды. Улучшает базовый плевок с 5 до 10 урона. Максимум плазмы — 500, восстановление — 10."
 	cost = 120
 	icon = "droplet"
-	tree_x = 2
-	tree_y = 3
 	requires = list("brood_scorpion")
 
 /datum/xeno_hive_upgrade/brood_baneling
 	id = "brood_baneling"
+	category = "Выводок"
 	name = "Банелинг"
-	desc = "Финальный выводок: подвижный отсчёт 5 секунд с громкими предупреждениями, затем самоподрыв на 100/75/50/25 ожогов до 3 клеток с учётом кислотной брони. Один вход каждые 120 секунд для всего улья; требуется место в яйце."
+	desc = "Открывает банелинга — живую кислотную бомбу. Перед самоподрывом банелинг замирает на 1,5 секунды, мигает и рычит. Взрыв наносит 100/75/50/25 ожогового урона в зависимости от расстояния (до трёх клеток) и кислотной защиты. Одно появление каждые 120 секунд на весь улей; требуется свободное место в яйце."
 	cost = 350
 	icon = "burst"
-	tree_x = 1
-	tree_y = 4
 	requires = list("beetle_charge", "mantis_ravage", "scorpion_spit")
 
 /datum/xeno_hive_upgrade/capture
 	id = "capture"
+	category = "Биоструктуры"
 	name = "Быстрое пленение"
-	desc = "Подготовка кокона за 3 секунды вместо 6."
-	branch = "Функциональность"
+	desc = "Кокон создаётся за 3 секунды вместо 6."
 	cost = 100
 	icon = "link"
-	tree_x = 0
-	tree_y = 0
 
 /datum/xeno_hive_upgrade/processing
 	id = "processing"
+	category = "Биоструктуры"
 	name = "Переработка добычи"
-	desc = "Обработка тела за 120 секунд вместо 150. Общая награда тела не увеличивается."
-	branch = "Функциональность"
+	desc = "Тело перерабатывается за 120 секунд вместо 150. Общая награда в биомассе не меняется."
 	cost = 150
 	icon = "recycle"
-	tree_x = 0
-	tree_y = 1
 	requires = list("capture")
 
 /datum/xeno_hive_upgrade/coordination
 	id = "coordination"
+	category = "Эволюция"
 	name = "Связь охотников"
-	desc = "Все взрослые получают личный фиолетовый указатель вокруг персонажа. Назначать точку могут только Queen, T4 и Hivemind."
-	branch = "Функциональность"
+	desc = "В составе улья можно выбрать ксеноморфа или точку сбора для личного указателя. Королева, ксеноморфы T4 и Разум улья могут поставить по одной точке сбора."
 	cost = 80
 	icon = "location-crosshairs"
-	tree_x = 3
-	tree_y = 0
 
 /datum/xeno_hive_upgrade/pheromones
 	id = "pheromones"
+	category = "Эволюция"
 	name = "Восстановительные феромоны"
-	desc = "Queen, Praetorian и Carrier получают восстановительные феромоны: по 5 ушибов и ожогов союзникам в view(5). 100 плазмы; перезарядка 30 секунд."
-	branch = "Функциональность"
+	desc = "Королева, Преторианец и Носитель получают восстановительные феромоны: союзники в радиусе 5 клеток исцеляют по 5 единиц ушибов и ожогов. Стоимость — 100 плазмы, перезарядка — 30 секунд."
 	cost = 180
 	icon = "wind"
-	tree_x = 3
-	tree_y = 1
 	requires = list("coordination")
 
 /datum/xeno_hive_upgrade/carrier
 	id = "carrier"
-	name = "Носитель · Carrier T2"
-	desc = "Трутень получает эволюцию в Носителя T2: хранилище четырёх хаггеров, выращивание и бросок хаггеров, кладка яиц. Феромоны требуют отдельной покупки. Смолу и траву не строит; отдельного лимита касты нет."
+	category = "Популяция"
+	name = "Носитель (T2)"
+	desc = "Открывает дрону эволюцию в носителя T2. Носитель выращивает, переносит и метает до четырёх лицехватов, а также откладывает яйца. Феромоны приобретаются отдельно. Носитель не возводит смоляные постройки и не выращивает траву. Ограничения на число носителей нет."
 	cost = 200
 	icon = "bugs"
-	tree_x = 2
-	tree_y = 0
 
 /datum/xeno_hive_upgrade/generator
 	id = "generator"
+	category = "Биоструктуры"
 	name = "Генератор биомассы"
-	desc = "Построить перед королевой непроходимый генератор 2×2. 600 биомассы; доход 1 в секунду, окупаемость 10 минут. 350 прочности, слышимый шум. Количество не ограничено; четыре клетки должны быть свободны."
-	branch = "Количество"
+	desc = "Создаёт перед Королевой непроходимый генератор биомассы размером 2×2 клетки. Стоимость — 600 биомассы, производство — 1 в секунду, окупаемость — 10 минут. Прочность — 350. Генератор шумит, количество построек не ограничено. Для строительства нужны четыре свободные клетки."
 	cost = 600
 	icon = "industry"
-	tree_x = 1
-	tree_y = 3
 	max_level = INFINITY
 
 /datum/xeno_hive_upgrade/hivemind
 	id = "hivemind"
-	name = "Разум улья · Hivemind"
-	desc = "Вырастить перед королевой на траве привязку для призрака. Hivemind T0 перемещается духом по траве, воплощается для удалённого строительства, лечения и передачи плазмы. Запас плазмы 400. Одна привязка одновременно; её уничтожение убивает Hivemind. Каждый призыв стоит 300."
+	category = "Биоструктуры"
+	name = "Разум улья"
+	desc = "Позволяет вырастить на траве перед королевой узел, к которому сможет привязаться призрак. Разум улья T0 перемещается по траве в форме духа и воплощается, чтобы строить, лечить и передавать плазму на расстоянии. Запас плазмы — 400. В улье может быть лишь один такой узел; его разрушение убивает Разум улья. Стоимость каждого призыва — 300."
 	cost = 300
 	icon = "brain"
-	tree_x = 2
-	tree_y = 1
 	requires = list("coordination")
 	max_level = INFINITY
+
+/datum/xeno_hive_upgrade/acid_mines
+	id = "acid_mines"
+	category = "Биоструктуры"
+	name = "Кислотные мины"
+	desc = "Дрон и королева могут строить кислотные мины: 150 плазмы, 6 секунд."
+	icon = "bomb"
+	cost = 200
+	requires = list("construction")
+
+/datum/xeno_hive_upgrade/reinforced_resin
+	id = "reinforced_resin"
+	category = "Биоструктуры"
+	name = "Укреплённая смола"
+	desc = "Открывает укреплённые стены с 600 прочности: 250 плазмы, 15 секунд строительства."
+	icon = "dungeon"
+	cost = 300
+	requires = list("construction")
+
+/datum/xeno_hive_upgrade/acid_turrets
+	id = "acid_turrets"
+	category = "Биоструктуры"
+	name = "Кислотные турели"
+	desc = "Открывает турель с 400 прочности: 250 плазмы, 20 секунд. Стреляет кислотой по людям в радиусе 5 клеток раз в 2 секунды."
+	icon = "crosshairs"
+	cost = 450
+	requires = list("acid_mines", "reinforced_resin")
 
 /** Independent caste limits; purchasing access never creates or evolves a mob. */
 /datum/xeno_hive/proc/slot_limit(caste_type)
@@ -362,9 +343,9 @@
 /mob/living/carbon/alien/adult/banda/examine(mob/user)
 	. = ..()
 	if(hive_health_bonus)
-		. += span_warning("Хитин выглядит особенно плотным и утолщённым.")
+		. += span_warning("Хитиновый панцирь выглядит необычайно толстым и прочным.")
 	if(hive_claw_bonus)
-		. += span_warning("Когти покрыты дополнительными режущими зазубринами.")
+		. += span_warning("Когти усеяны острыми режущими зазубринами.")
 
 /datum/xeno_hive/proc/can_manage(mob/living/carbon/alien/adult/banda/queen/queen)
 	return istype(queen) && !QDELETED(queen) && queen == living_queen() && !IS_UNCONSCIOUS(queen) && !queen.incapacitated && !queen.resting
@@ -441,7 +422,7 @@
 		core.eject_egg(egg)
 		flick("core_birth", core)
 		if(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER)
-			INVOKE_ASYNC(egg.spawner, TYPE_PROC_REF(/obj/effect/mob_spawn/ghost_role/xeno_hive, notify_available), "Улей вырастил яйцо полноценной личинки.", "Личинка улья")
+			INVOKE_ASYNC(egg.spawner, TYPE_PROC_REF(/obj/effect/mob_spawn/ghost_role/xeno_hive, notify_available), "Улей вырастил яйцо с полноценной личинкой.", "Личинка улья")
 	for(var/mob/living/carbon/alien/adult/banda/member as anything in members)
 		apply_upgrades(member)
 	for(var/mob/living/carbon/alien/brood/brood in GLOB.mob_living_list)
@@ -497,10 +478,8 @@
 			"id" = id,
 			"name" = upgrade.name,
 			"description" = upgrade.desc,
-			"branch" = upgrade.branch,
+			"category" = upgrade.category,
 			"icon" = upgrade.icon,
-			"x" = upgrade.tree_x,
-			"y" = upgrade.tree_y,
 			"cost" = upgrade.price(purchased[id] || 0),
 			"level" = purchased[id] || 0,
 			"maxLevel" = upgrade.max_level == INFINITY ? null : upgrade.max_level,

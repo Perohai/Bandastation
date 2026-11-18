@@ -24,19 +24,24 @@
 	hive.purchase_time = 0
 	TEST_ASSERT_NULL(hive.upgrades["hunter"], "Ordinary Hunter still requires a hive purchase")
 	TEST_ASSERT(!hive.can_buy(queen, "claws") && !hive.can_buy(queen, "crusher"), "A tree prerequisite was bypassed")
-	var/list/positions = list()
+	var/list/unresolved = hive.upgrades.Copy()
+	var/list/resolved = list()
 	var/list/icons = list()
 	for(var/id in hive.upgrades)
 		var/datum/xeno_hive_upgrade/upgrade = hive.upgrades[id]
 		TEST_ASSERT(length(upgrade.icon), "A tree node has no readable icon")
 		TEST_ASSERT(!(upgrade.icon in icons), "Different unlocks share the same icon")
 		icons += upgrade.icon
-		var/position = "[upgrade.branch]:[upgrade.tree_x]:[upgrade.tree_y]"
-		TEST_ASSERT(!(position in positions), "Tree nodes overlap")
-		positions += position
-		for(var/requirement in upgrade.requires)
-			var/datum/xeno_hive_upgrade/parent = hive.upgrades[requirement]
-			TEST_ASSERT(parent && parent.branch == upgrade.branch && (upgrade.branch == "Функциональность" ? parent.tree_y < upgrade.tree_y : parent.tree_x < upgrade.tree_x), "The tree has a missing, cyclic or backward dependency")
+		TEST_ASSERT(upgrade.category in list("Эволюция", "Биоструктуры", "Популяция", "Выводок"), "Unknown category for [id]")
+	while(length(unresolved))
+		var/previous_length = length(unresolved)
+		for(var/id in unresolved.Copy())
+			var/datum/xeno_hive_upgrade/upgrade = unresolved[id]
+			if(length(upgrade.requires - resolved))
+				continue
+			resolved += id
+			unresolved -= id
+		TEST_ASSERT(length(unresolved) < previous_length, "Missing or cyclic prerequisites: [unresolved.Join(", ")]")
 	for(var/id in list("carapace", "claws", "tier3", "tier4"))
 		TEST_ASSERT(hive.buy(queen, id), "A valid tier adaptation failed")
 	TEST_ASSERT(hive.can_buy(queen, "crusher") && hive.can_buy(queen, "boiler"), "T3 adaptation did not open its specializations")

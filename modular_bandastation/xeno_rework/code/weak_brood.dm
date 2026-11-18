@@ -1,7 +1,7 @@
 /** Player-controlled, deliberately weakened TGMC minions. They never become adult castes. */
 /mob/living/carbon/alien/brood
 	name = "hive beetle"
-	desc = "Маленький жук выводка. Умеет кусаться и таскать тела; таран открывает королева."
+	desc = "Небольшой жук из выводка улья. Кусается и таскает тела. Королева может открыть для него таран."
 	icon = 'modular_bandastation/xeno_rework/icons/brood/beetle.dmi'
 	icon_state = "beetle"
 	rotate_on_lying = FALSE
@@ -138,7 +138,7 @@
 
 /mob/living/carbon/alien/brood/mantis
 	name = "hive mantis"
-	desc = "Маленький богомол выводка. Размашистый удар серпами открывает королева."
+	desc = "Небольшой богомол из выводка улья. Королева может открыть для него взмах серпами."
 	icon = 'modular_bandastation/xeno_rework/icons/brood/mantis.dmi'
 	icon_state = "mantis"
 	maxHealth = 25
@@ -148,7 +148,7 @@
 
 /mob/living/carbon/alien/brood/scorpion
 	name = "hive scorpion"
-	desc = "Маленький скорпион выводка. Плюётся слабой кислотой; королева усиливает плевок."
+	desc = "Небольшой скорпион из выводка улья. Плюётся слабой кислотой; Королева может усилить плевок."
 	icon = 'modular_bandastation/xeno_rework/icons/brood/scorpion.dmi'
 	icon_state = "scorpion"
 	maxHealth = 25
@@ -158,7 +158,7 @@
 
 /mob/living/carbon/alien/brood/baneling
 	name = "hive baneling"
-	desc = "Раздутый кислотой банелинг. После запуска подрыва десять секунд громко предупреждает о взрыве и продолжает двигаться."
+	desc = "Раздувшийся от кислоты банелинг. Перед взрывом замирает на 1,5 секунды, мигает и предупреждающе рычит. Если успеть убить банелинга во время подготовки, взрыва не произойдёт."
 	icon = 'modular_bandastation/xeno_rework/icons/brood/baneling.dmi'
 	icon_state = "baneling"
 	maxHealth = 40

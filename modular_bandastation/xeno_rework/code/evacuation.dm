@@ -1,17 +1,17 @@
 GLOBAL_DATUM(xeno_evacuation, /datum/xeno_evacuation)
 
-ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: начать финал (тест)", "Запускает финальную эвакуацию роя без проверки его численности.", ADMIN_CATEGORY_DEBUG)
+ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запустить финал (тест)", "Начинает финальную эвакуацию роя, не проверяя его численность.", ADMIN_CATEGORY_DEBUG)
 	if(!SSticker.IsRoundInProgress())
-		to_chat(user, span_warning("Финал роя можно запустить только во время раунда."))
+		to_chat(user, span_warning("Запустить финал роя можно только во время раунда."))
 		return
 	if(!GLOB.xeno_evacuation)
 		GLOB.xeno_evacuation = new
 	if(!GLOB.xeno_evacuation.begin_evacuation())
-		to_chat(user, span_warning("Финал уже запущен или завершён, либо эвакуационный шаттл недоступен для запуска сценария."))
+		to_chat(user, span_warning("Финал уже запущен или завершён либо эвакуационный шаттл недоступен для этого сценария."))
 		return
 	log_admin("[key_name(user)] started the xeno evacuation finale for testing, bypassing population requirements.")
-	message_admins("[key_name_admin(user)] запустил финальную эвакуацию ксеноморфов для теста без проверки численности роя.")
-	to_chat(user, span_notice("Финал роя запущен. После стыковки шаттла начнётся оборона на десять минут; ксеноморфы могут взломать его навигационную консоль."))
+	message_admins("[key_name_admin(user)] запустил тестовую финальную эвакуацию ксеноморфов без проверки численности роя.")
+	to_chat(user, span_notice("Финал роя запущен. После стыковки шаттла начнётся десятиминутная оборона. Ксеноморфы смогут взломать навигационную консоль."))
 	BLACKBOX_LOG_ADMIN_VERB("Start Xeno Evacuation Test")
 
 /// One evacuation finale per round. Population checks are debounced off login/death events.
@@ -109,9 +109,9 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 	if(!shuttle || !SSticker.IsRoundInProgress())
 		return FALSE
 	active = TRUE
-	priority_announce("Ксеноморфная угроза вышла из-под контроля. Начата заключительная эвакуация. После стыковки удерживайте шаттл десять минут. Не подпускайте ксеноморфов к навигационной консоли! На борту доступен отряд сопровождения.", "Протокол последнего рубежа", sound = 'sound/announcer/announcement/announce.ogg')
+	priority_announce("Угроза ксеноморфов вышла из-под контроля. Объявлена последняя эвакуация! После стыковки шаттла удерживайте оборону десять минут. Не подпускайте ксеноморфов к навигационной консоли! На борту действует отряд сопровождения.", "Протокол последнего рубежа", sound = 'sound/announcer/announcement/announce.ogg')
 	if(shuttle.mode == SHUTTLE_IDLE || shuttle.mode == SHUTTLE_RECALL)
-		SSshuttle.call_evac_shuttle("Критическая ксеноморфная угроза. Отзыв эвакуации заблокирован.")
+		SSshuttle.call_evac_shuttle("Критический уровень угрозы ксеноморфов. Отменить эвакуацию невозможно.")
 	update_shuttle(shuttle)
 	log_game("Xeno evacuation finale triggered.")
 	return TRUE
@@ -130,7 +130,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 		if(has_survivors(shuttle))
 			resolve(XENO_EVAC_CREW, shuttle)
 		else
-			priority_announce("На борту не осталось выживших членов экипажа или бойцов сопровождения. Эвакуация потеряна! Запуск через десять секунд.", "Последний рубеж")
+			priority_announce("На борту не осталось ни одного выжившего члена экипажа или бойца сопровождения. Шаттл потерян! Отправление через десять секунд.", "Последний рубеж")
 			resolve(XENO_EVAC_XENOS, shuttle)
 		return
 	// Keep native ignition from closing the hacking window before the defense deadline.
@@ -138,7 +138,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 	var/minutes_left = CEILING((defense_deadline - world.time) / (1 MINUTES), 1)
 	if(minutes_left != last_announced_minute)
 		last_announced_minute = minutes_left
-		var/message = "Тревога! Оборона эвакуационного шаттла: до разблокировки запуска [minutes_left] мин. Защитите навигационную консоль!"
+		var/message = "Тревога! До разрешения вылета шаттла остаётся [minutes_left] мин. Удерживайте оборону и защитите навигационную консоль!"
 		priority_announce(message, "Последний рубеж", sound = 'sound/announcer/announcement/announce.ogg')
 		for(var/area/shuttle_area as anything in shuttle.shuttle_areas)
 			var/obj/machinery/computer/emergency_shuttle/console = locate() in shuttle_area
@@ -171,8 +171,8 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 	xeno.transition_filter_chain("xeno_shuttle_hack", INDEFINITE,
 		filter_chain_step(list("size" = 4), 0.5 SECONDS),
 		filter_chain_step(list("size" = 2), 0.5 SECONDS))
-	priority_announce("Обнаружено ксеноморфное вмешательство в навигацию! Защитите консоль шаттла!", "Тревога эвакуации")
-	to_chat(xeno, span_notice("Начат взлом навигации: этап [hack_stage + 1]/4. Не двигайтесь 30 секунд."))
+	priority_announce("Ксеноморфы пытаются захватить управление шаттлом! Защитите навигационную консоль!", "Эвакуационная тревога")
+	to_chat(xeno, span_notice("Начат взлом навигации: этап [hack_stage + 1]/4. Не двигайтесь в течение 30 секунд."))
 	var/ready = do_after(xeno, hack_duration, target = console)
 	if(!QDELETED(xeno))
 		xeno.remove_filter("xeno_shuttle_hack")
@@ -181,7 +181,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 		return FALSE
 	hack_stage = istype(xeno, /mob/living/carbon/alien/adult/banda/queen) ? 4 : hack_stage + 1
 	playsound(console, 'sound/machines/terminal/terminal_alert.ogg', 60, FALSE)
-	priority_announce("Нарушение навигации шаттла: [hack_stage]/4. [hack_stage >= 4 ? "Управление потеряно! Отправление через 10 секунд." : "Остановите ксеноморфов у консоли!"]", "Тревога эвакуации")
+	priority_announce("Взлом навигации шаттла: этап [hack_stage]/4. [hack_stage >= 4 ? "Управление потеряно! Отправление через 10 секунд." : "Остановите ксеноморфов у консоли!"]", "Эвакуационная тревога")
 	if(hack_stage >= 4)
 		resolve(XENO_EVAC_XENOS, SSshuttle.emergency)
 	return TRUE
@@ -196,7 +196,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 	if(winner == XENO_EVAC_XENOS)
 		shuttle.hijack_status = HIJACK_COMPLETED
 	else
-		priority_announce("Оборона завершена. Экипаж удержал шаттл! Запуск через десять секунд.", "Последний рубеж")
+		priority_announce("Экипаж удержал шаттл! Оборона завершена. Отправление через десять секунд.", "Последний рубеж")
 	shuttle.setTimer(departure_delay)
 	log_game("Xeno evacuation finale result: [winner].")
 
@@ -205,7 +205,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 	clear_spawners()
 	if(!active)
 		return
-	var/result = outcome == XENO_EVAC_XENOS ? "Победа ксеноморфов: эвакуационный шаттл захвачен." : outcome == XENO_EVAC_CREW ? "Победа выживших: эвакуационный шаттл удержан." : "Оборона шаттла была прервана до определения победителя."
+	var/result = outcome == XENO_EVAC_XENOS ? "Победа ксеноморфов: эвакуационный шаттл захвачен." : outcome == XENO_EVAC_CREW ? "Победа выживших: эвакуационный шаттл удержан." : "Оборона шаттла прервана. Победитель не определён."
 	to_chat(world, span_boldannounce(result))
 
 /datum/controller/subsystem/dynamic/set_round_result()
@@ -224,7 +224,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 		ert_spawners += WEAKREF(spawner)
 		remaining--
 		if(!remaining)
-			notify_ghosts("Три места ЕРТ для обороны эвакуационного шаттла доступны в меню ролей.", source = spawner, header = "Оборона шаттла", notify_flags = NOTIFY_CATEGORY_NOFLASH)
+			notify_ghosts("В меню ролей доступны три места для бойцов ЕРТ, направленных на защиту эвакуационного шаттла.", source = spawner, header = "Оборона шаттла", notify_flags = NOTIFY_CATEGORY_NOFLASH)
 			break
 
 	for(var/turf/location as anything in shuttle.return_turfs())
@@ -262,16 +262,16 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: нача�
 
 /obj/machinery/computer/emergency_shuttle/attempt_hijack_stage(mob/living/user)
 	if(GLOB.xeno_evacuation?.active && !GLOB.xeno_evacuation.resolved)
-		to_chat(user, span_warning("Протокол последнего рубежа блокирует перепрограммирование навигации."))
+		to_chat(user, span_warning("Протокол последнего рубежа запрещает перепрограммировать навигацию."))
 		return
 	return ..()
 
 /** One-use heavily equipped ERT ghost role for the evacuation defense. */
 /obj/effect/mob_spawn/ghost_role/human/xeno_defense
-	name = "капсула ЕРТ — последний рубеж"
-	prompt_name = "бойца ЕРТ сопровождения эвакуации"
-	you_are_text = "Вы — боец ЕРТ сопровождения."
-	flavour_text = "Защитите выживших и навигационную консоль до окончания обороны. Ксеноморфы попытаются захватить шаттл."
+	name = "капсула ЕРТ «Последний рубеж»"
+	prompt_name = "бойца ЕРТ, сопровождающего эвакуацию"
+	you_are_text = "Вы — боец ЕРТ. Задача — сопровождение эвакуации."
+	flavour_text = "Защищайте выживших и навигационную консоль до конца обороны. Ксеноморфы попытаются захватить шаттл."
 	spawner_job_path = /datum/job/ert
 	outfit = /datum/outfit/centcom/ert/security/alert
 

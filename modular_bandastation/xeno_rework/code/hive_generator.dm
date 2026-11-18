@@ -1,7 +1,7 @@
 /** Expensive, noisy, destructible passive income. No extra subsystem or infrastructure chain. */
 /obj/structure/xeno_biomass_generator
 	name = "hive biomass generator"
-	desc = "Шумный органический переработчик. Занимает четыре клетки и вырабатывает одну биомассу в секунду."
+	desc = "Громоздкий органический переработчик, заполняющий четыре клетки. Производит одну единицу биомассы в секунду и издаёт громкий шум."
 	icon = 'modular_bandastation/xeno_rework/icons/biomass_generator.dmi'
 	icon_state = "generator"
 	anchored = TRUE

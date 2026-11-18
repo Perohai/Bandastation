@@ -1,7 +1,7 @@
 /** Armoured breacher; momentum, stomp and crest toss follow TGMC's Crusher role. */
 /mob/living/carbon/alien/adult/banda/final_caste/crusher
 	name = "alien crusher"
-	desc = "Тяжёлый ксеноморф с бронированным гребнем. Разгоняется по прямой и проламывает оборону."
+	desc = "Тяжёлый ксеноморф с бронированным гребнем. Разгоняется по прямой и прорывает оборону противника."
 	caste = "crusher"
 	inhand_caste = "warrior"
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_adapted.dmi'
@@ -84,38 +84,44 @@
 	var/impact_speed = charge_speed()
 	if(isliving(obstacle))
 		var/mob/living/victim = obstacle
-		if(victim.anchored || victim.mob_size >= mob_size)
-			stop_momentum()
-			return ..()
 		if(!isalien(victim) && victim.stat != DEAD)
 			victim.buckled?.unbuckle_mob(victim)
 			victim.apply_damage(impact_speed * 20, BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
-			victim.Paralyze(impact_speed * 20)
+			if(QDELETED(victim))
+				return ..()
+			victim.Paralyze(impact_speed * 2 SECONDS)
 			log_combat(src, victim, "crusher charged")
-		knock_aside(victim, impact_speed)
-		lose_momentum(1)
+		if(victim.anchored || victim.mob_size >= mob_size || !knock_aside(victim, impact_speed))
+			stop_momentum()
+			if(!ishuman(victim))
+				Paralyze(0.5 SECONDS, ignore_canstun = TRUE)
 	else if(isobj(obstacle))
 		var/obj/target = obstacle
 		if(target.resistance_flags & INDESTRUCTIBLE)
-			stop_momentum()
+			stun_on_blocked_charge()
 			return ..()
 		var/was_anchored = target.anchored
 		var/border = target.flags_1 & ON_BORDER_1
 		var/front_border = border && target.dir == REVERSE_DIR(dir)
 		var/damage_multiplier = !was_anchored ? 20 : border ? (front_border ? 80 : 160) : 240
 		target.take_damage(impact_speed * damage_multiplier, BRUTE, MELEE)
-		lose_momentum(front_border ? 3 : border ? 1 : 2)
-		if(!QDELETED(target) && target.density)
-			if(was_anchored || target.move_resist >= move_force || !knock_aside(target, impact_speed))
-				stop_momentum()
+		if(was_anchored)
+			lose_momentum(front_border ? 3 : border ? 1 : 2)
+		if(!QDELETED(target) && target.density && (was_anchored || target.move_resist >= move_force || !knock_aside(target, impact_speed)))
+			stun_on_blocked_charge()
 	else if(isturf(obstacle))
 		if(istype(obstacle, /turf/closed/wall))
 			var/turf/closed/wall/wall = obstacle
 			wall.xeno_charge_impact(momentum >= max_steps_buildup)
 		else
 			obstacle.ex_act(momentum >= max_steps_buildup ? EXPLODE_HEAVY : EXPLODE_LIGHT)
-		stop_momentum()
+		if(!QDELETED(obstacle) && obstacle.density)
+			stun_on_blocked_charge()
 	return ..()
+
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/stun_on_blocked_charge()
+	stop_momentum()
+	Paralyze(0.5 SECONDS, ignore_canstun = TRUE)
 
 /mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/knock_aside(atom/movable/target, impact_speed)
 	var/side = pick(dir & (NORTH|SOUTH) ? list(EAST, WEST) : list(NORTH, SOUTH))
@@ -143,8 +149,8 @@
 		dismantle_wall(TRUE)
 
 /datum/action/cooldown/alien/banda/crusher_charge
-	name = "Разгон — Ready Charge"
-	desc = "Разгон TGMC: таран с 7-го шага, максимум с 14-го. Шаг +0,15 скорости; поворот, пауза свыше 0,5 секунды, захват и отдых сбрасывают разгон. Столкновения отнимают импульс. Укреплённая стена выдерживает 4 обычных или 2 максимальных тарана."
+	name = "Таранный разбег"
+	desc = "Разгон TGMC: таран с 7-го шага, максимум с 14-го. Шаг +0,15 скорости; поворот, пауза свыше 0,5 секунды, захват и отдых сбрасывают разгон. Непробитая преграда сбивает разгон и оглушает на полсекунды. Укреплённая стена выдерживает 4 обычных или 2 максимальных тарана."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_actions.dmi'
 	button_icon_state = "ready_charge"
 
@@ -180,8 +186,8 @@
 
 /** Area stomp, stronger against an enemy directly underneath the Crusher. */
 /datum/action/cooldown/alien/banda/crusher_stomp
-	name = "Топот — Stomp"
-	desc = "Бьёт по земле: 60 урона и 3 секунды паралича врагу под вами; рядом — 30 урона, отбрасывание и 0,5 секунды паралича."
+	name = "Сокрушительный топот"
+	desc = "С силой обрушивается на землю. Противник прямо под ногами получает 60 урона и паралич на 3 секунды. Соседние цели — 30 урона, отбрасывание и паралич на 0,5 секунды."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_actions.dmi'
 	button_icon_state = "stomp"
 	plasma_cost = 100
@@ -203,8 +209,8 @@
 
 /** Throw an adjacent creature over the crest, or forward in combat mode. */
 /datum/action/cooldown/alien/banda/crusher_toss
-	name = "Бросок гребнем — Crest Toss"
-	desc = "Бросает соседнюю цель на шесть клеток: в боевом режиме вперёд, иначе за спину. Союзники не получают урон; враги получают 36 урона."
+	name = "Удар гребнем"
+	desc = "Мощным ударом гребня отбрасывает соседнюю цель на шесть клеток: в боевом режиме — вперёд, в обычном — за спину. Враг получает 36 урона, союзник — без урона."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_actions.dmi'
 	button_icon_state = "cresttoss"
 	plasma_cost = 75

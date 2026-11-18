@@ -1,7 +1,7 @@
 /** T2 support branch from Drone; native eggs and facehuggers retain TG infection rules. */
 /mob/living/carbon/alien/adult/banda/carrier
 	name = "alien carrier"
-	desc = "Носитель роя. Выращивает и переносит до четырёх хаггеров, бросает их и поддерживает улей феромонами."
+	desc = "Носитель роя. Выращивает и переносит до четырёх лицехватов, бросает их в противников и поддерживает собратьев феромонами."
 	caste = "carrier"
 	inhand_caste = "drone"
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/carrier_adapted.dmi'
@@ -31,6 +31,7 @@
 	. = ..()
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/carrier_hugger)
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/carrier_spawn_hugger)
+	GRANT_ACTION(/datum/action/cooldown/alien/banda/carrier_trap)
 	GRANT_ACTION(/datum/action/cooldown/alien/make_structure/lay_egg)
 
 /mob/living/carbon/alien/adult/banda/carrier/Destroy()
@@ -69,20 +70,20 @@
 /mob/living/carbon/alien/adult/banda/carrier/examine(mob/user)
 	. = ..()
 	if(isalien(user) || isobserver(user))
-		. += span_notice("Хаггеры: [length(stored_huggers)]/[hugger_capacity].")
+		. += span_notice("Лицехватов: [length(stored_huggers)]/[hugger_capacity].")
 
 /obj/item/organ/alien/plasmavessel/carrier
 	actions_types = list(/datum/action/cooldown/alien/transfer)
-	max_plasma = 500
+	max_plasma = 250
 	stored_plasma = 100
 	plasma_rate = 20
 	heal_rate = 1
 
 /datum/action/cooldown/alien/banda/carrier_spawn_hugger
-	name = "Вырастить хаггера"
-	desc = "Выращивает обычного хаггера TG и помещает в хранилище. 100 плазмы, перезарядка 20 секунд; вместимость 4."
-	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
-	button_icon_state = "carrier"
+	name = "Вырастить лицехвата"
+	desc = "Выращивает лицехвата и помещает его во внутреннее хранилище. Стоимость — 100 плазмы, перезарядка — 20 секунд. Одновременно можно переносить до четырёх лицехватов."
+	button_icon = 'modular_bandastation/xeno_rework/icons/support_actions.dmi'
+	button_icon_state = "grow_hugger"
 	plasma_cost = 100
 	cooldown_time = 20 SECONDS
 
@@ -98,8 +99,8 @@
 	return TRUE
 
 /datum/action/cooldown/alien/banda/carrier_hugger
-	name = "Хранить / бросить хаггера"
-	desc = "Клик по соседнему хаггеру на полу — сохранить; клик по цели — бросить одного из хранилища до пяти клеток."
+	name = "Подобрать / бросить лицехвата"
+	desc = "Нажмите на лежащего рядом лицехвата, чтобы подобрать его, или укажите цель, чтобы метнуть одного из хранилища на расстояние до пяти клеток."
 	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
 	button_icon_state = "carrier"
 	click_to_activate = TRUE
@@ -129,3 +130,120 @@
 		posture = " Sleeping"
 	for(var/index in 1 to min(length(stored_huggers), 4))
 		add_overlay("clinger_[index][posture]")
+
+/datum/action/cooldown/alien/banda/carrier_trap
+	name = "Ловушка с лицехватом"
+	desc = "Устанавливает под собой на траве ловушку и помещает в неё одного лицехвата из запаса. Наступивший человек падает, а лицехват выскакивает. Разрушение ловушки выпускает лицехвата."
+	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
+	button_icon_state = "carrier"
+	plasma_cost = 150
+
+/datum/action/cooldown/alien/banda/carrier_trap/Activate()
+	var/mob/living/carbon/alien/adult/banda/carrier/carrier = owner
+	if(!istype(carrier) || !IsAvailable() || !length(carrier.stored_huggers) || !isopenturf(carrier.loc) || isspaceturf(carrier.loc))
+		return FALSE
+	var/turf/site = carrier.loc
+	if(!(locate(/obj/structure/alien/weeds) in site) || (locate(/obj/structure/alien/carrier_trap) in site))
+		return FALSE
+	for(var/obj/blocker in site)
+		if(blocker.density)
+			return FALSE
+	var/obj/item/clothing/mask/facehugger/hugger = carrier.stored_huggers[1]
+	if(QDELETED(hugger) || hugger.loc != carrier || hugger.facehugger_state == /obj/item/clothing/mask/facehugger/dead::facehugger_state)
+		return FALSE
+	new /obj/structure/alien/carrier_trap(site, hugger)
+	return TRUE
+
+/// TGMC's trap releases its one stored hugger when stepped on or destroyed by damage.
+/obj/structure/alien/carrier_trap
+	name = "ловушка с лицехватом"
+	desc = "Ямка в смоле с взведённой мембраной."
+	icon = 'icons/obj/fluff/general.dmi'
+	icon_state = "gelmound"
+	color = "#625673"
+	anchored = TRUE
+	max_integrity = 5
+	var/obj/item/clothing/mask/facehugger/hugger
+	var/static/list/trap_connections = list(COMSIG_ATOM_ENTERED = PROC_REF(on_entered))
+
+/obj/structure/alien/carrier_trap/Initialize(mapload, obj/item/clothing/mask/facehugger/inserted)
+	. = ..()
+	if(QDELETED(inserted))
+		return INITIALIZE_HINT_QDEL
+	hugger = inserted
+	hugger.forceMove(src)
+	RegisterSignals(hugger, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED), PROC_REF(on_hugger_removed))
+	AddElement(/datum/element/connect_loc, trap_connections)
+
+/obj/structure/alien/carrier_trap/proc/on_hugger_removed(obj/item/clothing/mask/facehugger/source)
+	SIGNAL_HANDLER
+	if(QDELETED(source) || source.loc != src)
+		UnregisterSignal(source, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
+		hugger = null
+
+/obj/structure/alien/carrier_trap/proc/on_entered(datum/source, atom/movable/entrant)
+	SIGNAL_HANDLER
+	if(!ishuman(entrant))
+		return
+	var/mob/living/carbon/human/victim = entrant
+	if(victim.stat == DEAD || QDELETED(hugger))
+		return
+	victim.Paralyze(4 SECONDS)
+	var/obj/item/clothing/mask/facehugger/released = hugger
+	if(!released.valid_to_attach(victim))
+		return
+	var/blocked = FALSE
+	if(victim.is_mouth_covered(ITEM_SLOT_HEAD))
+		var/obj/item/clothing/head/helmet = victim.head
+		blocked = helmet.absorb_trap_hugger()
+	if(!blocked && victim.wear_mask)
+		if(istype(victim.wear_mask, /obj/item/clothing/mask/facehugger))
+			return
+		var/obj/item/clothing/mask/mask = victim.wear_mask
+		blocked = mask.absorb_trap_hugger()
+	released.go_idle()
+	release_hugger()
+	if(!blocked && !QDELETED(released))
+		if(victim.wear_mask && !victim.dropItemToGround(victim.wear_mask))
+			qdel(src)
+			return
+		released.go_active()
+		victim.equip_to_slot_if_possible(released, ITEM_SLOT_MASK, 0, 1, 1)
+		log_combat(src, victim, "released facehugger onto")
+	qdel(src)
+
+/obj/structure/alien/carrier_trap/proc/release_hugger()
+	var/obj/item/clothing/mask/facehugger/released = hugger
+	if(!QDELETED(released))
+		UnregisterSignal(released, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
+		hugger = null
+		released.forceMove(drop_location())
+		return released
+
+/obj/structure/alien/carrier_trap/atom_destruction(damage_flag)
+	release_hugger()
+	return ..()
+
+/obj/structure/alien/carrier_trap/fire_act(exposed_temperature, exposed_volume)
+	release_hugger()
+	return ..()
+
+/obj/structure/alien/carrier_trap/Destroy()
+	if(hugger)
+		UnregisterSignal(hugger, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
+	QDEL_NULL(hugger)
+	return ..()
+
+
+/obj/item/clothing
+	/// TGMC-style single protection charge, consumed only by a trap-released hugger.
+	var/trap_hugger_protection = 1
+
+/obj/item/clothing/proc/absorb_trap_hugger()
+	if(HAS_TRAIT(src, TRAIT_NODROP))
+		return TRUE
+	if(trap_hugger_protection <= 0)
+		return FALSE
+	trap_hugger_protection--
+	visible_message(span_warning("Лицехват повреждает защиту [src]!"))
+	return TRUE

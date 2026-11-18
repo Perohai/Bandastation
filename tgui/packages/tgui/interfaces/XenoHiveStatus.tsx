@@ -3,7 +3,10 @@ import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
 type HiveMember = {
+  id: string;
   name: string;
+  canFollow: boolean;
+  following: boolean;
   caste: string;
   status: string;
   health: number;
@@ -12,10 +15,13 @@ type HiveMember = {
 type HiveStatusData = {
   members: HiveMember[];
   count: number;
+  canFollow: boolean;
+  points: { id: string; name: string; location: string; following: boolean }[];
 };
 
 const CASTE_NAMES: Record<string, string> = {
   larva: 'Личинка',
+  carrier: 'Носитель',
   drone: 'Дрон',
   defender: 'Защитник',
   runner: 'Бегун',
@@ -32,15 +38,15 @@ const CASTE_NAMES: Record<string, string> = {
 
 export function XenoHiveStatus() {
   const { act, data } = useBackend<HiveStatusData>();
-  const { members = [], count = 0 } = data;
+  const { members = [], count = 0, canFollow, points = [] } = data;
 
   return (
-    <Window width={640} height={520} title="Состав улья">
+    <Window width={740} height={520} title="Состав улья">
       <Window.Content>
         <Section
           fill
           scrollable
-          title={`Члены улья · ${count}`}
+          title={`Обитатели улья · ${count}`}
           buttons={
             <Button icon="sync" onClick={() => act('refresh')}>
               Обновить
@@ -48,7 +54,7 @@ export function XenoHiveStatus() {
           }
         >
           {members.length === 0 ? (
-            <Section color="label">В улье пока никого нет.</Section>
+            <Section color="label">Улей пока пуст.</Section>
           ) : (
             <Table>
               <Table.Row header>
@@ -56,9 +62,10 @@ export function XenoHiveStatus() {
                 <Table.Cell>Каста</Table.Cell>
                 <Table.Cell>Состояние</Table.Cell>
                 <Table.Cell>Здоровье</Table.Cell>
+                {canFollow && <Table.Cell>Указатель</Table.Cell>}
               </Table.Row>
-              {members.map((member, index) => (
-                <Table.Row key={`${member.name}-${index}`}>
+              {members.map((member) => (
+                <Table.Row key={member.id}>
                   <Table.Cell>{member.name}</Table.Cell>
                   <Table.Cell>
                     {CASTE_NAMES[member.caste] || member.caste}
@@ -80,9 +87,41 @@ export function XenoHiveStatus() {
                       {member.health}%
                     </ProgressBar>
                   </Table.Cell>
+                  {canFollow && (
+                    <Table.Cell>
+                      {member.canFollow && (
+                        <Button.Checkbox
+                          checked={member.following}
+                          onClick={() => act('follow', { id: member.id })}
+                        >
+                          Следовать
+                        </Button.Checkbox>
+                      )}
+                    </Table.Cell>
+                  )}
                 </Table.Row>
               ))}
             </Table>
+          )}
+          {!!points.length && (
+            <Section title="Точки сбора" mt={1}>
+              <Table>
+                {points.map((point) => (
+                  <Table.Row key={point.id}>
+                    <Table.Cell>{point.name}</Table.Cell>
+                    <Table.Cell>{point.location}</Table.Cell>
+                    <Table.Cell>
+                      <Button.Checkbox
+                        checked={point.following}
+                        onClick={() => act('follow', { id: point.id })}
+                      >
+                        Следовать
+                      </Button.Checkbox>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table>
+            </Section>
           )}
         </Section>
       </Window.Content>

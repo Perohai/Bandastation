@@ -21,6 +21,7 @@
 #include "code/hive_generator.dm"
 #include "code/carrier.dm"
 #include "code/fortifications/barricades.dm"
+#include "code/fortifications/biostructures.dm"
 #include "code/alien_powers.dm"
 #include "code/spitter_abilities.dm"
 #include "code/drone_fruit.dm"

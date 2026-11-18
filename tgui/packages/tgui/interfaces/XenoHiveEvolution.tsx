@@ -1,3 +1,4 @@
+import '../styles/themes/xeno-hive.scss';
 import { useState } from 'react';
 import {
   Box,
@@ -11,20 +12,8 @@ import {
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
-type Upgrade = {
-  id: string;
-  name: string;
-  description: string;
-  branch: string;
-  icon: string;
-  x: number;
-  y: number;
-  cost: number;
-  level: number;
-  maxLevel: number | null;
-  requires: string[];
-  available: boolean;
-};
+import { HiveTree, isComplete } from './XenoHiveEvolution/HiveTree';
+import type { Upgrade } from './XenoHiveEvolution/layoutTree';
 
 type Data = {
   biomass: number;
@@ -47,335 +36,191 @@ type Data = {
   nodes: Upgrade[];
 };
 
-const branches = [
-  { name: 'Качество', icon: 'dna', color: '#b99bea' },
-  { name: 'Количество', icon: 'egg', color: '#e7b674' },
-  { name: 'Функциональность', icon: 'sitemap', color: '#79c9bb' },
+const categories = [
+  { name: 'Эволюция', icon: 'dna' },
+  { name: 'Биоструктуры', icon: 'seedling' },
+  { name: 'Популяция', icon: 'egg' },
+  { name: 'Выводок', icon: 'bugs' },
 ];
-const complete = (node: Upgrade) =>
-  node.maxLevel !== null && node.level >= node.maxLevel;
 
 export function XenoHiveEvolution() {
   const { act, data } = useBackend<Data>();
-  const [branchIndex, setBranchIndex] = useState(0);
-  const [selectedId, setSelectedId] = useState('carapace');
-  const branch = branches[branchIndex];
-  const nodes = data.nodes.filter((node) => node.branch === branch.name);
-  const selected = nodes.find((node) => node.id === selectedId) || nodes[0];
-  const byId = Object.fromEntries(data.nodes.map((node) => [node.id, node]));
-  const centered = branch.name === 'Количество';
-  const vertical = branch.name === 'Функциональность';
-  const cardWidth = vertical ? 144 : 168;
-  const cardHeight = vertical ? 108 : 132;
-  const nodeX = (node: Upgrade) =>
-    vertical
-      ? 24 + node.x * 180
-      : centered
-        ? 32 + node.x * 245
-        : 120 + node.x * 195;
-  const nodeY = (node: Upgrade) =>
-    vertical ? 104 + node.y * 140 : 24 + node.y * 164;
-  const width = vertical
-    ? 732
-    : centered
-      ? 722
-      : 315 + Math.max(0, ...nodes.map((node) => node.x)) * 195;
-  const height = vertical
-    ? 800
-    : 170 + Math.max(0, ...nodes.map((node) => node.y)) * 164;
-  const rootY = vertical ? 28 : centered ? 254 : height / 2;
-  const rootX = vertical || centered ? width / 2 : 43;
+  const [category, setCategory] = useState(categories[0].name);
+  const [selectedId, setSelectedId] = useState<string>();
+  const [targetId, setTargetId] = useState<string | null>(null);
+  const byId = new Map(data.nodes.map((node) => [node.id, node]));
+  const current = selectedId ? byId.get(selectedId) : undefined;
+  const selected =
+    current?.category === category
+      ? current
+      : data.nodes.find((node) => node.category === category);
+
+  function selectNode(node: Upgrade) {
+    setSelectedId(node.id);
+    setCategory(node.category);
+    setTargetId(node.category === category ? null : node.id);
+  }
 
   return (
-    <Window width={1220} height={800} title="Эволюция улья" theme="abductor">
-      <Window.Content scrollable>
-        <Section>
-          <Stack align="center" justify="space-between">
-            <Stack.Item>
-              <Box fontSize={2} bold color="good">
-                <Icon name="leaf" /> {data.biomass} биомассы
-              </Box>
-              <Box color="label" mt={0.5}>
-                Выводок: {data.broodPoints} / {data.broodCost} · Мест в яйцах:{' '}
-                {data.broodPlaces}
-              </Box>
-              <Box color="label" mt={0.5}>
-                Рост: {data.broodRate} очков/мин · Живой экипаж: {data.crew}
-              </Box>
-              <Box color="label" mt={0.5}>
-                Территория: {data.territoryTiles} клеток · Заработано:{' '}
-                {data.territoryEarned} · Прогресс выплаты:{' '}
-                {data.territoryPending}/{data.territoryBatch}
-              </Box>
-              {data.canDebug && (
-                <Button.Checkbox
-                  checked={data.debugUsed}
-                  disabled={data.debugUsed}
-                  onClick={() => act('debug')}
-                  mt={0.5}
+    <Window width={1220} height={800} title="Эволюция улья" theme="xeno-hive">
+      <Window.Content fitted scrollable>
+        <div className="Hive-layout">
+          <Section className="Hive-vitals">
+            <Stack align="center">
+              <Stack.Item className="Hive-reserve">
+                <Box className="Hive-biomass">
+                  <Icon name="leaf" /> {data.biomass} биомассы
+                </Box>
+                {data.canDebug && (
+                  <Button.Checkbox
+                    checked={data.debugUsed}
+                    disabled={data.debugUsed}
+                    onClick={() => act('debug')}
+                    mt={0.5}
+                  >
+                    Отладка: 99999 биомассы
+                  </Button.Checkbox>
+                )}
+              </Stack.Item>
+              <Stack.Item grow className="Hive-metrics">
+                <Box color="label" mt={0.5}>
+                  Выводок: {data.broodPoints} / {data.broodCost} · Мест в яйцах:{' '}
+                  {data.broodPlaces}
+                </Box>
+                <Box color="label" mt={0.5}>
+                  Рост: {data.broodRate} очков/мин · Живой экипаж: {data.crew}
+                </Box>
+                <Box color="label" mt={0.5}>
+                  Территория: {data.territoryTiles} клеток · Заработано:{' '}
+                  {data.territoryEarned} · Прогресс выплаты:{' '}
+                  {data.territoryPending}/{data.territoryBatch}
+                </Box>
+              </Stack.Item>
+              <Stack.Item>
+                <Box className="Hive-coreStatus">
+                  {data.core
+                    ? 'Ядро улья установлено'
+                    : 'Ядро улья отсутствует'}
+                </Box>
+                <Button
+                  icon="seedling"
+                  disabled={!data.canPlace}
+                  onClick={() => act('place_core')}
                 >
-                  Debug: 99999 биомассы
-                </Button.Checkbox>
-              )}
-            </Stack.Item>
-            <Stack.Item>
-              <Box mb={0.5}>
-                {data.core ? 'Ядро улья установлено' : 'Ядро улья отсутствует'}
-              </Box>
-              <Button
-                icon="seedling"
-                disabled={!data.canPlace}
-                onClick={() => act('place_core')}
-              >
-                Установить ядро
-              </Button>
-              <Button
-                icon="arrows-up-down-left-right"
-                disabled={!data.canPack}
-                onClick={() => act('pack_core')}
-                tooltip="Свободные места и дробные очки выводка будут потеряны. Новое ядро устанавливается на траве."
-              >
-                Свернуть
-              </Button>
-            </Stack.Item>
-          </Stack>
-        </Section>
-        {data.core && data.crew === 0 && (
-          <NoticeBox>
-            Нет живого экипажа, учитываемого экономикой: рост выводка
-            остановлен. Призраки и ксеноморфы не увеличивают этот доход.
-          </NoticeBox>
-        )}
-        {data.broodBlocked && (
-          <NoticeBox>
-            Вокруг ядра нет места для яиц. Накопленные очки сохраняются.
-          </NoticeBox>
-        )}
-        <Tabs fluid>
-          {branches.map((entry, index) => (
-            <Tabs.Tab
-              key={entry.name}
-              icon={entry.icon}
-              selected={index === branchIndex}
-              onClick={() => setBranchIndex(index)}
-            >
-              {entry.name}
-            </Tabs.Tab>
-          ))}
-        </Tabs>
-        <Stack align="stretch" mt={1}>
-          <Stack.Item grow basis={0} style={{ minWidth: 0 }}>
-            <Section title={`Дерево: ${branch.name}`}>
-              <Box color="label" mb={1}>
-                Выберите узел. Линии показывают обязательные предшествующие
-                улучшения.
-              </Box>
-              <div
-                style={{
-                  overflow: 'auto',
-                  height: 530,
-                  background: '#10171c',
-                  borderRadius: 4,
+                  Установить ядро
+                </Button>
+                <Button
+                  icon="arrows-up-down-left-right"
+                  disabled={!data.canPack}
+                  onClick={() => act('pack_core')}
+                  tooltip="При установке нового ядра свободные места в яйцах и дробные очки выводка пропадут. Новое ядро можно разместить на траве."
+                >
+                  Свернуть
+                </Button>
+              </Stack.Item>
+            </Stack>
+          </Section>
+          {data.core && data.crew === 0 && (
+            <NoticeBox>
+              Доход выводка остановлен: среди живого экипажа нет существ,
+              учитываемых экономикой улья. Призраки и ксеноморфы на рост не влияют.
+            </NoticeBox>
+          )}
+          {data.broodBlocked && (
+            <NoticeBox>
+              Рядом с ядром не осталось места для яиц. Накопленные очки сохранятся.
+            </NoticeBox>
+          )}
+          <Tabs fluid>
+            {categories.map(({ name, icon }) => (
+              <Tabs.Tab
+                key={name}
+                icon={icon}
+                selected={name === category}
+                onClick={() => {
+                  setCategory(name);
+                  setTargetId(null);
                 }}
               >
-                <div
-                  style={{
-                    position: 'relative',
-                    width,
-                    height: Math.max(height, 510),
-                  }}
-                >
-                  <svg
-                    width={width}
-                    height={Math.max(height, 510)}
-                    style={{ position: 'absolute', inset: 0 }}
-                    aria-hidden="true"
-                  >
-                    {nodes.flatMap((node) => {
-                      const parents = node.requires
-                        .map((id) => byId[id])
-                        .filter(Boolean);
-                      const sources = parents.length
-                        ? parents.map((parent) => ({
-                            x:
-                              nodeX(parent) +
-                              (vertical ? cardWidth / 2 : cardWidth),
-                            y:
-                              nodeY(parent) +
-                              (vertical ? cardHeight : cardHeight / 2),
-                            owned: parent.level > 0,
-                          }))
-                        : [
-                            {
-                              x: vertical || centered ? rootX : 72,
-                              y: vertical ? rootY + 32 : rootY,
-                              owned: true,
-                            },
-                          ];
-                      return sources.map((source, index) => (
-                        <path
-                          key={`${node.id}-${index}`}
-                          d={
-                            vertical
-                              ? parents.length
-                                ? nodeY(node) - source.y > 60
-                                  ? `M ${source.x} ${source.y} V ${source.y + 16} H ${nodeX(node) + cardWidth / 2} V ${nodeY(node)}`
-                                  : `M ${source.x} ${source.y} C ${source.x} ${source.y + 26}, ${nodeX(node) + cardWidth / 2} ${nodeY(node) - 26}, ${nodeX(node) + cardWidth / 2} ${nodeY(node)}`
-                                : `M ${source.x} ${source.y} L ${source.x} 80 L ${nodeX(node) + cardWidth / 2} 80 L ${nodeX(node) + cardWidth / 2} ${nodeY(node)}`
-                              : centered
-                                ? `M ${source.x} ${source.y} L ${nodeX(node) + cardWidth / 2} ${nodeY(node) + (nodeY(node) > rootY ? 0 : cardHeight)}`
-                                : !parents.length && node.x > 0
-                                  ? `M ${source.x} ${source.y} L 92 ${source.y} L 92 ${height - 8} L ${nodeX(node) - 16} ${height - 8} L ${nodeX(node) - 16} ${nodeY(node) + cardHeight / 2} L ${nodeX(node)} ${nodeY(node) + cardHeight / 2}`
-                                  : `M ${source.x} ${source.y} C ${source.x + 24} ${source.y}, ${nodeX(node) - 24} ${nodeY(node) + cardHeight / 2}, ${nodeX(node)} ${nodeY(node) + cardHeight / 2}`
-                          }
-                          stroke={source.owned ? branch.color : '#68768b'}
-                          strokeWidth={3}
-                          strokeDasharray={parents.length ? undefined : '4 4'}
-                          fill="none"
-                        />
-                      ));
-                    })}
-                  </svg>
-                  <Box
-                    style={{
-                      position: 'absolute',
-                      left: rootX - 29,
-                      top: rootY - 28,
-                      width: 58,
-                      textAlign: 'center',
-                    }}
-                  >
-                    <Icon name="sitemap" size={2} color={branch.color} />
-                    <Box mt={0.5} fontSize={0.85}>
-                      Улей
-                    </Box>
-                  </Box>
-                  {nodes.map((node) => (
-                    <Box
-                      key={node.id}
-                      style={{
-                        position: 'absolute',
-                        left: nodeX(node),
-                        top: nodeY(node),
-                        width: cardWidth,
-                      }}
-                    >
-                      <Button
-                        fluid
-                        onClick={() => setSelectedId(node.id)}
-                        tooltip={node.description}
-                        style={{
-                          height: cardHeight,
-                          whiteSpace: 'normal',
-                          textAlign: 'center',
-                          background:
-                            selected?.id === node.id ? '#384154' : '#202a34',
-                          border: `2px solid ${complete(node) ? '#79bc8e' : selected?.id === node.id ? branch.color : '#46505e'}`,
-                        }}
-                      >
-                        <Box mb={0.7}>
-                          <Icon
-                            name={node.icon}
-                            size={2.5}
-                            color={complete(node) ? '#79bc8e' : branch.color}
-                          />
-                        </Box>
-                        <Box
-                          bold
-                          lineHeight={1.2}
-                          fontSize={vertical ? 0.9 : 1}
-                        >
-                          {node.name}
-                        </Box>
-                        <Box
-                          mt={0.7}
-                          color={
-                            complete(node)
-                              ? 'good'
-                              : node.available
-                                ? 'white'
-                                : 'label'
-                          }
-                        >
-                          {complete(node) ? (
-                            <>
-                              <Icon name="check" /> Изучено
-                            </>
-                          ) : (
-                            <>
-                              {!node.available && <Icon name="lock" />}{' '}
-                              {node.cost} биомассы
-                            </>
-                          )}
-                        </Box>
-                        {node.maxLevel !== 1 && (
-                          <Box mt={0.2} fontSize={0.8}>
-                            Куплено: {node.level}
-                            {node.maxLevel !== null && ` / ${node.maxLevel}`}
-                          </Box>
-                        )}
-                      </Button>
-                    </Box>
-                  ))}
-                </div>
-              </div>
-            </Section>
-          </Stack.Item>
-          <Stack.Item basis="270px" shrink={0}>
+                {name}
+              </Tabs.Tab>
+            ))}
+          </Tabs>
+          <div className="Hive-workspace">
+            <HiveTree
+              key={category}
+              category={category}
+              upgrades={data.nodes}
+              selectedId={selected?.id}
+              targetId={targetId}
+              onSelect={selectNode}
+            />
             {selected && (
-              <Section title="Выбранная адаптация" fill>
-                <Box textAlign="center" my={2}>
-                  <Icon name={selected.icon} size={4} color={branch.color} />
-                </Box>
-                <Box bold fontSize={1.4} mb={1}>
-                  {selected.name}
-                </Box>
-                <Box mb={2} lineHeight={1.5}>
-                  {selected.description}
-                </Box>
-                {!!selected.requires.length && (
-                  <Box mb={2}>
-                    <Box color="label" mb={0.5}>
-                      Предшествующие узлы
-                    </Box>
-                    {selected.requires.map((id) => (
-                      <Box
-                        key={id}
-                        mb={0.5}
-                        color={byId[id]?.level ? 'good' : 'label'}
-                      >
-                        <Icon name={byId[id]?.level ? 'check' : 'lock'} />{' '}
-                        {byId[id]?.name || id}
-                      </Box>
-                    ))}
+              <aside className="Hive-detail" aria-label="Выбранная технология">
+                <div className="Hive-detailBody">
+                  <h2>
+                    <Icon name={selected.icon} /> {selected.name}
+                  </h2>
+                  <p>{selected.description}</p>
+                  {!!selected.requires.length && (
+                    <div className="Hive-requirements">
+                      <h3>Требования</h3>
+                      {selected.requires.map((id) => {
+                        const required = byId.get(id);
+                        const icon = required?.level ? 'check' : 'lock';
+                        return required && required.category !== category ? (
+                          <Button
+                            key={id}
+                            fluid
+                            icon={icon}
+                            onClick={() => selectNode(required)}
+                          >
+                            {required.name} ↗{' '}
+                            <span className="Hive-requirementCategory">
+                              {required.category}
+                            </span>
+                          </Button>
+                        ) : (
+                          <Box
+                            key={id}
+                            mb={0.5}
+                            color={required?.level ? 'good' : 'label'}
+                          >
+                            <Icon name={icon} /> {required?.name ?? id}
+                          </Box>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {selected.id === 'larva' && !data.core && (
+                    <NoticeBox>Для создания яйца нужно установить ядро улья.</NoticeBox>
+                  )}
+                </div>
+                <div className="Hive-detailActions">
+                  <Button
+                    fluid
+                    icon={isComplete(selected) ? 'check' : 'dna'}
+                    disabled={!selected.available}
+                    onClick={() => act('buy', { id: selected.id })}
+                  >
+                    {isComplete(selected)
+                      ? 'Изучено'
+                      : `Развить · ${selected.cost}`}
+                  </Button>
+                  <Box color="label" mt={0.5}>
+                    Изученные адаптации сохраняются даже при смене королевы.
                   </Box>
-                )}
-                <Button
-                  fluid
-                  icon={complete(selected) ? 'check' : 'dna'}
-                  disabled={!selected.available}
-                  onClick={() => act('buy', { id: selected.id })}
-                >
-                  {complete(selected)
-                    ? 'Изучено'
-                    : `Развить · ${selected.cost}`}
-                </Button>
-                <Box mt={1} color="label">
-                  Покупки сохраняются при смене королевы.
-                </Box>
-                {selected.id === 'larva' && !data.core && (
-                  <NoticeBox mt={1}>Для яйца установите ядро.</NoticeBox>
-                )}
-              </Section>
+                </div>
+              </aside>
             )}
-          </Stack.Item>
-        </Stack>
-        <NoticeBox mt={1}>
-          {data.busy ? 'Королева занята развитием улья. ' : ''}
-          Покупка занимает 5 секунд. Движение, урон и потеря сознания прерывают
-          её. Биомасса списывается после завершения. Ветки можно смешивать;
-          сброса нет.
-        </NoticeBox>
+          </div>
+          <NoticeBox className="Hive-footnote" mt={1}>
+            {data.busy ? 'Королева уже развивает улей. ' : ''}
+            Изучение адаптации занимает 5 секунд. Движение, получение урона или
+            потеря сознания прервут процесс. Биомасса списывается только после
+            завершения. Можно развивать несколько ветвей, но сбросить улучшения нельзя.
+          </NoticeBox>
+        </div>
       </Window.Content>
     </Window>
   );

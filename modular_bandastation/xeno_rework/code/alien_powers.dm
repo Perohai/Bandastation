@@ -1,31 +1,38 @@
 /** Choose the type of resin structure to build. */
 /datum/action/cooldown/alien/select_resin_structure
-	name = "Select Resin Structure"
-	desc = "Choose the type of resin structure to build."
+	name = "Выбрать смоляную постройку"
+	desc = "Выберите тип смоляной постройки."
 	button_icon = 'icons/mob/actions/actions_xeno.dmi'
 	button_icon_state = "alien_resin"
 	plasma_cost = 0
 	cooldown_time = 0 SECONDS
 	/// Player-facing structure choices for resin selection.
 	var/static/list/structures = list(
-		"resin wall" = /obj/structure/alien/resin/wall,
-		"resin membrane" = /obj/structure/alien/resin/membrane,
-		"resin nest" = /obj/structure/bed/nest/banda,
-		"resin door" = /obj/structure/alien/resin/door,
+		"Смоляная стена" = /obj/structure/alien/resin/wall,
+		"Смоляная мембрана" = /obj/structure/alien/resin/membrane,
+		"Смоляное гнездо" = /obj/structure/bed/nest/banda,
+		"Смоляная дверь" = /obj/structure/alien/resin/door,
+		"кислотная мина" = /obj/structure/alien/acid_mine,
+		"кислотная турель" = /obj/structure/alien/acid_turret,
+		"укреплённая смоляная стена" = /obj/structure/alien/resin/wall/reinforced,
 	)
 
 /datum/action/cooldown/alien/select_resin_structure/Activate(atom/target)
-	var/choice = tgui_input_list(owner, "Select a shape to build", "Resin building", structures)
+	var/list/choices = structures.Copy()
+	for(var/name in structures)
+		if(!can_build_hive_structure(owner, structures[name]))
+			choices -= name
+	var/choice = tgui_input_list(owner, "Выберите, что построить", "Смоляные постройки", choices)
 	if(isnull(choice) || QDELETED(src) || QDELETED(owner) || !IsAvailable())
 		return FALSE
 
 	var/obj/structure/choice_path = structures[choice]
-	if(!ispath(choice_path))
+	if(!ispath(choice_path) || !can_build_hive_structure(owner, choice_path))
 		return FALSE
 
 	var/mob/living/carbon/alien/alien_owner = owner
 	alien_owner.selected_resin_structure = choice_path
-	to_chat(owner, span_noticealien("You prepare to build a [choice]."))
+	to_chat(owner, span_noticealien("Вы готовитесь возвести постройку: [choice]."))
 	return TRUE
 
 /datum/action/cooldown/alien/select_resin_structure/IsAvailable(feedback = FALSE)
@@ -36,15 +43,17 @@
 	if(istype(owner, /mob/living/carbon/alien/hivemind))
 		var/mob/living/carbon/alien/hivemind/hivemind = owner
 		return hivemind.operational() && hivemind.manifested && !hivemind.channeling
-	return !istype(owner, /mob/living/carbon/alien/adult/banda/carrier) && !istype(owner, /mob/living/carbon/alien/adult/banda/praetorian)
+	if(istype(owner, /mob/living/carbon/alien/adult/banda))
+		return is_hive_resin_builder(owner)
+	return TRUE
 
 /datum/action/cooldown/alien/make_structure/resin/IsAvailable(feedback = FALSE)
 	return resin_caste_allowed() && ..()
 
 /** Build the selected resin structure on nearby xenomorph weeds. */
 /datum/action/cooldown/alien/build_resin_structure
-	name = "Build Resin Structure"
-	desc = "Build the selected resin structure on nearby xenomorph weeds."
+	name = "Возвести смоляную постройку"
+	desc = "Возводит выбранную смоляную постройку на ксеноморфной траве поблизости."
 	button_icon_state = "alien_resin"
 	plasma_cost = 55
 	click_to_activate = TRUE
@@ -60,13 +69,16 @@
 		/obj/structure/bed/nest,
 		/obj/structure/bed/nest/banda,
 		/obj/structure/alien/resin/door,
+		/obj/structure/alien/acid_mine,
+		/obj/structure/alien/acid_turret,
+		/obj/structure/alien/resin/wall/reinforced,
 	)
 
 /// Used both before construction and after the do_after, since weeds and blockers can change.
 /datum/action/cooldown/alien/build_resin_structure/proc/can_build(turf/location, structure_type)
 	if(QDELETED(owner) || !isalien(owner) || !isturf(owner.loc) || !isopenturf(location) || isspaceturf(location))
 		return FALSE
-	if(!(structure_type in structure_types) || get_dist(owner, location) > build_range || owner.z != location.z || !(location in view(build_range, owner)))
+	if(!can_build_hive_structure(owner, structure_type) || !(structure_type in structure_types) || get_dist(owner, location) > build_range || owner.z != location.z || !(location in view(build_range, owner)))
 		return FALSE
 	if(!(locate(/obj/structure/alien/weeds) in location))
 		return FALSE
@@ -83,11 +95,21 @@
 	var/turf/location = get_turf(target)
 	if(!IsAvailable() || !can_build(location, structure_type))
 		return FALSE
-	var/duration = build_time * ((istype(owner, /mob/living/carbon/alien/adult/banda) || istype(owner, /mob/living/carbon/alien/hivemind)) && GLOB.xeno_hive?.purchased["construction"] ? 0.5 : 1)
+	var/list/spec = hive_structure_spec(structure_type)
+	var/cost = spec ? spec["plasma"] : initial(plasma_cost)
+	if(alien_owner.getPlasma() < cost)
+		return FALSE
+	var/duration = spec ? spec["time"] : build_time
+	if(GLOB.xeno_hive?.purchased["construction"] && is_hive_resin_builder(owner))
+		duration *= 0.8
 	if(!do_after(owner, duration, target = location, extra_checks = CALLBACK(src, PROC_REF(can_build), location, structure_type)))
 		return FALSE
-	if(QDELETED(src) || QDELETED(owner) || !IsAvailable() || !can_build(location, structure_type))
+	if(QDELETED(src) || QDELETED(alien_owner) || owner != alien_owner || !IsAvailable() || !can_build(location, structure_type))
 		return FALSE
+	if(alien_owner.getPlasma() < cost)
+		return FALSE
+	// PreActivate pays the base price. Charge the remainder after final validation.
+	alien_owner.adjustPlasma(-(cost - plasma_cost))
 	new structure_type(location)
 	playsound(location, 'modular_bandastation/xeno_rework/sound/alien_resin_move2.ogg', 50, TRUE)
 	// The alien action's PreActivate pays plasma once Activate succeeds.
@@ -96,12 +118,16 @@
 /datum/action/cooldown/alien/build_resin_structure/IsAvailable(feedback = FALSE)
 	return isalien(owner) && resin_caste_allowed() && ..()
 
+/// Drone and Queen receive the hive's construction upgrades.
+/proc/is_hive_resin_builder(mob/user)
+	return istype(user, /mob/living/carbon/alien/adult/banda/drone) || istype(user, /mob/living/carbon/alien/adult/banda/queen)
+
 // MARK: QUEEN
 
 /** Издаёт оглушительный визг, который, вероятно, ненадолго выведет из строя всех слышащих существ вокруг. Перезарядка 3 минуты. */
 /datum/action/cooldown/alien/banda/queen_screech
-	name = "Deafening Screech"
-	desc = "Издаёт оглушительный визг, который, вероятно, ненадолго выведет из строя всех слышащих существ вокруг. Перезарядка 3 минуты."
+	name = "Оглушительный визг"
+	desc = "Оглушительный визг на короткое время выводит из строя существ поблизости, способных его услышать. Перезарядка — 3 минуты."
 	button_icon_state = "screech"
 	cooldown_time = 3 MINUTES
 	plasma_cost = 250
@@ -118,7 +144,7 @@
 			continue
 		screech_target.soundbang_act(intensity = SOUNDBANG_NORMAL, stun_pwr = 1 SECONDS, damage_pwr = 5, deafen_pwr = 3 SECONDS)
 		shake_camera(screech_target, 4, 3)
-		to_chat(screech_target, span_red("[queenie] lets out a deafening screech!"))
+		to_chat(screech_target, span_red("[queenie] издаёт оглушительный визг!"))
 
 	StartCooldown()
 	return TRUE
@@ -145,8 +171,8 @@
 	button_icon = 'modular_bandastation/xeno_rework/icons/combat_actions.dmi'
 	button_icon_state = "fortify"
 	parent_type = /datum/action/cooldown/alien/banda/defender_shared
-	name = "Fortify"
-	desc = "Занять укреплённую позицию: сильно замедлиться, но получить защиту от дальнего урона и взрывов."
+	name = "Оборонительная стойка"
+	desc = "Занимает оборонительную стойку. Передвижение сильно замедляется, зато растёт защита от дальнобойных атак и взрывов."
 	cooldown_time = 5 SECONDS
 	can_be_used_always = TRUE
 
@@ -168,8 +194,8 @@
 /** Круговой удар хвостом, отбрасывающий и опрокидывающий соседние цели. */
 /datum/action/cooldown/alien/banda/defender_tail_sweep
 	parent_type = /datum/action/cooldown/alien/banda/defender_shared
-	name = "Tail Sweep"
-	desc = "Круговой удар хвостом, отбрасывающий и опрокидывающий соседние цели."
+	name = "Круговой удар хвостом"
+	desc = "Взмах хвостом по широкой дуге. Соседних противников отбрасывает и сбивает с ног."
 	button_icon_state = "crush_tail"
 	plasma_cost = 10
 	cooldown_time = 10 SECONDS
@@ -183,8 +209,8 @@
 	cooldown_time = defender.defender_tail_sweep_cooldown
 
 	defender.visible_message(
-		span_warning("[defender] sweeps its tail in a brutal circle!"),
-		span_warning("Мы сокрушающе взмахиваем хвостом вокруг себя!"),
+		span_warning("[defender] с силой хлещет хвостом вокруг себя!"),
+		span_warning("Мы с размаху хлещем хвостом вокруг себя!"),
 	)
 	playsound(defender, 'modular_bandastation/xeno_rework/sound/alien_tail_swipe.ogg', 70, TRUE)
 	defender.spin(4, 1)
@@ -207,7 +233,7 @@
 		victim.Knockdown(defender.defender_tail_sweep_knockdown)
 		victim.throw_at(throw_target, defender.defender_tail_sweep_throw_range, defender.defender_tail_sweep_throw_speed, defender)
 		shake_camera(victim, 2, 1)
-		to_chat(victim, span_userdanger("Хвост [defender] обрушивается на вас, отбрасывая назад!"))
+		to_chat(victim, span_userdanger("[defender] хлещет вас хвостом и отбрасывает назад!"))
 
 	for(var/obj/item/item in orange(defender.defender_tail_sweep_radius, defender))
 		if(item.anchored)
@@ -229,7 +255,7 @@
 
 /** Movement bonus granted by Warrior agility. */
 /datum/movespeed_modifier/warrior_agility
-	multiplicative_slowdown = -2.4
+	multiplicative_slowdown = -2.16
 
 /** Movement penalty while the Warrior holds a special grab. */
 /datum/movespeed_modifier/warrior_drag
@@ -262,8 +288,8 @@
 
 /** Переход на четвереньки значительно ускоряет передвижение, но увеличивает получаемый урон на 50%. Использование любой способности выводит из режима ловкости. */
 /datum/action/cooldown/alien/banda/warrior_agility
-	name = "Agility"
-	desc = "Переход на четвереньки значительно ускоряет передвижение, но увеличивает получаемый урон на 50%. Использование любой способности выводит из режима ловкости."
+	name = "Ловкость"
+	desc = "Передвижение на четырёх лапах заметно ускоряется, но входящий урон возрастает на 50%. Применение любой способности отключает режим ловкости."
 	button_icon_state = "the_speed_is_alot"
 	cooldown_time = 0.4 SECONDS
 	can_be_used_always = TRUE
@@ -290,8 +316,9 @@
 /** Рывок к цели на расстоянии до 4 клеток, сбивая её с ног и хватая. */
 /datum/action/cooldown/alien/banda/warrior_lunge
 	parent_type = /datum/action/cooldown/alien/banda/warrior_shared
-	name = "Lunge"
-	desc = "Рывок к цели на расстоянии до 4 клеток, сбивая её с ног и хватая."
+	name = "Рывок"
+	desc = "Бросается на цель в пределах 4 клеток, сбивает с ног и хватает."
+	button_icon = 'modular_bandastation/xeno_rework/icons/support_actions.dmi'
 	button_icon_state = "pounce"
 	plasma_cost = 30
 	cooldown_time = 20 SECONDS
@@ -307,7 +334,7 @@
 
 /datum/action/cooldown/alien/banda/warrior_lunge/PreActivate(atom/target)
 	if(!isliving(target))
-		to_chat(owner, span_warning("You can only lunge at living targets!"))
+		to_chat(owner, span_warning("Рывок доступен только против живых целей!"))
 		return FALSE
 
 	var/mob/living/victim = target
@@ -315,7 +342,7 @@
 		return FALSE
 
 	if(victim.stat == DEAD)
-		to_chat(owner, span_warning("That target is dead!"))
+		to_chat(owner, span_warning("Цель уже мертва!"))
 		return FALSE
 
 	var/mob/living/carbon/alien/adult/banda/warrior/warrior = owner
@@ -323,11 +350,11 @@
 		return FALSE
 
 	if(get_dist(warrior, victim) > warrior.warrior_lunge_range)
-		to_chat(warrior, span_warning("That target is too far away!"))
+		to_chat(warrior, span_warning("Цель слишком далеко!"))
 		return FALSE
 
 	if(!isturf(warrior.loc))
-		to_chat(warrior, span_warning("You can't lunge from here!"))
+		to_chat(warrior, span_warning("Отсюда нельзя совершить рывок!"))
 		return FALSE
 
 	return ..()
@@ -353,8 +380,8 @@
 	playsound(warrior, 'modular_bandastation/xeno_rework/sound/pounce.ogg', 60, TRUE)
 
 	warrior.visible_message(
-		span_danger("[warrior] lunges toward [victim]!"),
-		span_alertalien("We lunge at [victim]!"),
+		span_danger("[warrior] бросается к [victim]!"),
+		span_alertalien("Мы бросаемся к [victim]!"),
 	)
 
 	StartCooldown()
@@ -425,8 +452,8 @@
 
 	if(isalien(victim))
 		warrior.visible_message(
-			span_notice("[warrior] grabs [victim]!"),
-			span_noticealien("We grab [victim]."),
+			span_notice("[warrior] хватает [victim]!"),
+			span_noticealien("Мы хватаем [victim]."),
 		)
 		return
 
@@ -436,8 +463,8 @@
 	victim.Knockdown(warrior.warrior_lunge_knockdown)
 
 	warrior.visible_message(
-		span_danger("[warrior] crashes into [victim] and seizes [victim.p_them()]!"),
-		span_alertalien("We slam into [victim] and seize them!"),
+		span_danger("[warrior] с размаху врезается в [victim] и хватает [victim.p_them()]!"),
+		span_alertalien("Мы с размаху врезаемся в [victim] и хватаем добычу!"),
 	)
 
 /** Release the current lunge target and temporary movement state. */
@@ -464,8 +491,8 @@
 	button_icon = 'modular_bandastation/xeno_rework/icons/combat_actions.dmi'
 	button_icon_state = "warrior_throw"
 	parent_type = /datum/action/cooldown/alien/banda/warrior_shared
-	name = "Throw"
-	desc = "Бросок захваченного существа на выбранную клетку. Дальше, чем Fling, и с точным выбором точки."
+	name = "Бросить"
+	desc = "Бросает схваченную жертву на выбранную клетку. Дальность больше, чем у «Отшвырнуть», а место падения можно указать точно."
 	plasma_cost = 20
 	cooldown_time = 20 SECONDS
 	shared_cooldown = MOB_SHARED_COOLDOWN_3
@@ -479,7 +506,7 @@
 
 	var/mob/living/grabbed = warrior.get_warrior_grab_target()
 	if(!grabbed)
-		to_chat(warrior, span_warning("You are not grabbing anyone!"))
+		to_chat(warrior, span_warning("Вы никого не держите!"))
 		return FALSE
 
 	var/turf/target_turf = get_turf(target)
@@ -491,7 +518,7 @@
 		range -= warrior.warrior_throw_range_large_penalty
 
 	if(get_dist(warrior, target_turf) > range)
-		to_chat(warrior, span_warning("That tile is too far away!"))
+		to_chat(warrior, span_warning("Выбранная клетка находится слишком далеко!"))
 		return FALSE
 
 	return ..()
@@ -514,8 +541,8 @@
 		range -= warrior.warrior_throw_range_large_penalty
 
 	warrior.visible_message(
-		span_danger("[warrior] hurls [grabbed] away!"),
-		span_alertalien("We hurl [grabbed] away!"),
+		span_danger("[warrior] швыряет [grabbed] прочь!"),
+		span_alertalien("Мы швыряем [grabbed] прочь!"),
 	)
 
 	warrior.stop_pulling()
@@ -537,8 +564,8 @@
 	button_icon = 'modular_bandastation/xeno_rework/icons/combat_actions.dmi'
 	button_icon_state = "warrior_fling"
 	parent_type = /datum/action/cooldown/alien/banda/warrior_shared
-	name = "Fling"
-	desc = "Отбрасывает соседнюю цель от себя. Короче, чем Throw, но не требует захвата и накладывает дебафф."
+	name = "Отшвырнуть"
+	desc = "Отшвыривает соседнюю цель. Дальность меньше, чем у «Бросить», зато захват не нужен. На жертву накладывается ослабление."
 	plasma_cost = 20
 	cooldown_time = 20 SECONDS
 	shared_cooldown = MOB_SHARED_COOLDOWN_3
@@ -547,7 +574,7 @@
 
 /datum/action/cooldown/alien/banda/warrior_fling/PreActivate(atom/target)
 	if(!isliving(target))
-		to_chat(owner, span_warning("You can only fling living targets!"))
+		to_chat(owner, span_warning("Отшвыривать можно только живые цели!"))
 		return FALSE
 
 	var/mob/living/victim = target
@@ -556,7 +583,7 @@
 	if(victim.stat == DEAD)
 		return FALSE
 	if(!owner.Adjacent(victim))
-		to_chat(owner, span_warning("That target must be adjacent!"))
+		to_chat(owner, span_warning("Цель должна находиться по соседству!"))
 		return FALSE
 
 	return ..()
@@ -594,8 +621,8 @@
 
 
 	warrior.visible_message(
-		span_danger("[warrior] violently flings [victim] away!"),
-		span_alertalien("We violently fling [victim] away!"),
+		span_danger("[warrior] с силой отбрасывает [victim]!"),
+		span_alertalien("Мы с силой отбрасываем [victim]!"),
 	)
 
 	victim.throw_at(target_turf, fling_range, warrior.warrior_fling_speed, warrior)
@@ -613,8 +640,8 @@
 	button_icon = 'modular_bandastation/xeno_rework/icons/combat_actions.dmi'
 	button_icon_state = "warrior_punch"
 	parent_type = /datum/action/cooldown/alien/banda/warrior_shared
-	name = "Punch"
-	desc = "Удар по цели рядом, наносящий урон выносливости, замедление и пошатывание. Захваченной цели наносит усиленный эффект."
+	name = "Сокрушительный удар"
+	desc = "Наносит соседней цели удар, истощающий выносливость, замедляющий и вызывающий пошатывание. Схваченная жертва получает усиленный эффект."
 	plasma_cost = 15
 	cooldown_time = 10 SECONDS
 	click_to_activate = TRUE
@@ -622,7 +649,7 @@
 
 /datum/action/cooldown/alien/banda/warrior_punch/PreActivate(atom/target)
 	if(!isliving(target))
-		to_chat(owner, span_warning("You can only punch living targets!"))
+		to_chat(owner, span_warning("Кулаком можно бить только живые цели!"))
 		return FALSE
 
 	var/mob/living/victim = target
@@ -631,7 +658,7 @@
 	if(victim.stat == DEAD)
 		return FALSE
 	if(!owner.Adjacent(victim))
-		to_chat(owner, span_warning("That target must be adjacent!"))
+		to_chat(owner, span_warning("Цель должна находиться по соседству!"))
 		return FALSE
 
 	return ..()
@@ -660,8 +687,8 @@
 		warrior.stop_pulling()
 
 	warrior.visible_message(
-		span_danger("[warrior] smashes [victim] with a brutal punch!"),
-		span_alertalien("We smash [victim] with a brutal punch!"),
+		span_danger("[warrior] со всей силы бьёт [victim] кулаком!"),
+		span_alertalien("Мы со всей силы бьём [victim] кулаком!"),
 	)
 
 	warrior.do_attack_animation(victim, ATTACK_EFFECT_PUNCH)
@@ -682,7 +709,8 @@
 /** Прыжок, сбивающий цель с ног. Щит может отбить атаку. */
 /datum/action/cooldown/alien/banda/pounce_runner
 	name = "Наброситься"
-	desc = "Прыжок, сбивающий цель с ног. Щит может отбить атаку."
+	desc = "Прыгает на цель и сбивает её с ног. Щит способен отразить прыжок."
+	button_icon = 'modular_bandastation/xeno_rework/icons/support_actions.dmi'
 	button_icon_state = "pounce"
 	plasma_cost = 10
 	cooldown_time = 13 SECONDS
@@ -736,7 +764,7 @@
 /** Окно 0,15 секунды, строго один снаряд. Успех полностью сбрасывает перезарядку; промах — 8 секунд перезарядки и 1,5 секунды замедления. */
 /datum/action/cooldown/alien/banda/evade
 	name = "Уклонение"
-	desc = "Окно 0,15 секунды, строго один снаряд. Успех полностью сбрасывает перезарядку; промах — 8 секунд перезарядки и 1,5 секунды замедления."
+	desc = "Позволяет уклониться от одного снаряда в течение 0,15 секунды. Успешное уклонение мгновенно восстанавливает способность. При неудаче — перезарядка 8 секунд и замедление на 1,5 секунды."
 	button_icon_state = "evade"
 	cooldown_time = 8 SECONDS
 	/// Whether the evasion window is open.
@@ -798,8 +826,8 @@
 
 /** Иногда даже кровожадным чужим нужно немного полежать. */
 /datum/action/cooldown/alien/banda/sleepytime
-	name = "Rest"
-	desc = "Иногда даже кровожадным чужим нужно немного полежать."
+	name = "Отдых"
+	desc = "Даже самым свирепым ксеноморфам иногда нужен отдых."
 	button_icon_state = "sleepytime"
 	check_flags = AB_CHECK_CONSCIOUS | AB_CHECK_INCAPACITATED
 	can_be_used_always = TRUE
@@ -816,8 +844,8 @@
 
 /** Позволяет нам эволюционировать в высшую касту нашего типа, если такая ещё не существует. */
 /datum/action/cooldown/alien/banda/generic_evolve
-	name = "Evolve"
-	desc = "Эволюция в доступную высшую касту занимает 5 секунд. Движение или потеря сознания прерывают линьку."
+	name = "Эволюция"
+	desc = "Эволюция в доступную высшую касту занимает 5 секунд. Линька прерывается при движении или потере сознания."
 	button_icon_state = "evolution"
 	/// Locks requests after caste selection and before the channel yields.
 	var/evolving = FALSE
@@ -862,11 +890,11 @@
 	if(evolving || !evolution_type || !IsAvailable() || !istype(evolver))
 		return FALSE
 	if(!evolver.can_evolve(evolution_type))
-		evolver.balloon_alert(evolver, "высшая каста уже существует")
+		evolver.balloon_alert(evolver, "Такая высшая каста уже есть в улье")
 		return FALSE
 	evolving = TRUE
 	var/turf/start = evolver.loc
-	evolver.visible_message(span_warning("[evolver] начинает сбрасывать хитиновую оболочку!"))
+	evolver.visible_message(span_warning("[evolver] начинает сбрасывать старую хитиновую оболочку!"))
 	evolver.start_hive_evolution_visual()
 	var/ready = do_after(evolver, evolution_time, target = evolver)
 	if(!QDELETED(evolver))

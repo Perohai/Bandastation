@@ -1,7 +1,7 @@
 /** Mobile ambusher with stealth, pounce, marked prey and disposable mirages. */
 /mob/living/carbon/alien/adult/banda/final_caste/hunter
 	name = "alien hunter"
-	desc = "Охотник роя: маскируется, выслеживает отмеченную жертву и нападает из засады."
+	desc = "Охотник роя. Скрывается, выслеживает помеченную жертву и нападает из засады."
 	caste = "hunter"
 	evolution_tier = 2
 	inhand_caste = "runner"
@@ -68,8 +68,8 @@
 
 /** Toggle camouflage; plasma upkeep follows movement rather than polling the map. */
 /datum/action/cooldown/alien/banda/hunter_stealth
-	name = "Маскировка — Stealth"
-	desc = "Вход в маскировку занимает 3 секунды: движение, урон или потеря сознания прерывают подготовку. Прозрачность как у ниндзя; движение расходует плазму. После двух секунд маскировки удар парализует на секунду. Урон раскрывает охотника."
+	name = "Маскировка"
+	desc = "Маскировка включается за 3 секунды. Движение, получение урона или потеря сознания прерывают подготовку. Охотник сливается с окружением, расходуя плазму на передвижение. После двух секунд маскировки следующая атака парализует жертву на секунду. Получение урона раскрывает охотника."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "hunter_invisibility"
 	plasma_cost = 10
@@ -99,7 +99,7 @@
 		preparing = TRUE
 		entry_interrupted = FALSE
 		RegisterSignal(hunter, COMSIG_MOB_AFTER_APPLY_DAMAGE, PROC_REF(on_entry_damage))
-		hunter.visible_message(span_warning("[hunter] замирает, сливаясь с окружением..."))
+		hunter.visible_message(span_warning("[hunter] замирает и постепенно растворяется на фоне окружения..."))
 		var/ready = do_after(hunter, entry_time, target = hunter, extra_checks = CALLBACK(src, PROC_REF(can_enter), hunter))
 		UnregisterSignal(hunter, COMSIG_MOB_AFTER_APPLY_DAMAGE)
 		if(QDELETED(src))
@@ -161,8 +161,9 @@
 
 /** Leap using normal thrown-mob movement and collision. */
 /datum/action/cooldown/alien/banda/hunter_pounce
-	name = "Прыжок — Pounce"
-	desc = "Прыжок на семь клеток. Попадание опрокидывает противника на две секунды и снимает маскировку."
+	name = "Прыжок"
+	desc = "Прыгает на расстояние до семи клеток. Попадание сбивает жертву с ног на две секунды и снимает маскировку."
+	button_icon = 'modular_bandastation/xeno_rework/icons/support_actions.dmi'
 	button_icon_state = "pounce"
 	plasma_cost = 75
 	cooldown_time = 10 SECONDS
@@ -183,8 +184,8 @@
 
 /** Mark only visible living enemies; no raw player references are accepted. */
 /datum/action/cooldown/alien/banda/hunter_mark
-	name = "Метка охотника — Hunter's Mark"
-	desc = "Отмечает видимого врага. Psychic Trace сообщает направление, расстояние, область и общее состояние жертвы. Метку можно сменить раз в минуту."
+	name = "Метка охотника"
+	desc = "Помечает видимого противника. «Психический след» показывает направление, расстояние, местоположение и общее состояние жертвы. Сменить цель можно раз в минуту."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "hunter_mark"
 	plasma_cost = 25
@@ -201,8 +202,8 @@
 
 /** Read a weakly held mark without exposing player keys or remote z-level contents. */
 /datum/action/cooldown/alien/banda/hunter_trace
-	name = "Психический след — Psychic Trace"
-	desc = "За одну плазму определяет направление, расстояние, местоположение и состояние отмеченной жертвы на текущем уровне."
+	name = "Психический след"
+	desc = "За одну плазму показывает направление, расстояние, местоположение и состояние помеченной жертвы на том же уровне."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "psychic_trace"
 	plasma_cost = 1
@@ -219,8 +220,8 @@
 
 /** Silence affects a five-by-five visible area and lasts longer on the marked enemy. */
 /datum/action/cooldown/alien/banda/hunter_silence
-	name = "Безмолвие — Silence"
-	desc = "Видимые враги в области 5×5 теряют речь и слух на 5 секунд; отмеченная жертва — на 10 секунд. Перезарядка 100 секунд."
+	name = "Зона безмолвия"
+	desc = "На 5 секунд лишает речи и слуха всех видимых врагов в области 5×5 клеток. Помеченная жертва теряет их на 10 секунд. Перезарядка — 100 секунд."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "silence"
 	plasma_cost = 50
@@ -241,8 +242,8 @@
 
 /** Three decoys with a validated swap to one of their visible positions. */
 /datum/action/cooldown/alien/banda/hunter_mirage
-	name = "Мираж — Mirage"
-	desc = "Создаёт три иллюзии на десять секунд: они преследуют ближайших противников и наносят 2 урона за удар. Пока они существуют, повторный клик по своей иллюзии меняет вас с ней местами в пределах видимости."
+	name = "Мираж"
+	desc = "Призывает на десять секунд три иллюзии. Они преследуют ближайших противников и наносят по 2 урона за удар. Пока иллюзии активны, можно поменяться местами с одной из них, нажав на неё повторно в пределах видимости."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "mirror_image"
 	plasma_cost = 50

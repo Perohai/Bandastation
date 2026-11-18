@@ -212,3 +212,10 @@ Native TGMC Baneling replacement, 2026-11-17:
   above and in tgmc/LICENSE-CC-BY-NC-3.0 and LICENSE-CC-BY-NC-SA-3.0. No relicensing.
   The earlier nov17_baneling_*.png generated concepts are historical source previews;
   they no longer supply the runtime Baneling DMI.
+
+Support action icons, 2026-11-18:
+  support_actions.dmi and source/support_actions_20261118.png are original built-in
+  OpenAI image_gen output for BandaStation: cold slate-blue and purple pixel-art
+  facehugger hatching from a resin egg, and a leaping alien with claws.
+  No donor sprite pixels were used. Same generated-art CC BY-SA 3.0 terms as above.
+  Each symbol is packed into a transparent 32x32 action state.

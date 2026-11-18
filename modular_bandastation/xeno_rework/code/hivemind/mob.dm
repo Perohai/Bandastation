@@ -1,7 +1,7 @@
 /** TGMC support caste adapted to TG organs, movement, actions and ghost roles. */
 /mob/living/carbon/alien/hivemind
 	name = "alien hivemind"
-	desc = "Воплощённый разум улья, связанный с уязвимой смоляной привязкой."
+	desc = "Физическая оболочка Разума улья. Её существование зависит от уязвимого смоляного узла."
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/hivemind_source/hivemind.dmi'
 	icon_state = "Hivemind_"
 	pixel_x = -8
@@ -137,7 +137,7 @@
 	set_health(maxHealth)
 	SetAllImmobility(0)
 	return_to_core()
-	to_chat(src, span_userdanger("Оболочка разрушена! Вы рассеялись у привязки; новое воплощение станет доступно через [reformation_time / (1 SECONDS)] секунд."))
+	to_chat(src, span_userdanger("Оболочка уничтожена! Дух возвращается к узлу. Повторное воплощение станет доступно через [reformation_time / (1 SECONDS)] секунд."))
 
 /mob/living/carbon/alien/hivemind/updatehealth()
 	if(manifested && get_brute_loss() + get_fire_loss() + get_tox_loss() + get_oxy_loss() >= maxHealth)
@@ -165,7 +165,7 @@
 
 /mob/living/carbon/alien/hivemind/proc/anchor_destroyed()
 	anchor_ref = null
-	to_chat(src, span_userdanger("Привязка разума улья уничтожена!"))
+	to_chat(src, span_userdanger("Узел Разума улья уничтожен!"))
 	ghostize()
 	qdel(src)
 
@@ -206,6 +206,6 @@
 	actions_types = list(/datum/action/cooldown/alien/select_resin_structure, /datum/action/cooldown/alien/build_resin_structure/hivemind)
 
 /datum/action/cooldown/alien/build_resin_structure/hivemind
-	name = "Удалённое строительство"
-	desc = "Воплощение строит выбранную смолу на видимой траве в четырёх клетках."
+	name = "Строительство на расстоянии"
+	desc = "В физической оболочке возводит выбранную смоляную постройку на видимой траве в пределах четырёх клеток."
 	build_range = 4

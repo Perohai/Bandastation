@@ -2,7 +2,7 @@
 /** Тяжелый на вид чужой с хвостом, похожим на ядро тарана — получить удар таким было бы больно. */
 /mob/living/carbon/alien/adult/banda/defender
 	name = "alien defender"
-	desc = "Тяжелый на вид чужой с хвостом, похожим на ядро тарана — получить удар таким было бы больно."
+	desc = "Массивный Чужой с хвостом, напоминающим таран. Попасть под такой удар вряд ли захочется."
 	caste = "defender"
 	maxHealth = 250
 	health = 250
@@ -97,8 +97,8 @@
 		ADD_TRAIT(src, TRAIT_STUNIMMUNE, TRAIT_XENO_ABILITY_GIVEN)
 
 	visible_message(
-		span_warning("[src] braces into a fortified stance!"),
-		span_warning("Мы занимаем укреплённую позицию."),
+		span_warning("[src] принимает оборонительную стойку!"),
+		span_warning("Мы укрепляем оборону."),
 	)
 	playsound(src, 'sound/effects/stonedoor_openclose.ogg', 30, TRUE)
 
@@ -133,7 +133,7 @@
 
 	if(!silent)
 		visible_message(
-			span_warning("[src] relaxes out of its fortified stance."),
-			span_warning("Мы выходим из укреплённой позиции."),
+			span_warning("[src] выходит из оборонительной стойки."),
+			span_warning("Мы оставляем оборонительную стойку."),
 		)
 		playsound(src, 'sound/effects/stonedoor_openclose.ogg', 30, TRUE)

@@ -112,18 +112,32 @@
 	TEST_ASSERT(follow.PreActivate(), "Rally tracking could not be toggled on")
 	var/datum/status_effect/agent_pinpointer/xeno_rally/tracker = runner.has_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
 	TEST_ASSERT_NOTNULL(tracker, "Tracking did not create a native pinpointer")
-	TEST_ASSERT_EQUAL(tracker.scan_target, hive.rally_point, "Pinpointer lost the shared marker")
+	TEST_ASSERT_EQUAL(tracker.scan_target, hive.rally_points[REF(queen)], "Pinpointer lost the shared marker")
 	TEST_ASSERT_EQUAL(tracker.direction_arrow.dir, NORTH, "Pinpointer points away from the rally point")
 	rally.ResetCooldown()
 	TEST_ASSERT(rally.PreActivate(get_step(runner, EAST)), "Rally point could not be relocated")
 	tracker.tick(0)
 	TEST_ASSERT_EQUAL(tracker.direction_arrow.dir, EAST, "Active tracking ignored rally relocation")
-	qdel(hive.rally_point)
+	qdel(hive.rally_points[REF(queen)])
 	TEST_ASSERT_NULL(tracker.scan_target, "Deleted marker remains strongly referenced")
 	tracker.tick(0)
 	TEST_ASSERT_EQUAL(tracker.direction_arrow.alpha, 0, "Deleted marker still shows a direction")
 	TEST_ASSERT(follow.PreActivate(), "Rally tracking could not be toggled off")
 	TEST_ASSERT_NULL(runner.has_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally), "Tracking remains after toggle-off")
+	TEST_ASSERT(hive.set_rally_point(queen, get_step(runner, NORTH)), "The queen could not set a marker")
+	var/mob/living/carbon/alien/adult/banda/final_caste/crusher/crusher = allocate(/mob/living/carbon/alien/adult/banda/final_caste/crusher)
+	TEST_ASSERT(hive.set_rally_point(crusher, get_step(runner, EAST)), "The crusher could not set a separate marker")
+	TEST_ASSERT_EQUAL(length(hive.rally_points), 2, "Setters overwrote each other's markers")
+	TEST_ASSERT(hive.set_rally_point(crusher, get_step(runner, NORTHEAST)), "The crusher could not relocate its marker")
+	TEST_ASSERT_EQUAL(length(hive.rally_points), 2, "Relocation left the previous marker in the roster")
+	TEST_ASSERT(hive.follow_rally_target(runner, queen), "The roster could not follow a living xeno")
+	tracker = runner.has_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
+	queen.forceMove(get_step(runner, NORTH))
+	tracker.tick(0)
+	TEST_ASSERT_EQUAL(tracker.direction_arrow.dir, NORTH, "The pointer did not follow a moving xeno")
+	qdel(queen)
+	TEST_ASSERT_NULL(tracker.scan_target, "Deleted xeno remains targeted")
+	TEST_ASSERT_EQUAL(length(hive.rally_points), 1, "The setter's old marker remains in the roster")
 
 /datum/unit_test/xeno_rework_hive/boiler_spray_length
 	normal_floor_required = TRUE
@@ -131,7 +145,8 @@
 /datum/unit_test/xeno_rework_hive/boiler_spray_length/Run()
 	var/mob/living/carbon/alien/adult/banda/final_caste/boiler/boiler = allocate(/mob/living/carbon/alien/adult/banda/final_caste/boiler)
 	var/datum/action/cooldown/alien/banda/acid_spray/boiler/spray = locate() in boiler.actions
-	TEST_ASSERT(spray.PreActivate(get_ranged_target_turf(boiler, NORTH, 4)), "Boiler could not spray four tiles")
+	TEST_ASSERT(spray.PreActivate(get_ranged_target_turf(boiler, NORTH, 5)), "Boiler could not spray four tiles")
+	sleep(0.6 SECONDS)
 	for(var/distance in 1 to 4)
 		var/turf/location = get_ranged_target_turf(boiler, NORTH, distance)
 		TEST_ASSERT_NOTNULL(locate(/obj/effect/xeno_acid_pool/spray) in location, "Boiler spray missed tile [distance]")
@@ -199,3 +214,81 @@
 	TEST_ASSERT(!(prey in stomach.stomach_contents), "Prey dying during the channel was swallowed")
 	var/obj/structure/xeno_hive_egg/larva/egg = allocate(/obj/structure/xeno_hive_egg/larva)
 	TEST_ASSERT(egg.icon_state in icon_states(egg.icon), "Larval egg refers to a nonexistent sprite state")
+
+
+/datum/unit_test/xeno_rework_hive/carrier_traps/Run()
+	var/mob/living/carbon/alien/adult/banda/carrier/carrier = allocate(/mob/living/carbon/alien/adult/banda/carrier)
+	TEST_ASSERT_EQUAL(carrier.get_max_plasma(), 250, "Carrier plasma cap is wrong")
+	var/turf/site = carrier.loc
+	allocate(/obj/structure/alien/weeds, site)
+	var/obj/item/clothing/mask/facehugger/hugger = allocate(/obj/item/clothing/mask/facehugger, site)
+	TEST_ASSERT(carrier.store_hugger(hugger), "Cannot store test hugger")
+	carrier.adjustPlasma(250)
+	var/datum/action/cooldown/alien/banda/carrier_trap/trap_action = locate() in carrier.actions
+	TEST_ASSERT(trap_action.PreActivate(), "Cannot build loaded trap")
+	var/obj/structure/alien/carrier_trap/trap = locate() in site
+	TEST_ASSERT(trap && trap.hugger == hugger, "Trap lost its hugger")
+	TEST_ASSERT_EQUAL(length(carrier.stored_huggers), 0, "Carrier kept the placed hugger")
+	trap.take_damage(100, BRUTE, MELEE)
+	TEST_ASSERT(!QDELETED(hugger) && hugger.loc == site, "Destruction did not release the hugger")
+
+/datum/unit_test/xeno_rework_hive/warrior_agility_pull/Run()
+	var/mob/living/carbon/alien/adult/banda/warrior/warrior = allocate(/mob/living/carbon/alien/adult/banda/warrior)
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human/consistent)
+	TEST_ASSERT(warrior.start_pulling(victim), "Warrior cannot pull normally")
+	warrior.enter_agility()
+	TEST_ASSERT_NULL(warrior.pulling, "Agility kept the existing grab")
+	TEST_ASSERT(!warrior.start_pulling(victim), "Agility allowed another grab")
+	warrior.exit_agility()
+	TEST_ASSERT(warrior.start_pulling(victim), "Leaving agility did not restore pulling")
+
+/datum/unit_test/xeno_rework_hive/biostructure_gates/Run()
+	var/mob/living/carbon/alien/adult/banda/drone/drone = allocate(/mob/living/carbon/alien/adult/banda/drone)
+	var/mob/living/carbon/alien/adult/banda/spitter/spitter = allocate(/mob/living/carbon/alien/adult/banda/spitter)
+	TEST_ASSERT(!can_build_hive_structure(drone, /obj/structure/alien/acid_turret), "Locked turret was buildable")
+	hive.purchased["acid_turrets"] = 1
+	TEST_ASSERT(can_build_hive_structure(drone, /obj/structure/alien/acid_turret), "Unlocked turret stayed locked")
+	TEST_ASSERT(!can_build_hive_structure(spitter, /obj/structure/alien/acid_turret), "Non-builder could place turret")
+	TEST_ASSERT_EQUAL(hive_structure_spec(/obj/structure/alien/acid_turret)["plasma"], 250, "Turret price exceeds drone capacity")
+
+
+/datum/unit_test/xeno_rework_hive/biostructure_damage/Run()
+	var/turf/site = get_step(run_loc_floor_bottom_left, NORTH)
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human/consistent, get_step(site, EAST))
+	var/obj/structure/alien/acid_mine/mine = allocate(/obj/structure/alien/acid_mine, site)
+	mine.detonate()
+	TEST_ASSERT_EQUAL(victim.get_fire_loss(), 30, "Acid mine did not damage its victim exactly once")
+	TEST_ASSERT(QDELETED(mine), "Triggered mine remained alive")
+	var/obj/structure/alien/acid_turret/turret = allocate(/obj/structure/alien/acid_turret, site)
+	allocate(/obj/structure/alien/weeds, site)
+	turret.process(1)
+	TEST_ASSERT(turret.next_shot > world.time, "Turret did not start its shot interval")
+
+/datum/unit_test/xeno_rework_hive/crusher_block_stun/Run()
+	var/mob/living/carbon/alien/adult/banda/final_caste/crusher/crusher = allocate(/mob/living/carbon/alien/adult/banda/final_caste/crusher)
+	crusher.setDir(NORTH)
+	crusher.momentum = crusher.max_steps_buildup
+	crusher.charge_direction = NORTH
+	crusher.last_charge_step = world.time
+	crusher.adjustPlasma(crusher.get_max_plasma())
+	var/obj/structure/closet/blocker = allocate(/obj/structure/closet, get_step(crusher, NORTH))
+	blocker.resistance_flags |= INDESTRUCTIBLE
+	crusher.Bump(blocker)
+	TEST_ASSERT(crusher.IsParalyzed(), "Indestructible obstacle did not stun the crusher")
+	TEST_ASSERT_EQUAL(crusher.momentum, 0, "Blocked crusher kept its momentum")
+
+/datum/unit_test/xeno_rework_hive/trap_protection/Run()
+	var/mob/living/carbon/alien/adult/banda/carrier/carrier = allocate(/mob/living/carbon/alien/adult/banda/carrier)
+	var/turf/site = carrier.loc
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human/consistent, get_step(site, NORTH))
+	var/obj/item/clothing/mask/breath/mask = allocate(/obj/item/clothing/mask/breath)
+	victim.equip_to_slot_if_possible(mask, ITEM_SLOT_MASK)
+	for(var/attempt in 1 to 2)
+		var/obj/item/clothing/mask/facehugger/hugger = allocate(/obj/item/clothing/mask/facehugger, site)
+		var/obj/structure/alien/carrier_trap/trap = allocate(/obj/structure/alien/carrier_trap, site, hugger)
+		trap.on_entered(site, victim)
+		if(attempt == 1)
+			TEST_ASSERT_EQUAL(mask.trap_hugger_protection, 0, "Trap hugger did not consume mask protection")
+			TEST_ASSERT_EQUAL(victim.wear_mask, mask, "First trap hugger removed protected mask")
+		else
+			TEST_ASSERT_EQUAL(victim.wear_mask, hugger, "Second trap hugger failed to bypass spent protection")
