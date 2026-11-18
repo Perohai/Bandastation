@@ -1,0 +1,31 @@
+Imported through BandaStation PR #1969 (Perohai / Artfish):
+https://github.com/ss220club/BandaStation/pull/1969
+Original modpack credits: Artfish, Paxilmaniac.
+
+alien_footstep_large1.ogg, alien_footstep_large2.ogg,
+alien_footstep_large3.ogg, alien_hiss.ogg, alien_queen_screech.ogg,
+alien_roar1.ogg, alien_roar2.ogg, alien_spitacid.ogg,
+alien_spitacid2.ogg, alien_tail_swipe.ogg, bloodyslice.ogg
+
+The following supplied files were checked byte-for-byte against upstream:
+
+alien_resin_move1.ogg, alien_resin_move2.ogg:
+  CM-SS13, commit 535d773610984b04554c6e06a5f5ec7a6e3e23e0
+  https://github.com/cmss13-devs/cmss13/tree/535d773610984b04554c6e06a5f5ec7a6e3e23e0/sound/effects
+  Upstream attribution: https://github.com/cmss13-devs/cmss13/blob/535d773610984b04554c6e06a5f5ec7a6e3e23e0/sound/ATTRIBUTION.txt
+
+pounce.ogg:
+  TGMC, sound/voice/alien/pounce.ogg
+spin.ogg:
+  TGMC, sound/effects/spin.ogg
+  Commit df1917855472062520be96d592f88e3973efefbe
+  https://github.com/tgstation/TerraGov-Marine-Corps/tree/df1917855472062520be96d592f88e3973efefbe/sound
+
+Imported audio retains its upstream license and licensing exceptions.
+This file does not relicense audio. See the source repositories' README/license
+and attribution files; TGMC and CM include noncommercial asset exceptions.
+hunter_silence.ogg: original procedurally synthesized non-vocal hiss, Codex,
+2026-11-16, at the user's request. No Dota 2 recording or third-party audio.
+Distributed under the repository default artwork license CC BY-SA 3.0.
+Reproduce with FFmpeg (white noise, bandpass, rapid attack, decay and short echo):
+ffmpeg -f lavfi -i anoisesrc=d=0.85:c=white:r=44100:a=0.7 -af "highpass=f=1400,lowpass=f=8500,afade=t=in:d=0.008,afade=t=out:st=0.06:d=0.79,aecho=0.8:0.35:45:0.2" -c:a libvorbis -q:a 5 hunter_silence.ogg

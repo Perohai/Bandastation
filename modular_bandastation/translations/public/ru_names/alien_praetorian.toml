@@ -1,8 +1,8 @@
-["alien praetorian"]
-nominative = "преторианец Чужих"
-genitive = "преторианца Чужих"
-dative = "преторианцу Чужих"
-accusative = "преторианца Чужих"
-instrumental = "преторианцем Чужих"
-prepositional = "преторианце Чужих"
+["Преторианец улья"]
+nominative = "преторианец улья"
+genitive = "преторианца улья"
+dative = "преторианцу улья"
+accusative = "преторианца улья"
+instrumental = "преторианцем улья"
+prepositional = "преторианце улья"
 gender = "female"

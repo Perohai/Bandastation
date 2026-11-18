@@ -1,0 +1,16 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-11-17",
+  "approved_reference": {
+    "file": "nov17_baneling_approved.png",
+    "origin": "User-approved generated revision of this module's Baneling, with readable fangs, spherical acid sacs and short tail; generated file exec-5145d89a-7911-4f13-97fa-ee47b7cdb6f0.png."
+  },
+  "baneling_states": {
+    "reference_role": "Edit target: nov17_baneling_approved.png",
+    "prompt": "Edit target: the attached approved low-resolution baneling sprites. Create a production game sprite atlas matching EXACTLY this alien: charcoal-purple segmented chitin, long ivory head crest, readable fanged mouth, large spherical lime-green acid sacs in purple ribs, short curled pointed tail. No redesign. Chunky regular 32x32 pixel style, no high-res painting. TRANSPARENT BACKGROUND. Exact grid 4 COLUMNS × 3 ROWS, equal-sized square cells, each creature centered with ample padding, no crossings between cells, no text/no labels/no gridlines. Columns directions: first FRONT/SOUTH, second BACK/NORTH (rear chitin spine, green sacs and short tail, no front mouth), third RIGHT/EAST-facing profile, fourth LEFT/WEST-facing profile. Top row: standing alive. Middle row: resting, low to ground with tucked legs and closed mouth, still alive, same 4 directions. Bottom row: dead, legs collapsed/sprawled, sagging acid sacs, darkened, same 4 directions. Same anatomy, scale and colors in every cell. Whole creature including short tail stays inside each cell. Preserve approved living front and side designs, duplicate the side mirrored for opposite direction. Use very simple legible pixel clusters, limited palette, no smooth shading, no extra objects or characters. Sprite sheet only."
+  },
+  "rally_track": {
+    "reference_role": "Style/palette reference: hive_actions.dmi",
+    "prompt": "Create ONE new SS13 pixel-art ability icon for 'Follow hive rally point', matching the exact muted fleshy-purple chitin and bone-ivory palette and tiny chunky pixel style of the attached existing alien action icons. Transparent background, single centered square icon. Subject: a clearly readable curved BONE ARROW heading toward a small purple organic rally beacon/marker, framed by two subtle chitin claws, showing navigation toward a destination. Different from setting the rally point: this icon represents following its direction. Must be legible as a 32x32 action button: bold clean 1-pixel outlines, limited palette, very simple large shapes, no lettering, no numbers, no border, no circular UI background. One symbol only, no icon sheet, no gradients or tiny decorative noise. Use dark plum, muted mauve, desaturated bone with restrained violet accent. Not neon green, not white technical UI."
+  }
+}
