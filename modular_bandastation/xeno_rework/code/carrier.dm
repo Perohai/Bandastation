@@ -32,7 +32,12 @@
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/carrier_hugger)
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/carrier_spawn_hugger)
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/carrier_trap)
-	GRANT_ACTION(/datum/action/cooldown/alien/make_structure/lay_egg)
+	GRANT_ACTION(/datum/action/cooldown/alien/make_structure/lay_egg/carrier)
+
+/datum/action/cooldown/alien/make_structure/lay_egg/carrier
+	name = "Отложить яйцо"
+	desc = "Откладывает яйцо за 3 секунды. Стоимость — 100 плазмы."
+	plasma_cost = 100
 
 /mob/living/carbon/alien/adult/banda/carrier/Destroy()
 	release_huggers()
@@ -115,8 +120,14 @@
 	if(!(target in view(5, carrier)) || !length(carrier.stored_huggers))
 		return FALSE
 	var/obj/item/clothing/mask/facehugger/hugger = carrier.stored_huggers[1]
+	if(QDELETED(hugger) || hugger.loc != carrier || hugger.facehugger_state == /obj/item/clothing/mask/facehugger/dead::facehugger_state)
+		return FALSE
+	// Keep the hugger inert while moving it out of storage so only the impact triggers attachment.
+	hugger.go_idle()
 	hugger.forceMove(carrier.loc)
-	hugger.throw_at(target, 5, 1, carrier)
+	hugger.go_active()
+	if(!hugger.throw_at(target, 5, 1, carrier))
+		return FALSE
 	StartCooldown()
 	return TRUE
 
@@ -134,8 +145,8 @@
 /datum/action/cooldown/alien/banda/carrier_trap
 	name = "Ловушка с лицехватом"
 	desc = "Устанавливает под собой на траве ловушку и помещает в неё одного лицехвата из запаса. Наступивший человек падает, а лицехват выскакивает. Разрушение ловушки выпускает лицехвата."
-	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
-	button_icon_state = "carrier"
+	button_icon = 'modular_bandastation/xeno_rework/icons/hive_fortifications.dmi'
+	button_icon_state = "hugger_trap_action"
 	plasma_cost = 150
 
 /datum/action/cooldown/alien/banda/carrier_trap/Activate()
@@ -158,9 +169,9 @@
 /obj/structure/alien/carrier_trap
 	name = "ловушка с лицехватом"
 	desc = "Ямка в смоле с взведённой мембраной."
-	icon = 'icons/obj/fluff/general.dmi'
-	icon_state = "gelmound"
-	color = "#625673"
+	icon = 'modular_bandastation/xeno_rework/icons/hive_fortifications.dmi'
+	icon_state = "hugger_trap"
+	layer = LOW_OBJ_LAYER
 	anchored = TRUE
 	max_integrity = 5
 	var/obj/item/clothing/mask/facehugger/hugger
@@ -192,24 +203,11 @@
 	var/obj/item/clothing/mask/facehugger/released = hugger
 	if(!released.valid_to_attach(victim))
 		return
-	var/blocked = FALSE
-	if(victim.is_mouth_covered(ITEM_SLOT_HEAD))
-		var/obj/item/clothing/head/helmet = victim.head
-		blocked = helmet.absorb_trap_hugger()
-	if(!blocked && victim.wear_mask)
-		if(istype(victim.wear_mask, /obj/item/clothing/mask/facehugger))
-			return
-		var/obj/item/clothing/mask/mask = victim.wear_mask
-		blocked = mask.absorb_trap_hugger()
 	released.go_idle()
 	release_hugger()
-	if(!blocked && !QDELETED(released))
-		if(victim.wear_mask && !victim.dropItemToGround(victim.wear_mask))
-			qdel(src)
-			return
+	if(!QDELETED(released))
 		released.go_active()
-		victim.equip_to_slot_if_possible(released, ITEM_SLOT_MASK, 0, 1, 1)
-		log_combat(src, victim, "released facehugger onto")
+		released.leap_to(victim, use_protection_charges = TRUE)
 	qdel(src)
 
 /obj/structure/alien/carrier_trap/proc/release_hugger()
@@ -236,7 +234,7 @@
 
 
 /obj/item/clothing
-	/// TGMC-style single protection charge, consumed only by a trap-released hugger.
+	/// Single protection charge against huggers thrown by a Carrier or released from a trap.
 	var/trap_hugger_protection = 1
 
 /obj/item/clothing/proc/absorb_trap_hugger()

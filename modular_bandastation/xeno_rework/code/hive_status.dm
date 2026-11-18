@@ -53,7 +53,7 @@
 	var/can_follow = !!hive?.purchased["coordination"]
 	var/datum/status_effect/agent_pinpointer/xeno_rally/tracker = user.has_status_effect(/datum/status_effect/agent_pinpointer/xeno_rally)
 	for(var/mob/living/carbon/alien/xeno in GLOB.alive_mob_list)
-		if(!is_hive_roster_member(xeno))
+		if(xeno == user || !is_hive_roster_member(xeno))
 			continue
 		var/status = "В строю"
 		if(!xeno.client)
@@ -68,7 +68,7 @@
 			caste_name = adult.caste
 		members += list(list(
 			"id" = REF(xeno),
-			"canFollow" = can_follow && xeno != user,
+			"canFollow" = can_follow,
 			"following" = tracker?.scan_target == xeno,
 			"name" = xeno.name,
 			"caste" = caste_name,

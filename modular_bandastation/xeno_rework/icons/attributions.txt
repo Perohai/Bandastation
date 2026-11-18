@@ -219,3 +219,16 @@ Support action icons, 2026-11-18:
   facehugger hatching from a resin egg, and a leaping alien with claws.
   No donor sprite pixels were used. Same generated-art CC BY-SA 3.0 terms as above.
   Each symbol is packed into a transparent 32x32 action state.
+
+Hive defenses, 2026-11-18:
+  hive_fortifications.dmi: acid_turret and hugger_trap_action are original
+  OpenAI image_gen assets (see source/acid_turret.png and
+  source/hugger_trap_action.png). The low-profile acid_mine and hugger_trap
+  states were drawn for BandaStation. No donor pixels. CC BY-SA 3.0.
+
+Approved turret and trap revision:
+  source/acid_turret_drip_approved.png, source/acid_turret_directions_approved.png
+  and source/hugger_trap_jump_approved.png are OpenAI image_gen output for
+  BandaStation. The directional frames and acid drip are packed with
+  tools/pack_turret_assets.py. Low-profile mine and trap pixels are preserved
+  in source/fortification_low_profile.png. Same CC BY-SA 3.0 terms as above.

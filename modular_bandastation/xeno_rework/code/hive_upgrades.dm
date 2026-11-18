@@ -139,7 +139,7 @@
 	id = "construction"
 	category = "Биоструктуры"
 	name = "Живая смола"
-	desc = "Сокращает время строительства смолы дроном и королевой на 20%. Сворачивание ядра занимает 3 секунды вместо 10."
+	desc = "Сокращает время строительства смолы дроном и королевой на 20%. Сворачивание ядра занимает 10 секунд вместо 15."
 	cost = 100
 	icon = "trowel"
 
@@ -244,9 +244,21 @@
 	id = "carrier"
 	category = "Популяция"
 	name = "Носитель (T2)"
-	desc = "Открывает дрону эволюцию в носителя T2. Носитель выращивает, переносит и метает до четырёх лицехватов, а также откладывает яйца. Феромоны приобретаются отдельно. Носитель не возводит смоляные постройки и не выращивает траву. Ограничения на число носителей нет."
+	desc = "Открывает дрону эволюцию в носителя T2. Носитель выращивает, переносит и метает до четырёх лицехватов, а также откладывает яйца. Феромоны приобретаются отдельно. Носитель не возводит смоляные постройки и не выращивает траву. Базовый лимит — один Носитель."
 	cost = 200
 	icon = "bugs"
+
+/datum/xeno_hive_upgrade/carrier_slot
+	id = "carrier_slot"
+	category = "Популяция"
+	name = "Резерв носителей"
+	desc = "Добавляет одно место для Носителя. Можно открыть до трёх дополнительных мест; каждое следующее обходится дороже."
+	cost = 180
+	icon = "people-group"
+	max_level = 3
+	scaling_cost = TRUE
+	slot_type = /mob/living/carbon/alien/adult/banda/carrier
+	requires = list("carrier")
 
 /datum/xeno_hive_upgrade/generator
 	id = "generator"
@@ -280,7 +292,7 @@
 	id = "reinforced_resin"
 	category = "Биоструктуры"
 	name = "Укреплённая смола"
-	desc = "Открывает укреплённые стены с 600 прочности: 250 плазмы, 15 секунд строительства."
+	desc = "Открывает укреплённые стены с 300 прочности: 250 плазмы, 15 секунд строительства."
 	icon = "dungeon"
 	cost = 300
 	requires = list("construction")
@@ -289,7 +301,7 @@
 	id = "acid_turrets"
 	category = "Биоструктуры"
 	name = "Кислотные турели"
-	desc = "Открывает турель с 400 прочности: 250 плазмы, 20 секунд. Стреляет кислотой по людям в радиусе 5 клеток раз в 2 секунды."
+	desc = "Открывает турель со 150 прочности: 250 плазмы, 20 секунд. Раз в 2 секунды стреляет по незаражённым людям в радиусе 5 клеток, нанося 10 ожогового урона."
 	icon = "crosshairs"
 	cost = 450
 	requires = list("acid_mines", "reinforced_resin")
@@ -449,7 +461,7 @@
 	var/obj/structure/xeno_hive_core/original_core = core
 	if(!can_manage(queen) || QDELETED(original_core) || !original_core.next_to_core(queen) || !original_core.CheckReachableAdjacency(queen, 1))
 		return FALSE
-	if(!channel(queen, purchased["construction"] ? 3 SECONDS : 10 SECONDS))
+	if(!channel(queen, purchased["construction"] ? 10 SECONDS : 15 SECONDS))
 		return FALSE
 	if(!can_manage(queen) || QDELETED(original_core) || core != original_core || !original_core.next_to_core(queen) || !original_core.CheckReachableAdjacency(queen, 1))
 		return FALSE

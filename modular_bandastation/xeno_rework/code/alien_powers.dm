@@ -890,7 +890,7 @@
 	if(evolving || !evolution_type || !IsAvailable() || !istype(evolver))
 		return FALSE
 	if(!evolver.can_evolve(evolution_type))
-		evolver.balloon_alert(evolver, "Такая высшая каста уже есть в улье")
+		evolver.balloon_alert(evolver, "Эволюция в эту касту сейчас недоступна")
 		return FALSE
 	evolving = TRUE
 	var/turf/start = evolver.loc
@@ -930,6 +930,6 @@
 				return FALSE
 		return TRUE
 	var/mob/living/carbon/alien/adult/banda/evolution_type = evolution_target
-	if(initial(evolution_type.evolution_tier) >= 3 || evolution_target == /mob/living/carbon/alien/adult/banda/final_caste/hunter)
+	if(initial(evolution_type.evolution_tier) >= 3 || evolution_target == /mob/living/carbon/alien/adult/banda/carrier || evolution_target == /mob/living/carbon/alien/adult/banda/final_caste/hunter)
 		return GLOB.xeno_hive.slot_available(evolution_target)
 	return TRUE

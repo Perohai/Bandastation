@@ -14,15 +14,15 @@
 
 /obj/structure/alien/resin/wall/reinforced
 	name = "укреплённая смоляная стена"
-	max_integrity = 600
+	max_integrity = 300
 	color = "#555e76"
 
 /obj/structure/alien/acid_mine
 	name = "кислотная мина"
 	desc = "Раздутый мешок кислоты в переплетении смолы."
-	icon = 'icons/obj/fluff/general.dmi'
-	icon_state = "gelmound"
-	color = "#859752"
+	icon = 'modular_bandastation/xeno_rework/icons/hive_fortifications.dmi'
+	icon_state = "acid_mine"
+	layer = LOW_OBJ_LAYER
 	anchored = TRUE
 	max_integrity = 5
 	var/triggered = FALSE
@@ -58,12 +58,11 @@
 /obj/structure/alien/acid_turret
 	name = "кислотная турель"
 	desc = "Неподвижная железа, выплёвывающая кислоту во врагов улья."
-	icon = 'modular_bandastation/xeno_rework/icons/biomass_generator.dmi'
-	icon_state = "generator"
-	color = "#8993ad"
+	icon = 'modular_bandastation/xeno_rework/icons/hive_fortifications.dmi'
+	icon_state = "acid_turret"
 	anchored = TRUE
 	density = TRUE
-	max_integrity = 400
+	max_integrity = 150
 	/// Processing checks a small local area only when the turret can fire.
 	var/next_shot = 0
 
@@ -82,9 +81,10 @@
 	if(!(locate(/obj/structure/alien/weeds) in loc))
 		return
 	for(var/mob/living/carbon/human/victim in view(5, src))
-		if(victim.stat == DEAD)
+		if(victim.stat == DEAD || istype(victim.get_organ_slot(ORGAN_SLOT_PARASITE_EGG), /obj/item/organ/body_egg/alien_embryo))
 			continue
-		var/obj/projectile/neurotoxin/banda/acid/standard/shot = new(loc)
+		setDir(get_dir(src, victim) || dir)
+		var/obj/projectile/neurotoxin/banda/acid/standard/turret/shot = new(loc)
 		shot.aim_projectile(victim, src, list())
 		shot.firer = src
 		shot.fire()

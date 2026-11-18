@@ -54,6 +54,9 @@
 /obj/projectile/neurotoxin/banda/acid/standard
 	damage = 15
 
+/obj/projectile/neurotoxin/banda/acid/standard/turret
+	damage = 10
+
 /** Lower-damage acid spit for the Praetorian gland. */
 /obj/projectile/neurotoxin/banda/acid/standard/praetorian
 	damage = 10
@@ -182,20 +185,15 @@
 /datum/action/cooldown/alien/banda/acid_spray/cone
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "acid_cone"
-	desc = "После подготовки в полсекунды выплёвывает волну кислоты конусом 1–3–5. Подготовку нельзя прервать движением или оглушением."
+	desc = "Выплёвывает волну кислоты конусом 1–3–5 клеток в сторону курсора."
 	cooldown_time = 60 SECONDS
 	spray_length = 3
 
 /datum/action/cooldown/alien/banda/acid_spray/cone/release_spray(turf/origin, turf/target_turf)
 	set waitfor = FALSE
-	var/mob/living/caster = owner
 	var/facing = angle2dir(delta_to_angle(target_turf.x - origin.x, target_turf.y - origin.y))
-	caster.setDir(facing)
-	sleep(0.5 SECONDS)
-	// Movement and incapacitation do not cancel the committed cast. Release it from the caster's new tile.
-	if(QDELETED(src) || QDELETED(caster) || owner != caster || caster.stat == DEAD || !isturf(caster.loc) || caster.z != origin.z)
-		return
-	var/turf/center = caster.loc
+	owner.setDir(facing)
+	var/turf/center = origin
 	var/wing_angle = ISDIAGONALDIR(facing) ? 135 : 90
 	var/list/previous_row = list(center)
 	for(var/row in 1 to spray_length)

@@ -63,7 +63,7 @@
 	/// Warrior punch brute.
 	var/warrior_punch_brute = 15
 	/// Warrior punch stamina.
-	var/warrior_punch_stamina = 50
+	var/warrior_punch_stamina = 30
 	/// Warrior punch knockdown.
 	var/warrior_punch_knockdown = 1 SECONDS
 	/// Warrior punch grab multiplier.

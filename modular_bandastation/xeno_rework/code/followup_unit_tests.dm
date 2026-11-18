@@ -292,3 +292,25 @@
 			TEST_ASSERT_EQUAL(victim.wear_mask, mask, "First trap hugger removed protected mask")
 		else
 			TEST_ASSERT_EQUAL(victim.wear_mask, hugger, "Second trap hugger failed to bypass spent protection")
+
+
+/datum/unit_test/xeno_rework_hive/carrier_reserve/Run()
+	var/carrier_type = /mob/living/carbon/alien/adult/banda/carrier
+	var/mob/living/carbon/alien/adult/banda/drone/drone = allocate(/mob/living/carbon/alien/adult/banda/drone)
+	hive.purchased["carrier"] = 1
+	TEST_ASSERT(drone.can_evolve(carrier_type), "Carrier unlock did not open the first slot")
+	allocate(carrier_type)
+	TEST_ASSERT(!drone.can_evolve(carrier_type), "Carrier limit was not enforced")
+	hive.purchased["carrier_slot"] = 1
+	TEST_ASSERT(drone.can_evolve(carrier_type), "Carrier reserve did not open another slot")
+
+/datum/unit_test/xeno_rework_hive/shove_stamina_recovery/Run()
+	var/mob/living/carbon/alien/adult/banda/drone/drone = allocate(/mob/living/carbon/alien/adult/banda/drone)
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human/consistent)
+	victim.stamina_regen_time = 1 SECONDS
+	victim.adjust_stamina_loss(victim.max_stamina)
+	TEST_ASSERT_NOTNULL(victim.has_status_effect(/datum/status_effect/incapacitating/stamcrit), "Initial stamina damage did not exhaust the victim")
+	sleep(0.6 SECONDS)
+	victim.attack_banda_alien(drone, list(RIGHT_CLICK = TRUE))
+	sleep(0.6 SECONDS)
+	TEST_ASSERT_NOTNULL(victim.has_status_effect(/datum/status_effect/incapacitating/stamcrit), "Shove did not refresh recovery at the damage cap")

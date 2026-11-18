@@ -3,11 +3,15 @@
 	if(LAZYACCESS(modifiers, RIGHT_CLICK))
 		var/obj/item/mob_held_item = get_active_held_item()
 		var/disarm_damage = rand(user.melee_damage_lower * 1.5, user.melee_damage_upper * 1.5)
+		var/already_exhausted = has_status_effect(/datum/status_effect/incapacitating/stamcrit)
+		apply_damage(disarm_damage, STAMINA)
+		// Capped or diminished stamina damage does not fire the damage-change hook.
+		if(already_exhausted && disarm_damage > 0 && !HAS_TRAIT(src, TRAIT_GODMODE))
+			timed_stamina_reset()
 
 		if(mob_held_item)
 			playsound(loc, 'sound/items/weapons/thudswoosh.ogg', 25, TRUE, -1) //The sounds of these are changed so the xenos can actually hear they are being non-lethal
 			Knockdown(3 SECONDS)
-			apply_damage(disarm_damage, STAMINA)
 			visible_message(span_danger("[user] валит [src] на землю!"), \
 				span_userdanger("[user] валит вас на землю!"), span_hear("Раздаётся торопливый топот когтистых лап, за которым следует тяжёлый глухой удар!"), null, user)
 			to_chat(user, span_danger("Вы опрокидываете [src] на землю!"))
@@ -15,7 +19,6 @@
 
 		else
 			playsound(loc, 'sound/effects/hit_kick.ogg', 25, TRUE, -1)
-			apply_damage(disarm_damage, STAMINA)
 			log_combat(user, src, "tackled")
 			visible_message(span_danger("[user] сбивает [src] с ног!"), \
 							span_userdanger("[user] сбивает вас с ног!"), span_hear("Раздаётся торопливый топот когтистых лап!"), null, user)

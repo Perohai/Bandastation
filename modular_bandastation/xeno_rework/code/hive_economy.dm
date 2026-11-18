@@ -180,7 +180,38 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 	var/datum/component/xeno_biomass_body/body = get_xeno_biomass_body(egg_owner)
 	body?.pay("infection")
 
-/** Module hook used after the native ghost poll, without replacing infection or surgery. */
+/// Run the hive role poll during the final seconds of gestation.
+/obj/item/organ/body_egg/alien_embryo/proc/poll_hive_larva(poll_duration)
+	var/mob/living/carbon/host = owner
+	if(QDELETED(host) || bursting || stage < 5 || !host.GetComponent(/datum/component/xeno_biomass_body))
+		return
+	bursting = TRUE
+	var/birth_time = world.time + poll_duration
+	var/mob/dead/observer/candidate
+	if(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER)
+		candidate = SSpolling.poll_ghosts_for_target(
+			question = "Хотите сыграть за личинку улья? Она скоро вылупится.",
+			check_jobban = ROLE_ALIEN,
+			poll_time = poll_duration,
+			checked_target = src,
+			ignore_category = POLL_IGNORE_ALIEN_LARVA,
+			role_name_text = "Личинка улья",
+			chat_text_border_icon = /mob/living/carbon/alien/larva,
+			announce_chosen = FALSE,
+		)
+	if(world.time < birth_time)
+		sleep(birth_time - world.time)
+	// The stage timer can run on either side of the poll's last tick.
+	if(!QDELETED(src) && stage == 5)
+		sleep(world.tick_lag)
+	if(QDELETED(src))
+		return
+	if(QDELETED(host) || owner != host || stage < 6)
+		bursting = FALSE
+		return
+	on_poll_concluded(TRUE, candidate)
+
+/** Module hook used after the ghost poll, without replacing infection or surgery. */
 /obj/item/organ/body_egg/alien_embryo/proc/banda_birth(mob/dead/observer/ghost)
 	var/mob/living/carbon/host = owner
 	var/datum/component/xeno_biomass_body/body = host?.GetComponent(/datum/component/xeno_biomass_body)
@@ -190,7 +221,7 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 	host.add_overlay(burst_overlay)
 	sleep(0.6 SECONDS)
 	var/ghost_ckey = ghost?.ckey
-	var/candidate_valid = ghost?.client && ghost.key && !is_banned_from(ghost_ckey, ROLE_ALIEN)
+	var/candidate_valid = ghost?.client && ghost.key && !is_banned_from(ghost_ckey, list(ROLE_ALIEN, ROLE_SYNDICATE))
 	if(QDELETED(src) || QDELETED(host) || owner != host)
 		if(!QDELETED(host))
 			host.cut_overlay(burst_overlay)
@@ -198,7 +229,7 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 			bursting = FALSE
 		return TRUE
 	var/mob/living/carbon/alien/larva/larva = new(get_turf(host))
-	if(candidate_valid && !QDELETED(ghost) && ghost.client && ghost.ckey == ghost_ckey)
+	if(candidate_valid && (GLOB.ghost_role_flags & GHOSTROLE_SPAWNER) && !QDELETED(ghost) && ghost.client && ghost.ckey == ghost_ckey)
 		larva.PossessByPlayer(ghost.key)
 	else
 		// Birth and corpse processing must not stall forever when the poll has no candidates.
