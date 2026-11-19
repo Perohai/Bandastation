@@ -108,15 +108,15 @@
 	heal.channel_time = 0
 	var/before = hivemind.getPlasma()
 	TEST_ASSERT(heal.PreActivate(ally), "Physical Hivemind cannot heal an ally")
-	TEST_ASSERT_EQUAL(ally.get_brute_loss(), 0, "Healing did not prioritize brute")
-	TEST_ASSERT_EQUAL(ally.get_fire_loss(), 20, "Healing exceeded the total 50-damage budget")
+	TEST_ASSERT_EQUAL(ally.get_brute_loss(), 10, "Healing did not prioritize brute")
+	TEST_ASSERT_EQUAL(ally.get_fire_loss(), 30, "Healing exceeded the total 30-damage budget")
 	TEST_ASSERT_EQUAL(hivemind.getPlasma(), before - 150, "Healing paid the wrong plasma cost")
 	ally.adjustPlasma(-ally.getPlasma())
 	share.channel_time = 0
 	before = hivemind.getPlasma()
 	TEST_ASSERT(share.PreActivate(ally), "Plasma transfer failed")
-	TEST_ASSERT_EQUAL(ally.getPlasma(), 200, "Transfer did not deliver 200 plasma")
-	TEST_ASSERT_EQUAL(hivemind.getPlasma(), before - 200, "Transfer created plasma")
+	TEST_ASSERT_EQUAL(ally.getPlasma(), 120, "Transfer did not deliver 120 plasma")
+	TEST_ASSERT_EQUAL(hivemind.getPlasma(), before - 120, "Transfer created plasma")
 
 /datum/unit_test/xeno_rework_hive/hivemind_support_cancel/Run()
 	var/mob/living/carbon/alien/hivemind/hivemind = create_hivemind()

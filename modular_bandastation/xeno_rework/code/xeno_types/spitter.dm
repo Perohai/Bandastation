@@ -6,8 +6,8 @@
 	caste = "spitter"
 	evolution_tier = 2
 	next_evolution = /mob/living/carbon/alien/adult/banda/praetorian
-	maxHealth = 250
-	health = 250
+	maxHealth = 230
+	health = 230
 	icon_state = "alienspitter"
 	hud_sprite_height = 48
 	melee_damage_lower = 15

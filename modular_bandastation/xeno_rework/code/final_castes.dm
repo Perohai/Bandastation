@@ -39,12 +39,14 @@
 	)
 	if(final_evolution && GLOB.xeno_hive?.purchased[unlocks[final_evolution]])
 		return final_evolution
+	if(next_evolution == /mob/living/carbon/alien/adult/banda/final_caste/hunter && !GLOB.xeno_hive?.purchased["hunter"])
+		return null
 	return next_evolution
 
 /// The ordinary branch remains available when a specialization is bought.
 /mob/living/carbon/alien/adult/banda/proc/get_evolution_options()
 	var/list/options = list()
-	if(next_evolution)
+	if(next_evolution && (next_evolution != /mob/living/carbon/alien/adult/banda/final_caste/hunter || GLOB.xeno_hive?.purchased["hunter"]))
 		options += next_evolution
 	var/purchased_branch = get_evolution_type()
 	if(purchased_branch)

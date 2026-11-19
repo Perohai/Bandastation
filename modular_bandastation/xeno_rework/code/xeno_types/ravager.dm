@@ -6,12 +6,12 @@
 	caste = "ravager"
 	mob_size = MOB_SIZE_LARGE
 	evolution_tier = 4
-	maxHealth = 300
-	health = 300
+	maxHealth = 330
+	health = 330
 	icon_state = "alienravager"
 	hud_sprite_height = 57
-	melee_damage_lower = 15
-	melee_damage_upper = 15
+	melee_damage_lower = 22
+	melee_damage_upper = 22
 
 	default_organ_types_by_slot = list(
 		ORGAN_SLOT_BRAIN = /obj/item/organ/brain/alien,

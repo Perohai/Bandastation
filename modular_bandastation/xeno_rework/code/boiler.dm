@@ -7,10 +7,10 @@
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_adapted.dmi'
 	icon_state = "alienboiler"
 	hud_sprite_height = 42
-	health = 350
-	maxHealth = 350
-	melee_damage_lower = 20
-	melee_damage_upper = 20
+	health = 320
+	maxHealth = 320
+	melee_damage_lower = 16
+	melee_damage_upper = 16
 	/// Selected ammunition, shared by creation and firing actions.
 	var/corrosive = FALSE
 	/// Stockpiled globs of each type; total capacity is seven.
@@ -54,10 +54,10 @@
 /** Create ammunition without allowing concurrent channelled creation. */
 /datum/action/cooldown/alien/banda/boiler_create
 	name = "Создать газовый шар"
-	desc = "За 200 плазмы создаёт за две секунды газовый шар выбранного типа. Можно хранить до семи шаров."
+	desc = "За 250 плазмы создаёт за две секунды газовый шар выбранного типа. Можно хранить до семи шаров."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_actions.dmi'
 	button_icon_state = "create_bomb"
-	plasma_cost = 200
+	plasma_cost = 250
 	/// Prevents simultaneous stockpiling with the same action.
 	var/preparing = FALSE
 
@@ -79,10 +79,10 @@
 /** Stationary artillery; ammunition is consumed only after both preparation phases. */
 /datum/action/cooldown/alien/banda/boiler_bombard
 	name = "Бомбардировка"
-	desc = "Для обстрела нужно три секунды на подготовку и ещё две секунды на выстрел. Дальность — 5–20 клеток. Газ распространяется по проходам, но не проходит сквозь стены."
+	desc = "Для обстрела нужно три секунды на подготовку и ещё две секунды на выстрел. Дальность — 5–20 клеток, облако держится 12 секунд. Газ распространяется по проходам, но не проходит сквозь стены."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/boiler_actions.dmi'
 	button_icon_state = "bombard"
-	cooldown_time = 32 SECONDS
+	cooldown_time = 40 SECONDS
 	click_to_activate = TRUE
 	/// Holds the action busy across its preparation and firing delay.
 	var/preparing = FALSE
@@ -146,12 +146,12 @@
 /** Neurotoxin cloud; native smoke protection and internals protect the respiratory tract. */
 /obj/effect/particle_effect/fluid/smoke/xeno_boiler
 	color = "#678443"
-	lifetime = 10 SECONDS
+	lifetime = 12 SECONDS
 
 /obj/effect/particle_effect/fluid/smoke/xeno_boiler/smoke_mob(mob/living/carbon/smoker, seconds_per_tick)
 	if(!istype(smoker) || isalien(smoker) || smoker.internal || smoker.has_smoke_protection())
 		return FALSE
-	smoker.apply_damage(15 * seconds_per_tick, STAMINA, blocked = smoker.getarmor(null, BIO))
+	smoker.apply_damage(10 * seconds_per_tick, STAMINA, blocked = smoker.getarmor(null, BIO))
 	return TRUE
 
 /** Corrosive artillery smoke damages exposed targets; aliens remain immune. */
@@ -161,7 +161,7 @@
 /obj/effect/particle_effect/fluid/smoke/xeno_boiler/acid/smoke_mob(mob/living/carbon/smoker, seconds_per_tick)
 	if(isalien(smoker) || !istype(smoker))
 		return FALSE
-	smoker.apply_damage(6 * seconds_per_tick, BURN, blocked = smoker.getarmor(null, BIO))
+	smoker.apply_damage(5 * seconds_per_tick, BURN, blocked = smoker.getarmor(null, BIO))
 	return TRUE
 
 /** Local gas curtain shares bombardment's cooldown without consuming ammunition. */

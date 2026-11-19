@@ -145,7 +145,7 @@
 /datum/action/cooldown/alien/hivemind/heal
 	parent_type = /datum/action/cooldown/alien/hivemind/support
 	name = "Смоляной бальзам"
-	desc = "Восстанавливает союзнику в пределах трёх клеток до 50 единиц урона от ушибов, затем — от ожогов. Подготовка занимает секунду, стоимость — 150 плазмы."
+	desc = "Восстанавливает союзнику в пределах трёх клеток до 30 единиц урона от ушибов, затем — от ожогов. Подготовка занимает секунду, стоимость — 150 плазмы."
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "grow_fruit"
 	plasma_cost = 150
@@ -155,8 +155,8 @@
 	var/mob/living/carbon/alien/ally = target
 	if(!istype(ally) || !channel_support(ally))
 		return FALSE
-	var/heal_brute = min(50, ally.get_brute_loss())
-	ally.heal_overall_damage(heal_brute, 50 - heal_brute)
+	var/heal_brute = min(30, ally.get_brute_loss())
+	ally.heal_overall_damage(heal_brute, 30 - heal_brute)
 	new /obj/effect/temp_visual/hivemind_support(get_turf(owner), ally, COLOR_PALE_GREEN_GRAY)
 	playsound(ally, 'modular_bandastation/xeno_rework/sound/alien_resin_move2.ogg', 45, TRUE)
 	StartCooldown()
@@ -165,7 +165,7 @@
 /datum/action/cooldown/alien/hivemind/plasma
 	parent_type = /datum/action/cooldown/alien/hivemind/support
 	name = "Передать плазму"
-	desc = "За две секунды передаёт союзнику в пределах двух клеток до 200 плазмы."
+	desc = "За две секунды передаёт союзнику в пределах двух клеток до 120 плазмы."
 	button_icon_state = "alien_transfer"
 	channel_time = 2 SECONDS
 	support_range = 2
@@ -179,7 +179,7 @@
 	var/mob/living/carbon/alien/hivemind/hivemind = owner
 	if(!vessel)
 		return FALSE
-	var/amount = min(200, hivemind.getPlasma(), vessel.max_plasma - vessel.stored_plasma)
+	var/amount = min(120, hivemind.getPlasma(), vessel.max_plasma - vessel.stored_plasma)
 	if(amount <= 0)
 		return FALSE
 	hivemind.adjustPlasma(-amount)

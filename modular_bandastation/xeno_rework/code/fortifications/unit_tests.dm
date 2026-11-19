@@ -17,7 +17,7 @@
 	var/count = 0
 	for(var/obj/item/folding_barricade/barricade in crate)
 		count++
-	TEST_ASSERT_EQUAL(count, 50, "The shared stock does not contain exactly fifty folded barricades")
+	TEST_ASSERT_EQUAL(count, 25, "The shared stock does not contain exactly twenty-five folded barricades")
 	TEST_ASSERT(locate(/obj/item/book/granter/crafting_recipe/folding_barricade) in crate, "The supply crate has no reusable instruction")
 
 /datum/unit_test/xeno_rework_barricade_cycle
@@ -61,12 +61,13 @@
 	var/datum/crafting_recipe/recipe = GLOB.crafting_recipes_by_typepath[/datum/crafting_recipe/folding_barricade]
 	TEST_ASSERT_NOTNULL(recipe, "The barricade recipe was not registered")
 	TEST_ASSERT(!(recipe in crafting.get_visible_recipes(engineer)), "The undiscovered recipe is shown as a default")
-	var/obj/item/stack/sheet/iron/steel = allocate(/obj/item/stack/sheet/iron, engineer.loc, 4)
+	var/obj/item/stack/sheet/iron/steel = allocate(/obj/item/stack/sheet/iron, engineer.loc, 6)
+	var/obj/item/stack/sheet/plasteel/plasteel = allocate(/obj/item/stack/sheet/plasteel, engineer.loc, 2)
 	allocate(/obj/item/weldingtool, engineer.loc)
 	allocate(/obj/item/wrench, engineer.loc)
 	var/unknown_result = crafting.construct_item(engineer, recipe)
 	TEST_ASSERT(!isatom(unknown_result), "The server allowed crafting a recipe that was not learned")
-	TEST_ASSERT_EQUAL(steel.amount, 4, "An unlearned recipe consumed materials")
+	TEST_ASSERT_EQUAL(steel.amount, 6, "An unlearned recipe consumed materials")
 	var/obj/item/book/granter/crafting_recipe/folding_barricade/instruction = allocate(/obj/item/book/granter/crafting_recipe/folding_barricade)
 	instruction.pages_to_mastery = 0
 	instruction.reading_time = 0
@@ -77,5 +78,4 @@
 	crafting.ignored_flags |= CRAFT_IGNORE_DO_AFTER
 	var/result = crafting.construct_item(engineer, recipe)
 	TEST_ASSERT(istype(result, /obj/item/folding_barricade), "Learned recipe did not produce a folded barricade: [result]")
-	TEST_ASSERT(QDELETED(steel), "Successful crafting did not consume all four sheets")
-
+	TEST_ASSERT(QDELETED(steel) && QDELETED(plasteel), "Successful crafting did not consume all materials")

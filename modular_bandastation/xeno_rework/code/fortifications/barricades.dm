@@ -7,7 +7,7 @@
 	w_class = WEIGHT_CLASS_BULKY
 	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 4)
 	/// Folding is transport, never free repair.
-	var/stored_integrity = 180
+	var/stored_integrity = 140
 	/// Serializes overlapping requests before do_after can yield.
 	var/deploying = FALSE
 	/// Shared by real use and focused interruption tests.
@@ -51,7 +51,7 @@
 	desc = "Складная полевая баррикада. Перекрывает проход между клетками, но позволяет стрелять поверх и перелезать через неё. Ремонтируется сварочным аппаратом. Чтобы сложить, нажмите пустой рукой."
 	icon = 'modular_bandastation/xeno_rework/icons/fortifications/barricades.dmi'
 	icon_state = "folding_0"
-	max_integrity = 180
+	max_integrity = 140
 	armor_type = /datum/armor/folding_barricade
 	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 4)
 	/// Folding preserves integrity and does not produce raw materials.
@@ -125,7 +125,7 @@
 /datum/crafting_recipe/folding_barricade
 	name = "Складная полевая баррикада"
 	result = /obj/item/folding_barricade
-	reqs = list(/obj/item/stack/sheet/iron = 4)
+	reqs = list(/obj/item/stack/sheet/iron = 6, /obj/item/stack/sheet/plasteel = 2)
 	tool_behaviors = list(TOOL_WELDER, TOOL_WRENCH)
 	time = 8 SECONDS
 	category = CAT_FURNITURE
@@ -134,23 +134,23 @@
 /** Reusable field instruction, using the native book-granted recipe machinery. */
 /obj/item/book/granter/crafting_recipe/folding_barricade
 	name = "field barricade instruction"
-	desc = "Инструкция по изготовлению складной баррикады. Для сборки нужны четыре листа стали, сварочный аппарат и гаечный ключ."
+	desc = "Инструкция по изготовлению складной баррикады. Для сборки нужны шесть листов стали и два листа пластиали, сварочный аппарат и гаечный ключ."
 	icon = 'icons/obj/service/bureaucracy.dmi'
 	icon_state = "paper"
 	pages_to_mastery = 1
 	reading_time = 3 SECONDS
 	uses = INFINITY
 	crafting_recipe_types = list(/datum/crafting_recipe/folding_barricade)
-	remarks = list("Четыре стальные пластины, шарнир, сварные швы и стопорный механизм.")
+	remarks = list("Шесть стальных и две пласталевые пластины, шарнир, сварные швы и стопорный механизм.")
 
 /** One shared initial stock per team; the reusable instruction permits later manufacture. */
 /obj/structure/closet/crate/field_fortifications
 	name = "field fortification supply crate"
-	desc = "В ящике 50 складных баррикад для отряда и инструкция по их изготовлению."
-	storage_capacity = 51
+	desc = "В ящике 25 складных баррикад для отряда и инструкция по их изготовлению."
+	storage_capacity = 26
 
 /obj/structure/closet/crate/field_fortifications/PopulateContents()
 	. = ..()
-	for(var/index in 1 to 50)
+	for(var/index in 1 to 25)
 		new /obj/item/folding_barricade(src)
 	new /obj/item/book/granter/crafting_recipe/folding_barricade(src)

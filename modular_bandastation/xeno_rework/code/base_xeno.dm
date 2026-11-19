@@ -30,6 +30,8 @@
 	var/evolution_cooldown_time = 90 SECONDS
 	/// Determines if a xeno is unable to use abilities
 	var/unable_to_use_abilities = FALSE
+	/// Natural healing starts only once damage stops coming in.
+	COOLDOWN_DECLARE(natural_heal_cooldown)
 	/// Pixel X shifting of the on fire overlay
 	var/on_fire_pixel_x = 16
 	/// Pixel Y shifting of the on fire overlay
@@ -42,6 +44,12 @@
 	var/hud_sprite_height = 64
 	/// Per-mob hive roster UI source, deleted with the mob.
 	var/datum/xeno_rework_hive_status/hive_status_panel
+
+/mob/living/carbon/alien/adult/banda/set_health(new_value)
+	var/previous_health = health
+	. = ..()
+	if(health < previous_health)
+		COOLDOWN_START(src, natural_heal_cooldown, 8 SECONDS)
 
 /mob/living/carbon/alien/adult/banda/Destroy()
 	QDEL_NULL(hive_status_panel)

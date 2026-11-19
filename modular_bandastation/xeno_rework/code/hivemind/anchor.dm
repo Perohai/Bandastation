@@ -12,7 +12,7 @@
 	pixel_y = -12
 	density = TRUE
 	anchored = TRUE
-	max_integrity = 600
+	max_integrity = 450
 	/// The anchor owns the role; the mob is held weakly to avoid a deletion cycle.
 	var/obj/effect/mob_spawn/ghost_role/xeno_hivemind/spawner
 	/// Occupancy persists through disconnects and incorporeal/physical transitions.

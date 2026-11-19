@@ -3,7 +3,7 @@
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "empower"
 	name = "Усиление (50P)"
-	desc = "Первое нажатие создаёт защитный барьер. Повторное нажатие в течение шести секунд усиливает барьер в зависимости от числа врагов поблизости."
+	desc = "Первое нажатие создаёт защитный барьер. Повторное нажатие в течение шести секунд добавляет по 40 прочности барьера за врага поблизости, до пяти врагов."
 	/// Whether the Ravager can amplify its initial shield.
 	var/awaiting_second_activation = FALSE
 	/// Absolute expiry timestamp of the second-activation window.
@@ -38,7 +38,7 @@
 		if(enemies >= 5)
 			break
 	var/datum/status_effect/xeno_overshield/shield = owner.has_status_effect(/datum/status_effect/xeno_overshield)
-	xeno.apply_status_effect(/datum/status_effect/xeno_overshield/ravager, (shield?.remaining || 0) + enemies * 50, 15 SECONDS)
+	xeno.apply_status_effect(/datum/status_effect/xeno_overshield/ravager, (shield?.remaining || 0) + enemies * 40, 15 SECONDS)
 	playsound(owner, 'modular_bandastation/xeno_rework/sound/alien_roar2.ogg', 75, TRUE)
 	if(enemies >= 3)
 		xeno.apply_status_effect(/datum/status_effect/xeno_super_empowered)
@@ -165,7 +165,7 @@
 		for(var/mob/living/victim in hit_turf)
 			if(isalien(victim))
 				continue
-			victim.apply_damage(25, BRUTE, BODY_ZONE_CHEST, sharpness = SHARP_EDGED)
+			victim.apply_damage(30, BRUTE, BODY_ZONE_CHEST, sharpness = SHARP_EDGED)
 			if(attacker.has_status_effect(/datum/status_effect/xeno_super_empowered) && !QDELETED(victim))
 				victim.apply_status_effect(/datum/status_effect/xeno_hamstrung)
 	return TRUE

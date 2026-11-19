@@ -16,10 +16,8 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 
 /// One evacuation finale per round. Population checks are debounced off login/death events.
 /datum/xeno_evacuation
-	/// Minimum connected station xenos required to start evacuation.
-	var/minimum_xenos = 15
-	/// Required ratio of connected station xenos to surviving crew.
-	var/crew_ratio = 0.5
+	/// Broadcast the lower population warning only once per round.
+	var/spread_announced = FALSE
 	/// Duration of the docked defense phase, in deciseconds.
 	var/defense_duration = 10 MINUTES
 	/// Uninterrupted time needed for one navigation hacking stage.
@@ -74,9 +72,15 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 	check_queued = TRUE
 	addtimer(CALLBACK(src, PROC_REF(check_population)), 1 SECONDS)
 
-/** Evaluate the minimum population and relative crew threshold. */
+/datum/xeno_evacuation/proc/finale_threshold(crew)
+	return CEILING(clamp(crew * 0.35, 6, 18), 1)
+
 /datum/xeno_evacuation/proc/population_qualifies(xenos, crew)
-	return xenos >= minimum_xenos && xenos >= crew * crew_ratio
+	return xenos >= finale_threshold(crew)
+
+/// A large crew must get its warning before the capped finale threshold.
+/datum/xeno_evacuation/proc/spread_threshold(crew)
+	return clamp(CEILING(crew * 0.2, 1), 1, finale_threshold(crew) - 1)
 
 /** Count connected station xenos and surviving crew before starting the finale. */
 /datum/xeno_evacuation/proc/check_population()
@@ -90,6 +94,9 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 			xenos++
 		else if(!isalien(member) && (member.mind?.assigned_role?.job_flags & JOB_CREW_MEMBER))
 			crew++
+	if(!spread_announced && xenos >= spread_threshold(crew))
+		spread_announced = TRUE
+		priority_announce("Заражение распространяется. Сообщайте о ксеноморфах и защищайте пути эвакуации.", "Биологическая угроза")
 	if(population_qualifies(xenos, crew))
 		begin_evacuation()
 

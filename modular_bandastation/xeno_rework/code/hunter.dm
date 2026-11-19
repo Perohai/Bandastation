@@ -16,10 +16,10 @@
 	maptext_width = 32
 	maptext_height = 32
 	hud_sprite_height = 30
-	health = 310
-	maxHealth = 310
-	melee_damage_lower = 25
-	melee_damage_upper = 25
+	health = 220
+	maxHealth = 220
+	melee_damage_lower = 20
+	melee_damage_upper = 20
 	/// Weak reference avoids retaining deleted prey.
 	var/datum/weakref/marked_prey
 	/// True only while a pounce throw is in flight.
@@ -47,7 +47,7 @@
 	remove_status_effect(/datum/status_effect/xeno_hunter_stealth)
 	. = ..()
 	if(ready && victim && !QDELETED(victim) && !isalien(victim) && Adjacent(victim) && victim.get_brute_loss() + victim.get_fire_loss() > old_damage)
-		victim.Paralyze(1 SECONDS)
+		victim.Paralyze(0.6 SECONDS)
 
 /** Ends the pounce on arrival or obstruction. */
 /mob/living/carbon/alien/adult/banda/final_caste/hunter/proc/end_pounce()
@@ -60,16 +60,17 @@
 		var/blocked = FALSE
 		if(ishuman(victim))
 			var/mob/living/carbon/human/human = victim
-			blocked = human.check_block(src, 0, name, attack_type = LEAP_ATTACK)
+			blocked = human.deflect_xeno_attack(src, "прыжок ксеноморфа")
 		if(!blocked)
-			victim.Knockdown(2 SECONDS)
+			victim.Knockdown(1.2 SECONDS)
+			victim.Paralyze(0.6 SECONDS)
 	end_pounce()
 	return ..()
 
 /** Toggle camouflage; plasma upkeep follows movement rather than polling the map. */
 /datum/action/cooldown/alien/banda/hunter_stealth
 	name = "Маскировка"
-	desc = "Маскировка включается за 3 секунды. Движение, получение урона или потеря сознания прерывают подготовку. Охотник сливается с окружением, расходуя плазму на передвижение. После двух секунд маскировки следующая атака парализует жертву на секунду. Получение урона раскрывает охотника."
+	desc = "Маскировка включается за 3 секунды. Движение, получение урона или потеря сознания прерывают подготовку. Охотник сливается с окружением, расходуя плазму на передвижение. После двух секунд маскировки следующая атака парализует жертву на 0,6 секунды. Получение урона раскрывает охотника."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hunter_actions.dmi'
 	button_icon_state = "hunter_invisibility"
 	plasma_cost = 10
@@ -162,7 +163,7 @@
 /** Leap using normal thrown-mob movement and collision. */
 /datum/action/cooldown/alien/banda/hunter_pounce
 	name = "Прыжок"
-	desc = "Прыгает на расстояние до семи клеток. Попадание сбивает жертву с ног на две секунды и снимает маскировку."
+	desc = "Прыгает на расстояние до семи клеток. Попадание сбивает жертву с ног на 1,2 секунды, парализует на 0,6 секунды и снимает маскировку."
 	button_icon = 'modular_bandastation/xeno_rework/icons/support_actions.dmi'
 	button_icon_state = "pounce"
 	plasma_cost = 75
