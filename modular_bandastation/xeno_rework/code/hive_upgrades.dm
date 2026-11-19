@@ -287,6 +287,15 @@
 	requires = list("coordination")
 	max_level = INFINITY
 
+/datum/xeno_hive_upgrade/tunnels
+	id = "tunnels"
+	category = "Биоструктуры"
+	name = "Смоляные тоннели"
+	desc = "Дрон может вырыть пару входов на траве на одном уровне станции. Пара стоит 200 плазмы, КД 120 секунд после соединения. Проход занимает 2 секунды."
+	cost = 200
+	icon = "arrows-left-right"
+	requires = list("construction")
+
 /datum/xeno_hive_upgrade/acid_mines
 	id = "acid_mines"
 	category = "Биоструктуры"
@@ -332,6 +341,9 @@
 
 /** Delta application preserves damage, mode changes, fruit buffs and admin adjustments. */
 /datum/xeno_hive/proc/apply_upgrades(mob/living/carbon/alien/adult/banda/member)
+	if(purchased["tunnels"] && istype(member, /mob/living/carbon/alien/adult/banda/drone) && !(locate(/datum/action/cooldown/alien/banda/dig_tunnel) in member.actions))
+		var/datum/action/cooldown/alien/banda/dig_tunnel/dig = new
+		dig.Grant(member)
 	var/health_bonus = 0
 	var/claw_bonus = 0
 	for(var/id in purchased)
@@ -454,15 +466,21 @@
 
 /datum/xeno_hive/proc/can_place_core(mob/living/carbon/alien/adult/banda/queen/queen)
 	var/turf/origin = hive_structure_location(queen)
-	return can_manage(queen) && !core && origin && (locate(/obj/structure/alien/weeds) in origin) && clear_structure_footprint(origin, floors_only = FALSE)
+	return can_manage(queen) && !core && can_unfold_core(queen) && origin && (locate(/obj/structure/alien/weeds) in origin) && clear_structure_footprint(origin, floors_only = FALSE)
 
 /datum/xeno_hive/proc/place_core(mob/living/carbon/alien/adult/banda/queen/queen)
 	var/turf/origin = hive_structure_location(queen)
+	var/obj/item/packed_xeno_hive_core/relocating = packed_core
 	if(!can_place_core(queen) || !channel(queen, 5 SECONDS) || !can_place_core(queen))
 		return FALSE
-	if(origin != hive_structure_location(queen))
+	if(origin != hive_structure_location(queen) || packed_core != relocating)
 		return FALSE
-	new /obj/structure/xeno_hive_core(origin)
+	var/obj/structure/xeno_hive_core/installed = new(origin)
+	if(QDELETED(installed) || core != installed)
+		return FALSE
+	if(relocating)
+		installed.update_integrity(relocating.get_integrity())
+		qdel(relocating)
 	return TRUE
 
 /datum/xeno_hive/proc/pack_core(mob/living/carbon/alien/adult/banda/queen/queen)
@@ -473,7 +491,11 @@
 		return FALSE
 	if(!can_manage(queen) || QDELETED(original_core) || core != original_core || !original_core.next_to_core(queen) || !original_core.CheckReachableAdjacency(queen, 1))
 		return FALSE
-	qdel(core)
+	var/obj/item/packed_xeno_hive_core/folded = new(get_turf(queen))
+	packed_core = folded
+	folded.update_integrity(original_core.get_integrity())
+	qdel(original_core)
+	queen.put_in_hands(folded)
 	return TRUE
 
 /datum/xeno_hive/ui_interact(mob/user, datum/tgui/ui)
@@ -521,6 +543,7 @@
 		"broodPlaces" = core?.available_brood() || 0,
 		"broodBlocked" = core && !core.egg_spawn_turf(),
 		"core" = !!core,
+		"packedCore" = !QDELETED(packed_core),
 		"busy" = purchase_busy,
 		"canPlace" = !purchase_busy && can_place_core(user),
 		"canPack" = !purchase_busy && core && core.next_to_core(user) && core.CheckReachableAdjacency(user, 1),

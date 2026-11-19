@@ -30,6 +30,9 @@
 	. = ..()
 	GRANT_ACTION(/datum/action/cooldown/alien/make_structure/plant_weeds)
 	GRANT_ACTION(/datum/action/cooldown/alien/hive_development)
+	var/datum/component/itempicky/picky = GetComponent(/datum/component/itempicky)
+	var/static/list/packed_core_types = typecacheof(/obj/item/packed_xeno_hive_core)
+	picky.whitelist = picky.whitelist | packed_core_types
 	var/static/list/innate_actions = list(
 		/datum/action/cooldown/alien/banda/queen_screech,
 	)
