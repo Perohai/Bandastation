@@ -8,10 +8,10 @@
 	icon_state = "aliencarrier"
 	hud_sprite_height = 51
 	evolution_tier = 2
-	maxHealth = 250
-	health = 250
-	melee_damage_lower = 17
-	melee_damage_upper = 17
+	maxHealth = 220
+	health = 220
+	melee_damage_lower = 12
+	melee_damage_upper = 12
 	default_organ_types_by_slot = list(
 		ORGAN_SLOT_BRAIN = /obj/item/organ/brain/alien,
 		ORGAN_SLOT_XENO_HIVENODE = /obj/item/organ/alien/hivenode,
@@ -81,16 +81,16 @@
 	actions_types = list(/datum/action/cooldown/alien/transfer)
 	max_plasma = 250
 	stored_plasma = 100
-	plasma_rate = 20
+	plasma_rate = 8
 	heal_rate = 1
 
 /datum/action/cooldown/alien/banda/carrier_spawn_hugger
 	name = "Вырастить лицехвата"
-	desc = "Выращивает лицехвата и помещает его во внутреннее хранилище. Стоимость — 100 плазмы, перезарядка — 20 секунд. Одновременно можно переносить до четырёх лицехватов."
+	desc = "Выращивает лицехвата и помещает его во внутреннее хранилище. Стоимость — 120 плазмы, перезарядка — 25 секунд. Одновременно можно переносить до четырёх лицехватов."
 	button_icon = 'modular_bandastation/xeno_rework/icons/support_actions.dmi'
 	button_icon_state = "grow_hugger"
-	plasma_cost = 100
-	cooldown_time = 20 SECONDS
+	plasma_cost = 120
+	cooldown_time = 25 SECONDS
 
 /datum/action/cooldown/alien/banda/carrier_spawn_hugger/Activate()
 	var/mob/living/carbon/alien/adult/banda/carrier/carrier = owner
@@ -105,7 +105,7 @@
 
 /datum/action/cooldown/alien/banda/carrier_hugger
 	name = "Подобрать / бросить лицехвата"
-	desc = "Нажмите на лежащего рядом лицехвата, чтобы подобрать его, или укажите цель, чтобы метнуть одного из хранилища на расстояние до пяти клеток."
+	desc = "Нажмите на лежащего рядом лицехвата, чтобы подобрать его, или укажите цель, чтобы метнуть одного из хранилища на расстояние до четырёх клеток."
 	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
 	button_icon_state = "carrier"
 	click_to_activate = TRUE
@@ -117,7 +117,7 @@
 		return FALSE
 	if(istype(target, /obj/item/clothing/mask/facehugger))
 		return carrier.store_hugger(target)
-	if(!(target in view(5, carrier)) || !length(carrier.stored_huggers))
+	if(!(target in view(4, carrier)) || !length(carrier.stored_huggers))
 		return FALSE
 	var/obj/item/clothing/mask/facehugger/hugger = carrier.stored_huggers[1]
 	if(QDELETED(hugger) || hugger.loc != carrier || hugger.facehugger_state == /obj/item/clothing/mask/facehugger/dead::facehugger_state)
@@ -126,7 +126,7 @@
 	hugger.go_idle()
 	hugger.forceMove(carrier.loc)
 	hugger.go_active()
-	if(!hugger.throw_at(target, 5, 1, carrier))
+	if(!hugger.throw_at(target, 4, 1, carrier))
 		return FALSE
 	StartCooldown()
 	return TRUE

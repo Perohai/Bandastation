@@ -4,8 +4,8 @@
 	name = "alien runner"
 	desc = "Невысокий Чужой с гладким красным хитином. Похоже, правило «красный — значит быстрый» работает: почти всегда передвигается на четырёх лапах."
 	caste = "runner"
-	maxHealth = 150
-	health = 150
+	maxHealth = 120
+	health = 120
 	icon_state = "alienrunner"
 	hud_sprite_height = 22
 
@@ -14,8 +14,8 @@
 	/// Owned runner evasion action, deleted with the mob.
 	var/datum/action/cooldown/alien/banda/evade/evade_ability
 
-	melee_damage_lower = 10
-	melee_damage_upper = 10
+	melee_damage_lower = 8
+	melee_damage_upper = 8
 	next_evolution = /mob/living/carbon/alien/adult/banda/final_caste/hunter
 	on_fire_pixel_y = 0
 

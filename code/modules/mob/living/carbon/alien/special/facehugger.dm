@@ -222,7 +222,7 @@
 	if(real && !sterile)
 		victim.Paralyze(1 SECONDS)
 		victim.adjust_confusion(20 SECONDS)
-		victim.Knockdown(25 SECONDS) // BANDASTATION EDIT - xeno_rework: allow time to secure a host.
+		victim.Knockdown(14 SECONDS) // BANDASTATION EDIT - xeno_rework: shorten the window to secure a host.
 	go_idle() //so it doesn't jump the people that tear it off
 
 	addtimer(CALLBACK(src, PROC_REF(impregnate_target), victim), real && !sterile ? MIN_IMPREGNATION_TIME : rand(MIN_IMPREGNATION_TIME, MAX_IMPREGNATION_TIME)) // BANDASTATION EDIT - TGMC incubation on the face is ten seconds.

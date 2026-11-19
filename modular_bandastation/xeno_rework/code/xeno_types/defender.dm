@@ -4,8 +4,8 @@
 	name = "alien defender"
 	desc = "Массивный Чужой с хвостом, напоминающим таран. Попасть под такой удар вряд ли захочется."
 	caste = "defender"
-	maxHealth = 250
-	health = 250
+	maxHealth = 230
+	health = 230
 	icon_state = "aliendefender"
 	hud_sprite_height = 53
 	melee_damage_lower = 10
@@ -44,7 +44,7 @@
 	/// Defender tail sweep cooldown.
 	var/defender_tail_sweep_cooldown = 10 SECONDS
 	/// Defender tail sweep brute.
-	var/defender_tail_sweep_brute = 10
+	var/defender_tail_sweep_brute = 8
 	/// Defender tail sweep radius.
 	var/defender_tail_sweep_radius = 1
 	/// Defender tail sweep throw range.

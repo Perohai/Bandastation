@@ -709,7 +709,7 @@
 /** Прыжок, сбивающий цель с ног. Щит может отбить атаку. */
 /datum/action/cooldown/alien/banda/pounce_runner
 	name = "Наброситься"
-	desc = "Прыгает на цель и сбивает её с ног. Щит способен отразить прыжок."
+	desc = "Прыгает на цель и сбивает её с ног на секунду. Щит может отразить прыжок."
 	button_icon = 'modular_bandastation/xeno_rework/icons/support_actions.dmi'
 	button_icon_state = "pounce"
 	plasma_cost = 10
@@ -754,9 +754,9 @@
 		var/blocked = FALSE
 		if(ishuman(victim))
 			var/mob/living/carbon/human/human = victim
-			blocked = human.check_block(src, 0, name, attack_type = LEAP_ATTACK)
+			blocked = human.deflect_xeno_attack(src, "прыжок ксеноморфа")
 		if(!blocked)
-			victim.Knockdown(2 SECONDS)
+			victim.Knockdown(1 SECONDS)
 		Paralyze(0.5 SECONDS)
 	pounce_ability.finish_pounce()
 

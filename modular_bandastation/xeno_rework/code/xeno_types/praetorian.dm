@@ -5,12 +5,12 @@
 	desc = "Чужой, похожий на помесь Королевы и Дрона. Вероятно, так оно и есть."
 	caste = "praetorian"
 	mob_size = MOB_SIZE_LARGE
-	maxHealth = 250
-	health = 250
+	maxHealth = 280
+	health = 280
 	icon_state = "alienpraetorian"
 	hud_sprite_height = 55
-	melee_damage_lower = 15
-	melee_damage_upper = 15
+	melee_damage_lower = 17
+	melee_damage_upper = 17
 	evolution_tier = 3
 
 	default_organ_types_by_slot = list(

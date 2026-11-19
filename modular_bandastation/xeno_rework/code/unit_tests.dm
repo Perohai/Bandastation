@@ -410,7 +410,7 @@
 	TEST_ASSERT(lunge.PreActivate(victim), "Warrior could not prepare a combo")
 	var/datum/action/cooldown/alien/banda/warrior_punch/punch = locate() in warrior.actions
 	TEST_ASSERT(punch.PreActivate(victim), "Warrior could not punch its grabbed target")
-	TEST_ASSERT_EQUAL(victim.get_brute_loss(), round(warrior.warrior_punch_brute * 1.5), "Grab combo did not multiply punch damage")
+	TEST_ASSERT_EQUAL(victim.get_brute_loss(), round(warrior.warrior_punch_brute * 1.3), "Grab combo did not multiply punch damage")
 	TEST_ASSERT(victim.has_status_effect(/datum/status_effect/staggered), "Punch did not stagger its target")
 	TEST_ASSERT_NULL(warrior.get_warrior_grab_target(), "Combo punch did not release its grab")
 	lunge.ResetCooldown()
@@ -447,17 +447,15 @@
 	praetorian.adjustPlasma(praetorian.get_max_plasma())
 	var/datum/action/cooldown/alien/banda/acid_spray/cone/spray = locate() in praetorian.actions
 	TEST_ASSERT(spray.PreActivate(get_ranged_target_turf(origin, NORTH, 4)), "Praetorian could not spray acid")
-	TEST_ASSERT_NULL(locate(/obj/effect/xeno_acid_pool/spray) in get_step(origin, NORTH), "Windup was skipped")
+	TEST_ASSERT_NOTNULL(locate(/obj/effect/xeno_acid_pool/spray) in get_step(origin, NORTH), "First row appeared only after a windup")
 	praetorian.forceMove(get_step(origin, EAST))
-	var/turf/release_site = praetorian.loc
-	praetorian.Paralyze(0.1 SECONDS)
 	sleep(0.9 SECONDS)
 	for(var/row in 1 to 3)
-		for(var/offset in -3 to 1)
-			var/turf/location = locate(release_site.x + offset, release_site.y + row, release_site.z)
+		for(var/offset in -2 to 2)
+			var/turf/location = locate(origin.x + offset, origin.y + row, origin.z)
 			var/obj/effect/xeno_acid_pool/spray/pool = locate() in location
 			TEST_ASSERT_EQUAL(!!pool, abs(offset) < row, "Unexpected 1-3-5 spray footprint at [offset], [row]")
-	TEST_ASSERT_NULL(locate(/obj/effect/xeno_acid_pool/spray) in get_ranged_target_turf(release_site, NORTH, 4), "Spray exceeded three rows")
+	TEST_ASSERT_NULL(locate(/obj/effect/xeno_acid_pool/spray) in get_ranged_target_turf(origin, NORTH, 4), "Spray exceeded three rows")
 
 /datum/unit_test/xeno_rework_spray_diagonal/Run()
 	var/turf/origin = get_step(run_loc_floor_bottom_left, EAST)
@@ -501,7 +499,7 @@
 	TEST_ASSERT_EQUAL(victim.get_brute_loss(), 0, "Reselecting immediately restored a cancelled cut")
 	cut.ResetCooldown()
 	TEST_ASSERT(cut.PreActivate(victim), "An uninterrupted cut failed")
-	TEST_ASSERT_EQUAL(victim.get_brute_loss(), 25, "The uninterrupted cut did not hit")
+	TEST_ASSERT_EQUAL(victim.get_brute_loss(), 30, "The uninterrupted cut did not hit")
 
 /datum/unit_test/xeno_rework_hive_panel/Run()
 	var/mob/living/carbon/alien/adult/banda/drone/drone = allocate(/mob/living/carbon/alien/adult/banda/drone)
@@ -565,10 +563,12 @@
 	TEST_ASSERT_NOTNULL(test_button, "The xeno finale test button was not registered")
 	TEST_ASSERT_EQUAL(test_button.permissions, R_DEBUG, "The finale test button does not require debug rights")
 	TEST_ASSERT_EQUAL(test_button.category, ADMIN_CATEGORY_DEBUG, "The finale test button is missing from the debug category")
-	TEST_ASSERT(!event.population_qualifies(14, 10), "Finale triggered below its minimum xeno population")
-	TEST_ASSERT(!event.population_qualifies(15, 31), "Finale triggered below its population ratio")
-	TEST_ASSERT(event.population_qualifies(15, 30), "Finale did not trigger at exactly 50 percent")
-	TEST_ASSERT(event.population_qualifies(15, 0), "No remaining crew prevented the finale")
+	TEST_ASSERT(!event.population_qualifies(5, 10), "Finale bypassed the minimum of six")
+	TEST_ASSERT(!event.population_qualifies(10, 30), "Finale triggered below 35 percent")
+	TEST_ASSERT(event.population_qualifies(11, 30), "Finale did not round 10.5 up to 11")
+	TEST_ASSERT(event.population_qualifies(18, 100), "Finale exceeded the cap of eighteen")
+	TEST_ASSERT_EQUAL(event.spread_threshold(100), 17, "Warning was blocked by the finale cap")
+	TEST_ASSERT(event.population_qualifies(6, 0), "No remaining crew prevented the finale")
 
 /datum/unit_test/xeno_rework_evacuation_hack
 	normal_floor_required = TRUE

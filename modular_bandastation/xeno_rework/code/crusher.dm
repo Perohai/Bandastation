@@ -7,11 +7,11 @@
 	icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_adapted.dmi'
 	icon_state = "aliencrusher"
 	hud_sprite_height = 40
-	health = 445
-	maxHealth = 445
+	health = 350
+	maxHealth = 350
 	damage_resistance = 35
-	melee_damage_lower = 25
-	melee_damage_upper = 25
+	melee_damage_lower = 15
+	melee_damage_upper = 15
 	/// Whether straight-line movement builds momentum.
 	var/charge_enabled = TRUE
 	/// Consecutive unforced steps in the same cardinal direction.
@@ -46,14 +46,18 @@
 	last_charge_step = world.time
 	momentum++
 	update_charge_speed()
-	if(momentum > steps_for_charge)
+	if(momentum >= steps_for_charge)
 		adjustPlasma(-round(charge_speed()))
 		if(momentum % 4 == 0)
 			playsound(src, 'sound/effects/bang.ogg', 50, TRUE)
 		for(var/mob/living/victim in loc)
 			if(!isalien(victim) && victim.stat != DEAD && victim.body_position == LYING_DOWN && !victim.buckled)
-				victim.apply_damage(charge_speed() * 10, BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
+				victim.apply_damage(charge_damage(), BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
 				log_combat(src, victim, "crusher ran over")
+
+/// Living targets take the same capped damage on a direct hit or when run over.
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/charge_damage()
+	return min(100, 20 + 12 * (momentum - 6))
 
 /mob/living/carbon/alien/adult/banda/final_caste/crusher/proc/charge_speed()
 	return min(momentum, max_steps_buildup) * speed_per_step
@@ -86,7 +90,7 @@
 		var/mob/living/victim = obstacle
 		if(!isalien(victim) && victim.stat != DEAD)
 			victim.buckled?.unbuckle_mob(victim)
-			victim.apply_damage(impact_speed * 20, BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
+			victim.apply_damage(charge_damage(), BRUTE, BODY_ZONE_CHEST, blocked = victim.getarmor(BODY_ZONE_CHEST, MELEE))
 			if(QDELETED(victim))
 				return ..()
 			victim.Paralyze(impact_speed * 2 SECONDS)
@@ -150,7 +154,7 @@
 
 /datum/action/cooldown/alien/banda/crusher_charge
 	name = "Таранный разбег"
-	desc = "Разгон TGMC: таран с 7-го шага, максимум с 14-го. Шаг +0,15 скорости; поворот, пауза свыше 0,5 секунды, захват и отдых сбрасывают разгон. Непробитая преграда сбивает разгон и оглушает на полсекунды. Укреплённая стена выдерживает больше урона, чем обычная."
+	desc = "Разгон TGMC: таран с 7-го шага, максимум с 14-го. Шаг +0,15 скорости; поворот, пауза свыше 0,5 секунды, захват и отдых сбрасывают разгон. Непробитая преграда сбивает разгон и оглушает на полсекунды. По живой цели: 20 + 12 × (шаги − 6), максимум 100 урона до брони."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_actions.dmi'
 	button_icon_state = "ready_charge"
 
@@ -187,7 +191,7 @@
 /** Area stomp, stronger against an enemy directly underneath the Crusher. */
 /datum/action/cooldown/alien/banda/crusher_stomp
 	name = "Сокрушительный топот"
-	desc = "С силой обрушивается на землю. Противник прямо под ногами получает 60 урона и паралич на 3 секунды. Соседние цели — 30 урона, отбрасывание и паралич на 0,5 секунды."
+	desc = "С силой обрушивается на землю. Противник прямо под ногами получает 50 урона и паралич на 2,5 секунды. Соседние цели — 20 урона, отбрасывание и паралич на 0,5 секунды."
 	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/crusher_actions.dmi'
 	button_icon_state = "stomp"
 	plasma_cost = 100
@@ -200,8 +204,8 @@
 		if(isalien(victim) || victim.stat == DEAD)
 			continue
 		var/same_tile = victim.loc == owner.loc
-		victim.apply_damage(same_tile ? 60 : 30, BRUTE)
-		victim.Paralyze(same_tile ? 3 SECONDS : 0.5 SECONDS)
+		victim.apply_damage(same_tile ? 50 : 20, BRUTE)
+		victim.Paralyze(same_tile ? 2.5 SECONDS : 0.5 SECONDS)
 		if(!same_tile)
 			step_away(victim, owner)
 	StartCooldown()

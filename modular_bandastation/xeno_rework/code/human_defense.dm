@@ -1,3 +1,11 @@
+/// A held shield can deflect a pounce or acid wave once per attack.
+/mob/living/carbon/human/proc/deflect_xeno_attack(atom/movable/attacker, attack_text)
+	for(var/obj/item/shield/shield in get_active_handset_items())
+		if(istype(shield, /obj/item/shield/energy) && !HAS_TRAIT(shield, TRAIT_TRANSFORM_ACTIVE))
+			continue
+		return shield.hit_reaction(src, attacker, attack_text, 50, attack_type = XENO_DEFLECTABLE_ATTACK)
+	return FALSE
+
 /// Apply reworked attacks after the native attack_alien has validated blocks and pacifism.
 /mob/living/carbon/human/proc/attack_banda_alien(mob/living/carbon/alien/adult/banda/user, list/modifiers)
 	if(LAZYACCESS(modifiers, RIGHT_CLICK))

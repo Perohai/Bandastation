@@ -314,3 +314,40 @@
 	victim.attack_banda_alien(drone, list(RIGHT_CLICK = TRUE))
 	sleep(0.6 SECONDS)
 	TEST_ASSERT_NOTNULL(victim.has_status_effect(/datum/status_effect/incapacitating/stamcrit), "Shove did not refresh recovery at the damage cap")
+
+/obj/item/shield/riot/xeno_deflection_fixture
+	var/checks = 0
+	var/chance_seen
+
+/obj/item/shield/riot/xeno_deflection_fixture/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text, final_block_chance, damage, attack_type, damage_type)
+	checks++
+	chance_seen = final_block_chance
+	return TRUE
+
+/datum/unit_test/xeno_rework_hive/wave_shield_roll/Run()
+	var/mob/living/carbon/human/defender = allocate(/mob/living/carbon/human/consistent)
+	var/obj/item/shield/riot/xeno_deflection_fixture/shield = allocate(/obj/item/shield/riot/xeno_deflection_fixture)
+	TEST_ASSERT(defender.put_in_active_hand(shield), "Shield fixture could not be equipped")
+	var/list/results = list()
+	var/obj/effect/xeno_acid_pool/spray/first = allocate(/obj/effect/xeno_acid_pool/spray, defender.loc, results)
+	var/obj/effect/xeno_acid_pool/spray/second = allocate(/obj/effect/xeno_acid_pool/spray, get_step(defender, NORTH), results)
+	first.affect(defender, 1)
+	second.affect(defender, 1)
+	TEST_ASSERT_EQUAL(shield.checks, 1, "A wave rerolled its shield check")
+	TEST_ASSERT_EQUAL(shield.chance_seen, 50, "The shield was given the wrong deflection chance")
+	TEST_ASSERT_EQUAL(defender.get_fire_loss(), 0, "Blocked wave still dealt damage")
+
+/datum/unit_test/xeno_rework_hive/natural_recovery/Run()
+	var/mob/living/carbon/alien/adult/banda/drone/drone = allocate(/mob/living/carbon/alien/adult/banda/drone)
+	var/obj/item/organ/alien/plasmavessel/vessel = drone.get_organ_slot(ORGAN_SLOT_XENO_PLASMAVESSEL)
+	allocate(/obj/structure/alien/weeds, drone.loc)
+	drone.adjust_brute_loss(50)
+	TEST_ASSERT_EQUAL(COOLDOWN_TIMELEFT(drone, natural_heal_cooldown), 8 SECONDS, "Damage did not delay healing")
+	vessel.on_life(1)
+	TEST_ASSERT_EQUAL(drone.get_brute_loss(), 50, "Natural healing bypassed the damage delay")
+	COOLDOWN_RESET(drone, natural_heal_cooldown)
+	vessel.on_life(1)
+	TEST_ASSERT(abs(drone.get_brute_loss() - 49.2) < 0.01, "Standing regeneration was not 0.4% max health")
+	drone.set_body_position(LYING_DOWN)
+	vessel.on_life(1)
+	TEST_ASSERT(abs(drone.get_brute_loss() - 45.2) < 0.01, "Lying regeneration was not 2% max health")

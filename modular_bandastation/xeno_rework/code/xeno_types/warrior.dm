@@ -6,12 +6,12 @@
 	caste = "warrior"
 	mob_size = MOB_SIZE_LARGE
 	evolution_tier = 3
-	maxHealth = 250
-	health = 250
+	maxHealth = 290
+	health = 290
 	icon_state = "alienwarrior"
 	hud_sprite_height = 47
-	melee_damage_lower = 15
-	melee_damage_upper = 15
+	melee_damage_lower = 18
+	melee_damage_upper = 18
 
 	default_organ_types_by_slot = list(
 		ORGAN_SLOT_BRAIN = /obj/item/organ/brain/alien,
@@ -67,7 +67,7 @@
 	/// Warrior punch knockdown.
 	var/warrior_punch_knockdown = 1 SECONDS
 	/// Warrior punch grab multiplier.
-	var/warrior_punch_grab_multiplier = 1.5
+	var/warrior_punch_grab_multiplier = 1.3
 	/// Warrior punch grab knockdown.
 	var/warrior_punch_grab_knockdown = 2 SECONDS
 

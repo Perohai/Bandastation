@@ -28,6 +28,7 @@
 	return TRUE
 
 /datum/action/cooldown/alien/banda/spit/spitter
+	acid_projectile = /obj/projectile/neurotoxin/banda/acid/standard/spitter
 	plasma_cost = 20
 	neuro_plasma_cost = 20
 	acid_plasma_cost = 40
@@ -57,9 +58,12 @@
 /obj/projectile/neurotoxin/banda/acid/standard/turret
 	damage = 10
 
-/** Lower-damage acid spit for the Praetorian gland. */
+/** Caste-specific direct acid damage. */
 /obj/projectile/neurotoxin/banda/acid/standard/praetorian
-	damage = 10
+	damage = 14
+
+/obj/projectile/neurotoxin/banda/acid/standard/spitter
+	damage = 12
 
 /** Переключает нейротоксин и кислоту. Текущая цена указана на кнопке плевка. */
 /datum/action/cooldown/alien/banda/toggle_spit
@@ -161,11 +165,12 @@
 	set waitfor = FALSE
 	var/list/line = get_line(origin, target_turf)
 	var/distance = min(spray_length, length(line) - 1)
+	var/list/shield_results = list()
 	for(var/step in 1 to distance)
 		var/turf/location = line[step + 1]
 		if(QDELETED(src) || !can_cover(location))
 			break
-		new /obj/effect/xeno_acid_pool/spray(location)
+		new /obj/effect/xeno_acid_pool/spray(location, shield_results)
 		if(step < distance)
 			sleep(ACID_SPRAY_STEP)
 
@@ -185,8 +190,9 @@
 /datum/action/cooldown/alien/banda/acid_spray/cone
 	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
 	button_icon_state = "acid_cone"
-	desc = "Выплёвывает волну кислоты конусом 1–3–5 клеток в сторону курсора."
-	cooldown_time = 60 SECONDS
+	desc = "Выплёвывает волну кислоты конусом 1–3–5 клеток в сторону курсора. Кислота разъедает полевые баррикады."
+	plasma_cost = 220
+	cooldown_time = 45 SECONDS
 	spray_length = 3
 
 /datum/action/cooldown/alien/banda/acid_spray/cone/release_spray(turf/origin, turf/target_turf)
@@ -196,6 +202,7 @@
 	var/turf/center = origin
 	var/wing_angle = ISDIAGONALDIR(facing) ? 135 : 90
 	var/list/previous_row = list(center)
+	var/list/shield_results = list()
 	for(var/row in 1 to spray_length)
 		if(QDELETED(src))
 			break
@@ -205,13 +212,17 @@
 		var/list/hit_row = list()
 		for(var/offset in (1 - row) to (row - 1))
 			var/turf/location = get_ranged_target_turf(center, turn(facing, offset < 0 ? -wing_angle : wing_angle), abs(offset))
-			if(!location || (offset && get_dist(center, location) != abs(offset)) || !can_cover(location))
+			if(!location || (offset && get_dist(center, location) != abs(offset)))
 				continue
 			for(var/turf/previous as anything in previous_row)
-				if(get_dist(previous, location) == 1)
+				if(get_dist(previous, location) != 1)
+					continue
+				for(var/obj/structure/railing/folding/barrier in location)
+					barrier.acid_act(50, 20)
+				if(can_cover(location))
 					hit_row += location
-					new /obj/effect/xeno_acid_pool/spray(location)
-					break
+					new /obj/effect/xeno_acid_pool/spray(location, shield_results)
+				break
 		if(!length(hit_row) || row == spray_length)
 			break
 		previous_row = hit_row
@@ -268,3 +279,24 @@
 /obj/effect/xeno_acid_pool/spray
 	lifetime = 5 SECONDS
 	knockdown_time = 0.5 SECONDS
+
+	/// Pools in one wave share the result. String refs avoid keeping victims alive.
+	var/list/shield_results
+
+/obj/effect/xeno_acid_pool/spray/Initialize(mapload, list/wave_results)
+	shield_results = islist(wave_results) ? wave_results : list()
+	return ..()
+
+/obj/effect/xeno_acid_pool/spray/Destroy()
+	shield_results = null
+	return ..()
+
+/obj/effect/xeno_acid_pool/spray/affect(mob/living/victim, seconds_per_tick)
+	if(ishuman(victim))
+		var/key = REF(victim)
+		if(!(key in shield_results))
+			var/mob/living/carbon/human/human = victim
+			shield_results[key] = human.deflect_xeno_attack(src, "кислотную волну")
+		if(shield_results[key])
+			return
+	return ..()

@@ -200,7 +200,7 @@
 		return
 	hivemind.adjustPlasma(60 * seconds_per_tick)
 	if(hivemind.can_travel(get_turf(hivemind)))
-		hivemind.heal_overall_damage(5 * seconds_per_tick, 5 * seconds_per_tick, forced = TRUE)
+		hivemind.heal_overall_damage(3 * seconds_per_tick, 3 * seconds_per_tick, forced = TRUE)
 
 /obj/item/organ/alien/resinspinner_banda/hivemind
 	actions_types = list(/datum/action/cooldown/alien/select_resin_structure, /datum/action/cooldown/alien/build_resin_structure/hivemind)

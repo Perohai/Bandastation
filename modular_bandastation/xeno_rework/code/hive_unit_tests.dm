@@ -22,7 +22,7 @@
 	var/mob/living/carbon/alien/adult/banda/queen/queen = allocate(/mob/living/carbon/alien/adult/banda/queen)
 	hive.biomass = 10000
 	hive.purchase_time = 0
-	TEST_ASSERT_NULL(hive.upgrades["hunter"], "Ordinary Hunter still requires a hive purchase")
+	TEST_ASSERT_EQUAL(hive.upgrades["hunter"]?.cost, 200, "Hunter unlock has the wrong cost")
 	TEST_ASSERT(!hive.can_buy(queen, "claws") && !hive.can_buy(queen, "crusher"), "A tree prerequisite was bypassed")
 	var/list/unresolved = hive.upgrades.Copy()
 	var/list/resolved = list()
@@ -242,7 +242,9 @@
 	var/mob/living/carbon/alien/adult/banda/runner/runner = allocate(/mob/living/carbon/alien/adult/banda/runner)
 	var/hunter_type = /mob/living/carbon/alien/adult/banda/final_caste/hunter
 	var/ravager_type = /mob/living/carbon/alien/adult/banda/ravager
-	TEST_ASSERT(runner.can_evolve(hunter_type), "Ordinary Hunter is locked")
+	TEST_ASSERT(!runner.can_evolve(hunter_type), "Unpurchased Hunter was available")
+	hive.purchased["hunter"] = 1
+	TEST_ASSERT(runner.can_evolve(hunter_type), "Purchased Hunter is locked")
 	TEST_ASSERT(!runner.can_evolve(ravager_type), "Unpurchased Ravager was available")
 	var/mob/living/carbon/alien/adult/banda/hunter = allocate(hunter_type)
 	TEST_ASSERT(!runner.can_evolve(hunter_type), "A living Hunter did not reserve its separate slot")
