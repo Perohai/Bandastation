@@ -22,7 +22,7 @@
 	var/alien_speed = 0
 	unique_name = TRUE
 
-	var/static/regex/alien_name_regex = new("alien (larva|sentinel|drone|hunter|praetorian|princess|queen|runner|spitter|defender|warrior|ravager)( \\(\\d+\\))?") // BANDASTATION EDIT - xeno_rework caste names must preserve evolution identifiers.
+	var/static/regex/alien_name_regex = new("alien (larva|sentinel|drone|hunter|praetorian|princess|queen)( \\(\\d+\\))?")
 	var/static/list/xeno_allowed_items = typecacheof(list(
 		/obj/item/clothing/mask/facehugger,
 		/obj/item/toy/basketball, // playing ball against a xeno is rigged since they cannot be disarmed, their game is out of this world

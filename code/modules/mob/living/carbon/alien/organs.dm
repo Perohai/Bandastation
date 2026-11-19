@@ -64,19 +64,10 @@
 		owner.adjustPlasma(plasma_rate * delta_time)
 		return
 
-	owner.adjustPlasma(0.5 * plasma_rate * delta_time_capped)
-	// BANDASTATION ADDITION START - reworked adults recover after disengaging.
-	if(istype(owner, /mob/living/carbon/alien/adult/banda))
-		var/mob/living/carbon/alien/adult/banda/xeno = owner
-		if(COOLDOWN_FINISHED(xeno, natural_heal_cooldown))
-			var/static/list/healed_damage = list(BRUTE, BURN, OXY)
-			var/heal_budget = xeno.maxHealth * (xeno.body_position == LYING_DOWN ? 0.02 : 0.004) * seconds_per_tick
-			xeno.heal_ordered_damage(heal_budget, healed_damage)
-		return
-	// BANDASTATION ADDITION END
 	var/heal_amt = heal_rate
 	if(!isalien(owner))
 		heal_amt *= 0.2
+	owner.adjustPlasma(0.5 * plasma_rate * delta_time_capped)
 	owner.adjust_brute_loss(-heal_amt * delta_time_capped)
 	owner.adjust_fire_loss(-heal_amt * delta_time_capped)
 	owner.adjust_oxy_loss(-heal_amt * delta_time_capped)

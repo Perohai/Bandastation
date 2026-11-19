@@ -1,8 +1,8 @@
-["Охотник роя"]
-nominative = "охотник роя"
-genitive = "охотника роя"
-dative = "охотнику роя"
-accusative = "охотника роя"
-instrumental = "охотником роя"
-prepositional = "охотнике роя"
+["alien hunter"]
+nominative = "охотник Чужих"
+genitive = "охотника Чужих"
+dative = "охотнику Чужих"
+accusative = "охотника Чужих"
+instrumental = "охотником Чужих"
+prepositional = "охотнике Чужих"
 gender = "female"

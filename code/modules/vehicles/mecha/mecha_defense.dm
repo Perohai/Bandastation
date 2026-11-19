@@ -73,7 +73,7 @@
 /obj/vehicle/sealed/mecha/attack_alien(mob/living/user, list/modifiers)
 	log_message("Attack by alien. Attacker - [user].", LOG_MECHA, color="red")
 	playsound(loc, 'sound/items/weapons/slash.ogg', 100, TRUE)
-	return attack_generic(user, rand(user.melee_damage_lower, user.melee_damage_upper), BRUTE, MELEE, 0) // BANDASTATION EDIT - xeno_rework uses native mech armor without special penetration.
+	return attack_generic(user, rand(user.melee_damage_lower, user.melee_damage_upper), BRUTE, MELEE, 0)
 
 /obj/vehicle/sealed/mecha/attack_animal(mob/living/simple_animal/user, list/modifiers)
 	log_message("Attack by simple animal. Attacker - [user].", LOG_MECHA, color="red")

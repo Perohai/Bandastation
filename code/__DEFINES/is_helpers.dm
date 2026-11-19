@@ -171,9 +171,9 @@ GLOBAL_LIST_INIT(turfs_pass_meteor, typecacheof(list(
 
 #define isaliensentinel(A) (istype(A, /mob/living/carbon/alien/adult/sentinel))
 
-#define isalienroyal(A) (istype(A, /mob/living/carbon/alien/adult/royal) || istype(A, /mob/living/carbon/alien/adult/banda/queen) || istype(A, /mob/living/carbon/alien/adult/banda/praetorian)) // BANDASTATION EDIT - xeno_rework royal integration.
+#define isalienroyal(A) (istype(A, /mob/living/carbon/alien/adult/royal))
 
-#define isalienqueen(A) (istype(A, /mob/living/carbon/alien/adult/royal/queen) || istype(A, /mob/living/carbon/alien/adult/banda/queen)) // BANDASTATION EDIT - xeno_rework queen integration.
+#define isalienqueen(A) (istype(A, /mob/living/carbon/alien/adult/royal/queen))
 
 //Silicon mobs
 #define issilicon(A) (istype(A, /mob/living/silicon))

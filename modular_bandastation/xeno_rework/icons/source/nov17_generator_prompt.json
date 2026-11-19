@@ -1,5 +1,0 @@
-{
-  "tool": "built-in image_gen",
-  "reference": "generator_style_matched.png",
-  "prompt": "Edit target: existing SS13 64x64 xenomorph organic biomass generator in the reference image. Produce an EIGHT frame seamless animation atlas in exactly FOUR columns by TWO rows, transparent backgrounds, no text or grid. Keep EXACT identical rigid outer chitin, roots, silhouette, scale, perspective, lighting and baseline in every cell. Only edit the olive acid liquid in its central open bowl: redraw that liquid as viscous organic biomass, dark olive depth with muted yellow-green highlights matching the reference palette, no bright neon, no water-blue. Animate slow circulating ripples and several rising bubbles that swell and pop across the eight frames. Surface should look alive, with clearly readable 1-pixel-scale arcs and bubble rings when packed at 64x64. Same flat logical 64x64 pixel-art style, same native xeno palette as reference. No new machinery, no body movement or bounce, no smoke baked into frames (the game already supplies vapor), no detached effects. This is a targeted liquid correction and animation, preserve the rest of the organic body unchanged."
-}

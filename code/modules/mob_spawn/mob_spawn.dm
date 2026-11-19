@@ -193,10 +193,6 @@
 		return FALSE
 	if(!can_ghost_take(user))
 		return FALSE
-	// BANDASTATION ADDITION START - ban lookups may yield while another ghost reserves the last use.
-	if(uses <= 0 && !infinite_use)
-		return FALSE
-	// BANDASTATION ADDITION END
 
 	uses -= 1 // Remove a use EARLY to account for sleep / inputs
 	var/user_ckey = user.ckey // Just in case shenanigans happen, we always want to remove it from the list.

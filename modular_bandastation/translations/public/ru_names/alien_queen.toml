@@ -1,8 +1,8 @@
-["Королева улья"]
-nominative = "королева улья"
-genitive = "королевы улья"
-dative = "королеве улья"
-accusative = "королеву улья"
-instrumental = "королевой улья"
-prepositional = "королеве улья"
+["alien queen"]
+nominative = "королева Чужих"
+genitive = "королевы Чужих"
+dative = "королеве Чужих"
+accusative = "королеву Чужих"
+instrumental = "королевой Чужих"
+prepositional = "королеве Чужих"
 gender = "female"

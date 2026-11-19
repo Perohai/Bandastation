@@ -1,8 +1,8 @@
-["Дрон улья"]
-nominative = "дрон улья"
-genitive = "дрона улья"
-dative = "дрону улья"
-accusative = "дрона улья"
-instrumental = "дроном улья"
-prepositional = "дроне улья"
+["alien drone"]
+nominative = "дрон Чужих"
+genitive = "дрона Чужих"
+dative = "дрону Чужих"
+accusative = "дрона Чужих"
+instrumental = "дроном Чужих"
+prepositional = "дроне Чужих"
 gender = "female"

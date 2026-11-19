@@ -1,8 +1,8 @@
-["Страж улья"]
-nominative = "страж улья"
-genitive = "стража улья"
-dative = "стражу улья"
-accusative = "стража улья"
-instrumental = "стражем улья"
-prepositional = "страже улья"
+["alien sentinel"]
+nominative = "страж Чужих"
+genitive = "стража Чужих"
+dative = "стражу Чужих"
+accusative = "стража Чужих"
+instrumental = "стражем Чужих"
+prepositional = "страже Чужих"
 gender = "female"

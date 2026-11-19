@@ -70,24 +70,7 @@
 			return
 	. = ..()
 
-// BANDASTATION ADDITION START - live huggers are thrown through the Carrier action.
-/obj/item/clothing/mask/facehugger/on_thrown(mob/living/carbon/user, atom/target)
-	if(real && !sterile && facehugger_state != FACEHUGGER_DEAD)
-		to_chat(user, span_warning("Только Носитель может метнуть живого лицехвата своей способностью."))
-		return null
-	return ..()
-// BANDASTATION ADDITION END
-
 /obj/item/clothing/mask/facehugger/attack(mob/living/M, mob/user)
-	// BANDASTATION ADDITION START - conscious hosts can resist manual attachment.
-	if(real && !sterile && isalien(user))
-		if(!valid_to_attach(M) || loc != user || !user.Adjacent(M))
-			return
-		if(M.client && !M.stat && !do_after(user, 1 SECONDS, target = M))
-			return
-		if(QDELETED(src) || QDELETED(user) || QDELETED(M) || user.incapacitated || loc != user || !user.Adjacent(M) || !valid_to_attach(M))
-			return
-	// BANDASTATION ADDITION END
 	..()
 	if(user.transferItemToLoc(src, get_turf(M)))
 		leap_to(M)
@@ -127,10 +110,6 @@
 		return leap_to(AM)
 
 /obj/item/clothing/mask/facehugger/throw_at(atom/target, range, speed, mob/thrower, spin=1, diagonals_first = 0, datum/callback/callback, gentle, quickstart = TRUE, throw_type_path = /datum/thrownthing)
-	// BANDASTATION ADDITION START - only the Carrier can launch fertile huggers.
-	if(real && !sterile && facehugger_state != FACEHUGGER_DEAD && !istype(thrower, /mob/living/carbon/alien/adult/banda/carrier))
-		return FALSE
-	// BANDASTATION ADDITION END
 	. = ..()
 	if(!.)
 		return
@@ -146,7 +125,7 @@
 	..()
 	if(facehugger_state == FACEHUGGER_AWAKE)
 		icon_state = "[base_icon_state]"
-		leap_to(hit_atom, use_protection_charges = real && !sterile && istype(throwingdatum?.get_thrower(), /mob/living/carbon/alien/adult/banda/carrier)) // BANDASTATION EDIT - Carrier throws wear down protection.
+		leap_to(hit_atom)
 
 /obj/item/clothing/mask/facehugger/proc/valid_to_attach(mob/living/hit_mob)
 	// valid targets: carbons except aliens and devils
@@ -159,7 +138,7 @@
 		return FALSE
 	var/mob/living/carbon/human/target = hit_mob
 	// gotta have a head to be implanted (no changelings or sentient plants)
-	if(!target.get_bodypart(BODY_ZONE_HEAD) || target.stat == DEAD || istype(target.get_organ_slot(ORGAN_SLOT_PARASITE_EGG), /obj/item/organ/body_egg/alien_embryo)) // BANDASTATION EDIT - skip dead or already infected hosts.
+	if(!target.get_bodypart(BODY_ZONE_HEAD))
 		return FALSE
 	// gotta be able to have the xeno implanted
 	if(HAS_TRAIT(hit_mob, TRAIT_XENO_IMMUNE))
@@ -167,7 +146,7 @@
 	// carbon, has head, not an alien nor has an hivenode or embryo: valid
 	return TRUE
 
-/obj/item/clothing/mask/facehugger/proc/leap_to(mob/living/hit_mob, use_protection_charges = FALSE) // BANDASTATION EDIT - support Carrier protection wear.
+/obj/item/clothing/mask/facehugger/proc/leap_to(mob/living/hit_mob)
 	//check if not carbon/alien/has facehugger already/ect.
 	if(!valid_to_attach(hit_mob))
 		return FALSE
@@ -179,15 +158,7 @@
 						span_userdanger("[src] leaps at your face!"))
 
 	// probiscis-blocker handling
-	// BANDASTATION ADDITION START - charged equipment absorbs one Carrier or trap hit.
-	if(use_protection_charges)
-		var/obj/item/clothing/head/helmet = target.head
-		var/obj/item/clothing/mask/mask = target.wear_mask
-		if((target.is_mouth_covered(ITEM_SLOT_HEAD) && helmet?.absorb_trap_hugger()) || mask?.absorb_trap_hugger())
-			go_idle()
-			return FALSE
-	// BANDASTATION ADDITION END
-	if(!use_protection_charges && target.is_mouth_covered(ITEM_SLOT_HEAD)) // BANDASTATION EDIT - worn-out gear no longer protects against Carrier hits.
+	if(target.is_mouth_covered(ITEM_SLOT_HEAD))
 		target.visible_message(span_danger("[src] smashes against [target]'s [target.head]!"), \
 							span_userdanger("[src] smashes against your [target.head]!"))
 		die()
@@ -222,10 +193,10 @@
 	if(real && !sterile)
 		victim.Paralyze(1 SECONDS)
 		victim.adjust_confusion(20 SECONDS)
-		victim.Knockdown(14 SECONDS) // BANDASTATION EDIT - xeno_rework: shorten the window to secure a host.
+		victim.Knockdown(10 SECONDS)
 	go_idle() //so it doesn't jump the people that tear it off
 
-	addtimer(CALLBACK(src, PROC_REF(impregnate_target), victim), real && !sterile ? MIN_IMPREGNATION_TIME : rand(MIN_IMPREGNATION_TIME, MAX_IMPREGNATION_TIME)) // BANDASTATION EDIT - TGMC incubation on the face is ten seconds.
+	addtimer(CALLBACK(src, PROC_REF(impregnate_target), victim), rand(MIN_IMPREGNATION_TIME, MAX_IMPREGNATION_TIME))
 
 /obj/item/clothing/mask/facehugger/proc/detach()
 	attached = 0

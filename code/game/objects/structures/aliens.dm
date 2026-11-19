@@ -214,7 +214,6 @@
 		//set the new one's parent node to our parent node
 		check_weed.parent_node = parent_node
 		check_weed.RegisterSignal(parent_node, COMSIG_QDELETING, PROC_REF(after_parent_destroyed))
-		check_weed.record_hive_expansion() // BANDASTATION ADDITION - credit unique hive territory after native growth assigns its parent.
 
 /**
  * Called when the parent node is destroyed

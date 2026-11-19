@@ -101,23 +101,8 @@
 	made_structure_type = /obj/structure/alien/egg
 
 /datum/action/cooldown/alien/make_structure/lay_egg/Activate(atom/target)
-	// BANDASTATION EDIT START - reworked egg laying uses a visible preparation.
-	if(istype(owner, /mob/living/carbon/alien/adult/banda/queen) || istype(owner, /mob/living/carbon/alien/adult/banda/carrier))
-		var/mob/living/carbon/alien/layer = owner
-		var/turf/site = layer.loc
-		if(!IsAvailable() || !check_for_duplicate())
-			return FALSE
-		layer.visible_message(span_alertalien("[layer] приседает, готовясь отложить яйцо."))
-		animate(layer, pixel_z = -3, time = 0.25 SECONDS, flags = ANIMATION_PARALLEL|ANIMATION_RELATIVE)
-		animate(pixel_z = 3, time = 0.25 SECONDS, flags = ANIMATION_RELATIVE)
-		if(!do_after(layer, 3 SECONDS, target = site))
-			return FALSE
-		if(QDELETED(src) || QDELETED(layer) || owner != layer || layer.loc != site || !IsAvailable() || !check_for_duplicate())
-			return FALSE
 	. = ..()
-	if(.)
-		owner.visible_message(span_alertalien("[owner] откладывает яйцо!"))
-	// BANDASTATION EDIT END
+	owner.visible_message(span_alertalien("[owner] lays an egg!"))
 
 //Button to let queen choose her praetorian.
 /datum/action/cooldown/alien/promote
