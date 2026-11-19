@@ -103,7 +103,10 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 /** Start the one-shot evacuation finale and optionally replace an idle shuttle. */
 /datum/xeno_evacuation/proc/begin_evacuation()
 	var/obj/docking_port/mobile/emergency/shuttle = SSshuttle.emergency
-	if(active || starting || resolved || !shuttle || !(shuttle.mode in list(SHUTTLE_IDLE, SHUTTLE_RECALL, SHUTTLE_CALL, SHUTTLE_DOCKED)))
+	if(active || starting || resolved || !shuttle)
+		return FALSE
+	var/held_by_hive = shuttle.mode == SHUTTLE_STRANDED && GLOB.xeno_hive?.core_blockade_registered
+	if(!held_by_hive && !(shuttle.mode in list(SHUTTLE_IDLE, SHUTTLE_RECALL, SHUTTLE_CALL, SHUTTLE_DOCKED)))
 		return FALSE
 	starting = TRUE
 	if(shuttle_template && shuttle.mode == SHUTTLE_IDLE)
@@ -116,6 +119,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 	if(!shuttle || !SSticker.IsRoundInProgress())
 		return FALSE
 	active = TRUE
+	GLOB.xeno_hive?.update_core_blockade()
 	priority_announce("Угроза ксеноморфов вышла из-под контроля. Объявлена последняя эвакуация! После стыковки шаттла удерживайте оборону десять минут. Не подпускайте ксеноморфов к навигационной консоли! На борту действует отряд сопровождения.", "Протокол последнего рубежа", sound = 'sound/announcer/announcement/announce.ogg')
 	if(shuttle.mode == SHUTTLE_IDLE || shuttle.mode == SHUTTLE_RECALL)
 		SSshuttle.call_evac_shuttle("Критический уровень угрозы ксеноморфов. Отменить эвакуацию невозможно.")
@@ -248,6 +252,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 	ert_spawners.Cut()
 
 /obj/docking_port/mobile/emergency/check()
+	GLOB.xeno_hive?.update_core_blockade()
 	GLOB.xeno_evacuation?.update_shuttle(src)
 	. = ..()
 	GLOB.xeno_evacuation?.update_shuttle(src)

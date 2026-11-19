@@ -22,6 +22,7 @@
 	if(!is_installed() || hive.core)
 		return INITIALIZE_HINT_QDEL
 	hive.core = src
+	hive.core_arrived()
 	RegisterSignal(src, COMSIG_MOVABLE_MOVED, PROC_REF(core_moved))
 	START_PROCESSING(SSobj, src)
 
@@ -33,6 +34,7 @@
 	if(GLOB.xeno_hive?.core == src)
 		GLOB.xeno_hive.core = null
 		GLOB.xeno_hive.brood_points = 0
+		GLOB.xeno_hive.core_removed()
 	return ..()
 
 /obj/structure/xeno_hive_core/proc/core_moved()
@@ -324,3 +326,85 @@
 	if(brood_type_available(/mob/living/carbon/alien/brood/baneling))
 		options["Банелинг"] = /mob/living/carbon/alien/brood/baneling
 	return options
+
+/datum/xeno_hive
+	/// The one physical core may be installed or carried.
+	var/obj/item/packed_xeno_hive_core/packed_core
+	var/core_announcement_timer
+	var/core_revealed = FALSE
+	var/core_blockade_registered = FALSE
+
+/datum/xeno_hive/proc/can_unfold_core(mob/living/carbon/alien/adult/banda/queen/queen)
+	if(QDELETED(packed_core))
+		return TRUE
+	return queen.is_holding(packed_core) || (isturf(packed_core.loc) && queen.Adjacent(packed_core))
+
+/datum/xeno_hive/proc/core_arrived()
+	if(!core_revealed && !core_announcement_timer)
+		core_announcement_timer = addtimer(CALLBACK(src, PROC_REF(reveal_core)), 10 MINUTES, TIMER_STOPPABLE)
+	update_core_blockade()
+
+/datum/xeno_hive/proc/core_removed()
+	if(!QDELETED(core) || !QDELETED(packed_core))
+		return
+	if(core_announcement_timer)
+		deltimer(core_announcement_timer)
+		core_announcement_timer = null
+	core_revealed = FALSE
+	update_core_blockade()
+
+/datum/xeno_hive/proc/reveal_core()
+	core_announcement_timer = null
+	var/atom/current_core = QDELETED(core) ? packed_core : core
+	if(QDELETED(current_core) || !get_turf(current_core))
+		return
+	core_revealed = TRUE
+	priority_announce("Обнаружено ядро выводка. Последний сигнал: [get_area_name(current_core)]. Ядро может задержать обычную эвакуацию.", "Биологическая угроза")
+
+/datum/xeno_hive/proc/update_core_blockade()
+	if(QDELETED(SSshuttle?.emergency))
+		if(core_blockade_registered && SSshuttle)
+			SSshuttle.hostile_environments -= src
+		core_blockade_registered = FALSE
+		return
+	var/atom/current_core = QDELETED(core) ? packed_core : core
+	var/turf/core_location = get_turf(current_core)
+	var/should_block = !QDELETED(src) && !GLOB.xeno_evacuation?.active && core_location && is_station_level(core_location.z) && !isspaceturf(core_location)
+	if(should_block == core_blockade_registered)
+		return
+	core_blockade_registered = should_block
+	if(should_block)
+		SSshuttle.registerHostileEnvironment(src)
+	else
+		SSshuttle.clearHostileEnvironment(src)
+
+/obj/item/packed_xeno_hive_core
+	name = "свёрнутое ядро выводка"
+	desc = "Сжатый маточный мешок. Королева может снова развернуть его на траве."
+	icon = 'icons/mob/nonhuman-player/alien.dmi'
+	icon_state = "egg"
+	color = "#9e86b6"
+	w_class = WEIGHT_CLASS_NORMAL
+	uses_integrity = TRUE
+	max_integrity = 250
+
+/obj/item/packed_xeno_hive_core/Destroy()
+	if(GLOB.xeno_hive?.packed_core == src)
+		GLOB.xeno_hive.packed_core = null
+		GLOB.xeno_hive.core_removed()
+	return ..()
+
+/// Welding lets crew attack the objective without a weapon.
+/proc/sear_xeno_structure(obj/target, mob/living/user, obj/item/tool, damage)
+	if(!target.CheckReachableAdjacency(user, 1) || !tool.tool_start_check(user, amount = 1) || !tool.use_tool(target, user, 2 SECONDS, amount = 1, volume = 50))
+		return ITEM_INTERACT_BLOCKING
+	if(QDELETED(target) || QDELETED(user) || QDELETED(tool) || user.incapacitated || !target.CheckReachableAdjacency(user, 1) || !user.is_holding(tool))
+		return ITEM_INTERACT_BLOCKING
+	target.take_damage(damage, BURN, FIRE)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/xeno_hive_core/welder_act(mob/living/user, obj/item/tool)
+	return sear_xeno_structure(src, user, tool, 20)
+
+/obj/item/packed_xeno_hive_core/welder_act(mob/living/user, obj/item/tool)
+	return sear_xeno_structure(src, user, tool, 20)

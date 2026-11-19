@@ -30,6 +30,7 @@ type Data = {
   broodPlaces: number;
   broodBlocked: boolean;
   core: boolean;
+  packedCore: boolean;
   busy: boolean;
   canPlace: boolean;
   canPack: boolean;
@@ -100,7 +101,9 @@ export function XenoHiveEvolution() {
                 <Box className="Hive-coreStatus">
                   {data.core
                     ? 'Ядро улья установлено'
-                    : 'Ядро улья отсутствует'}
+                    : data.packedCore
+                      ? 'Ядро улья свёрнуто'
+                      : 'Ядро улья отсутствует'}
                 </Box>
                 <Button
                   icon="seedling"
@@ -113,7 +116,7 @@ export function XenoHiveEvolution() {
                   icon="arrows-up-down-left-right"
                   disabled={!data.canPack}
                   onClick={() => act('pack_core')}
-                  tooltip="При установке нового ядра свободные места в яйцах и дробные очки выводка пропадут. Новое ядро можно разместить на траве."
+                  tooltip="Свёрнутое ядро можно перенести и развернуть на траве. Свободные места в яйцах и накопленные очки выводка пропадут."
                 >
                   Свернуть
                 </Button>

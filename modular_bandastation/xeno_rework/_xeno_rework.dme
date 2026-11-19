@@ -10,6 +10,7 @@
 #include "code/hive_territory.dm"
 #include "code/cocoons.dm"
 #include "code/hive_core.dm"
+#include "code/hive_tunnels.dm"
 #include "code/hivemind/anchor.dm"
 #include "code/hivemind/mob.dm"
 #include "code/hivemind/actions.dm"

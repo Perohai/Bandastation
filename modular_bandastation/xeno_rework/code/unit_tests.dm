@@ -588,12 +588,30 @@
 	shuttle.calculate_docking_port_information()
 	shuttle.register()
 	var/list/defense_areas = shuttle.shuttle_areas
-	shuttle.mode = SHUTTLE_DOCKED
+	var/datum/xeno_hive/hive = allocate(/datum/xeno_hive)
+	var/datum/xeno_hive/previous_hive = GLOB.xeno_hive
+	var/datum/xeno_evacuation/previous_event = GLOB.xeno_evacuation
+	var/obj/item/packed_xeno_hive_core/live_core = allocate(/obj/item/packed_xeno_hive_core)
+	hive.packed_core = live_core
+	GLOB.xeno_hive = hive
+	GLOB.xeno_evacuation = event
+	var/test_z = live_core.z
+	is_station_level(test_z) // Populate the cache before saving its entry.
+	var/previous_station_eligibility = GLOB.station_levels_cache[test_z]
+	GLOB.station_levels_cache[test_z] = TRUE
+	shuttle.mode = SHUTTLE_IGNITING
+	hive.update_core_blockade()
+	var/stranded_by_core = shuttle.mode == SHUTTLE_STRANDED && (hive in SSshuttle.hostile_environments)
 	var/old_round_state = SSticker.current_state
 	SSticker.current_state = GAME_STATE_PLAYING
 	var/started_without_population = event.begin_evacuation()
 	var/repeated_start_blocked = !event.begin_evacuation()
+	hive.update_core_blockade()
+	var/released_with_live_core = shuttle.mode == SHUTTLE_DOCKED && !(hive in SSshuttle.hostile_environments) && !QDELETED(live_core)
 	SSticker.current_state = old_round_state
+	GLOB.station_levels_cache[test_z] = previous_station_eligibility
+	GLOB.xeno_evacuation = previous_event
+	GLOB.xeno_hive = previous_hive
 	event.defense_deadline = world.time + 5 SECONDS
 	event.update_shuttle(shuttle)
 	var/held_ignition = shuttle.timeLeft(1) > ENGINE_START_TIME
@@ -637,6 +655,8 @@
 	event.clear_spawners()
 	SSshuttle.emergency = original_shuttle
 	qdel(shuttle, force = TRUE)
+	TEST_ASSERT(stranded_by_core, "A living folded core did not delay ordinary departure")
+	TEST_ASSERT(released_with_live_core, "The finale did not release the stranded shuttle with a living core")
 	TEST_ASSERT(started_without_population, "The test entry point could not start the finale without a populated hive")
 	TEST_ASSERT(repeated_start_blocked, "Repeated activation started the finale twice")
 	TEST_ASSERT_EQUAL(default_duration, 30 SECONDS, "A hack stage must take thirty seconds")
