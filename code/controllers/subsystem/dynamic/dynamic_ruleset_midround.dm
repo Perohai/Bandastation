@@ -488,10 +488,12 @@
 
 /datum/dynamic_ruleset/midround/from_ghosts/xenomorph/execute()
 	. = ..()
-	addtimer(CALLBACK(src, PROC_REF(announce_xenos)), rand(375, 600) SECONDS)
+	// warn fifteen minutes after spawning the event larvae.
+	addtimer(CALLBACK(src, PROC_REF(announce_xenos)), 15 MINUTES)
 
 /datum/dynamic_ruleset/midround/from_ghosts/xenomorph/proc/announce_xenos()
-	priority_announce("На борту [station_name()] обнаружены неопознанные формы жизни. Перекройте все внешние шлюзы, включая трубы и вентиляции.", "Неопознанные формы жизни", ANNOUNCER_ALIENS)
+	// report the threat without its location.
+	priority_announce("На станции обнаружена биологическая угроза.", "Биологическая угроза", ANNOUNCER_ALIENS)
 
 /datum/dynamic_ruleset/midround/from_ghosts/xenomorph/false_alarm()
 	announce_xenos()

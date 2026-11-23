@@ -1,0 +1,58 @@
+BandaStation artwork
+-------------------
+Original module assets were made for BandaStation with OpenAI image generation
+and local sprite packing or pixel edits. License: CC BY-SA 3.0.
+https://creativecommons.org/licenses/by-sa/3.0/
+
+  resin_fruits.dmi, fruit_inhands.dmi, new_actions.dmi, combat_actions.dmi,
+  xeno_effects.dmi, hive_actions.dmi, brood_actions.dmi, support_actions.dmi,
+  biomass_generator.dmi, hive_fortifications.dmi,
+  brood/{hive_core,brood_core}.dmi and rally_track.dmi.
+
+The generator concept used a StarCraft Extractor design reference (Blizzard
+Entertainment). The final atlas was made for this module.
+The beetle, mantis and scorpion atlases use TGMC references listed below and
+retain the donor artwork restrictions.
+
+big_xenos.dmi, xeno_actions.dmi and resin_door.dmi come from BandaStation PR
+#1969 by Perohai (Artfish). Original modpack credits: Artfish, Paxilmaniac.
+The resin door was moved with its pixels intact.
+https://github.com/ss220club/BandaStation/pull/1969
+
+TGMC artwork
+------------
+Author: TerraGov Marine Corps contributors. Original restrictions, including
+applicable CC BY-NC and CC BY-NC-SA terms and per-asset exceptions, apply to
+source files and derivatives. The upstream README links 4.0; the bundled
+upstream license texts are labelled 3.0 and are retained with the inputs.
+https://github.com/tgstation/TerraGov-Marine-Corps#licensing
+
+  Final castes and actions: icons/Xeno/castes and icons/Xeno/actions at
+  df1917855472062520be96d592f88e3973efefbe. Local *_castes.dmi and *_actions.dmi
+  retain original pixels. *_adapted.dmi uses renamed states, resized or padded
+  frames and selected poses.
+  https://github.com/tgstation/TerraGov-Marine-Corps/tree/df1917855472062520be96d592f88e3973efefbe/icons/Xeno
+
+  Brood and Carrier: icons/Xeno/castes/{beetle,mantis,scorpion,baneling,carrier}.dmi
+  at 94bbe4ce7716cebedda1d0c36968c07eda62ad01. Originals and hashes are in
+  tgmc/minions_source/. brood/baneling.dmi crops and scales native frames.
+  tgmc/carrier_adapted.dmi renames states and preserves clinger overlays.
+  https://github.com/tgstation/TerraGov-Marine-Corps/tree/94bbe4ce7716cebedda1d0c36968c07eda62ad01/icons/Xeno/castes
+
+  Hivemind: icons/Xeno/castes/hivemind.dmi and icons/Xeno/actions/hivemind.dmi at
+  2b7bb78c00425676035d3fdaabc598d3ce112534. Originals, hashes and license texts
+  are in tgmc/hivemind_source/. The related DM logic is adapted under AGPL-3.0.
+  https://github.com/tgstation/TerraGov-Marine-Corps/tree/2b7bb78c00425676035d3fdaabc598d3ce112534
+
+  Folding barricade: icons/Marine/barricades.dmi. Archive revision unknown.
+  The byte-identical source and its SHA-256 are in fortifications/source/.
+  The gameplay atlas retains the original folding_0 through folding_3 frames.
+  https://github.com/tgstation/TerraGov-Marine-Corps
+
+TGstation artwork
+-----------------
+rally_pointer.dmi adapts a frame from icons/effects/vent_indicator.dmi,
+blob 783320d72f05f3d384723ddf19f16962b6aed19c, by TGstation contributors.
+The glyph was centered, scaled and rotated into eight directions.
+License: CC BY-SA 3.0.
+https://github.com/tgstation/tgstation

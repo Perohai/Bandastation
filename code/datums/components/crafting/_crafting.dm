@@ -335,6 +335,11 @@
 
 ///This proc performs all the necessary conditional control statement to ensure that the object is allowed to be crafted by the crafter.
 /datum/component/personal_crafting/proc/perform_all_checks(atom/crafter, datum/crafting_recipe/recipe, list/contents, check_tools_last = FALSE)
+	// learned recipes must be enforced before and after personal crafting, not only hidden by TGUI.
+	if(ismob(crafter) && (recipe.crafting_flags & CRAFT_MUST_BE_LEARNED) && !(ignored_flags & CRAFT_MUST_BE_LEARNED))
+		var/mob/user = crafter
+		if(!user.mind?.has_crafting_recipe(recipe.type))
+			return ", recipe not learned."
 	if(!check_contents(crafter, recipe, contents))
 		return ", missing component."
 

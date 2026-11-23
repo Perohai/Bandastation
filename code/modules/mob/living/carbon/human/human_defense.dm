@@ -194,6 +194,10 @@
 	if(!.)
 		return
 
+	// reworked attacks share the native validation, not its damage.
+	if(istype(user, /mob/living/carbon/alien/adult/banda))
+		return attack_banda_alien(user, modifiers)
+
 	if(LAZYACCESS(modifiers, RIGHT_CLICK)) //Always drop item in hand if there is one. If there's no item, shove the target. If the target is incapacitated, slam them into the ground to stun them.
 		var/obj/item/I = get_active_held_item()
 		if(I && dropItemToGround(I))

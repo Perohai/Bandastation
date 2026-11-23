@@ -67,7 +67,9 @@ GLOBAL_LIST_INIT(strippable_alien_humanoid_items, create_strippable_list(list(
 	for(var/mob/living/carbon/alien/alien in GLOB.carbon_list)
 		if(alien == ignored)
 			continue
-		if(!istype(alien, alien_path))
+		// include the reworked queen in existing queen/royal queries without a second scan.
+		var/is_reworked_queen = (alien_path == /mob/living/carbon/alien/adult/royal/queen || alien_path == /mob/living/carbon/alien/adult/royal) && istype(alien, /mob/living/carbon/alien/adult/banda/queen)
+		if(!istype(alien, alien_path) && !is_reworked_queen)
 			continue
 		if(!alien.key || alien.stat == DEAD) //Only living aliens with a ckey are valid.
 			continue

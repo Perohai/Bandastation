@@ -77,7 +77,12 @@
 			if(HAS_TRAIT(owner, TRAIT_IMMUNODEFICIENCY) && !HAS_TRAIT(owner, TRAIT_VIRUS_RESISTANCE))
 				slowdown *= 0.5 //terrible immune system = doubled parasite growth
 
-		addtimer(CALLBACK(src, PROC_REF(advance_embryo_stage)), growth_time*slowdown)
+		var/stage_delay = growth_time * slowdown
+		// offer the larva role before the last stage finishes.
+		if(stage == 5 && owner?.GetComponent(/datum/component/xeno_biomass_body))
+			var/poll_lead = min(15 SECONDS, stage_delay)
+			addtimer(CALLBACK(src, PROC_REF(poll_hive_larva), poll_lead), stage_delay - poll_lead)
+		addtimer(CALLBACK(src, PROC_REF(advance_embryo_stage)), stage_delay)
 
 /obj/item/organ/body_egg/alien_embryo/egg_process()
 	if(stage == 6 && prob(50))
@@ -89,6 +94,11 @@
 	if(QDELETED(owner) || bursting)
 		return
 
+	// use the ghost role preferences for hive larvae.
+	if(owner.GetComponent(/datum/component/xeno_biomass_body))
+		if(stage >= 6)
+			poll_hive_larva(15 SECONDS)
+		return
 	bursting = TRUE
 	var/mob/chosen_one = SSpolling.poll_ghosts_for_target(
 		question = "An [span_notice("alien")] is bursting out of [span_danger(owner.real_name)]!",
@@ -107,8 +117,11 @@
 /obj/item/organ/body_egg/alien_embryo/proc/on_poll_concluded(gib_on_success, mob/dead/observer/ghost)
 	if(QDELETED(owner))
 		return
+	// xeno_rework preserves prey bodies after birth.
+	if(banda_birth(ghost))
+		return
 
-	if(isnull(ghost))
+	if(!can_claim_hive_larva(ghost)) // BANDASTATION EDIT - never move a client already playing another body.
 		bursting = FALSE
 		stage = 5 // If no ghosts sign up for the Larva, let's regress our growth by one minute, we will try again!
 		addtimer(CALLBACK(src, PROC_REF(advance_embryo_stage)), growth_time)
