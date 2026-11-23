@@ -1,7 +1,13 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Icon } from 'tgui-core/components';
 import { addScrollableNode, removeScrollableNode } from 'tgui-core/events';
-import { layoutTree, nodeHeight, nodeWidth, type Upgrade } from './layoutTree';
+import {
+  layoutTree,
+  nodeHeight,
+  nodeWidth,
+  type Upgrade,
+  type UpgradeDefinition,
+} from './layoutTree';
 
 export function isComplete(node: Upgrade) {
   return node.maxLevel !== null && node.level >= node.maxLevel;
@@ -9,7 +15,8 @@ export function isComplete(node: Upgrade) {
 
 type Props = {
   category: string;
-  upgrades: Upgrade[];
+  definitions: UpgradeDefinition[];
+  upgradesById: Map<string, Upgrade>;
   selectedId?: string;
   targetId: string | null;
   onSelect: (upgrade: Upgrade) => void;
@@ -17,7 +24,8 @@ type Props = {
 
 export function HiveTree({
   category,
-  upgrades,
+  definitions,
+  upgradesById,
   selectedId,
   targetId,
   onSelect,
@@ -27,10 +35,9 @@ export function HiveTree({
   const [zoom, setZoom] = useState<number | 'fit' | null>(null);
   const zoomAnchor = useRef<{ x: number; y: number } | null>(null);
   const lastTarget = useRef<string | null>(null);
-  const { nodes, links, width, height } = layoutTree(
-    upgrades,
-    category,
-    size.width,
+  const { nodes, links, width, height } = useMemo(
+    () => layoutTree(definitions, category, size.width),
+    [definitions, category, size.width],
   );
   const widthScale = Math.min(1, size.width / (width || 1)) || 1;
   const fit = Math.min(widthScale, size.height / height) || widthScale;
@@ -122,63 +129,75 @@ export function HiveTree({
               className="Hive-links"
               aria-hidden="true"
             >
-              {[...links]
+              {links
+                .map((link) => ({
+                  ...link,
+                  owned: (upgradesById.get(link.sourceId)?.level ?? 0) > 0,
+                }))
                 .sort((a, b) => Number(a.owned) - Number(b.owned))
                 .map(({ path, key, owned }) => (
                   <path key={key} d={path} data-owned={owned} />
                 ))}
             </svg>
-            {nodes.map(({ upgrade, external, terminal, x, y }) => (
-              <button
-                type="button"
-                aria-pressed={external ? undefined : selectedId === upgrade.id}
-                className="Hive-node"
-                data-terminal={terminal}
-                data-external={external}
-                style={{
-                  left: x - (terminal ? 4 : 0),
-                  top: y,
-                  width: nodeWidth + (terminal ? 8 : 0),
-                  height: nodeHeight + (terminal ? 6 : 0),
-                }}
-                key={upgrade.id}
-                onClick={() => onSelect(upgrade)}
-              >
-                <Icon
-                  name={upgrade.icon}
-                  className="Hive-nodeIcon"
-                  aria-hidden="true"
-                />
-                <span className="Hive-nodeText">
-                  <strong>
-                    {upgrade.name}
-                    {external && ' ↗'}
-                  </strong>
-                  {external ? (
-                    <span>{upgrade.category}</span>
-                  ) : isComplete(upgrade) ? (
-                    <span className="Hive-owned">
-                      <Icon name="check" /> Изучено
-                    </span>
-                  ) : (
-                    <span
-                      className={upgrade.available ? 'Hive-price' : undefined}
-                    >
-                      {!upgrade.available && (
-                        <Icon name="lock" aria-label="Недоступно" />
-                      )}{' '}
-                      {upgrade.cost} биомассы
-                    </span>
-                  )}
-                  {!external && upgrade.maxLevel !== 1 && (
-                    <span>
-                      Куплено: {upgrade.level}
-                      {upgrade.maxLevel !== null && ` / ${upgrade.maxLevel}`}
-                    </span>
-                  )}
-                </span>
-              </button>
-            ))}
+            {nodes.map(({ upgrade: definition, external, terminal, x, y }) => {
+              const upgrade = upgradesById.get(definition.id);
+              if (!upgrade) {
+                return null;
+              }
+              return (
+                <button
+                  type="button"
+                  aria-pressed={
+                    external ? undefined : selectedId === upgrade.id
+                  }
+                  className="Hive-node"
+                  data-terminal={terminal}
+                  data-external={external}
+                  style={{
+                    left: x - (terminal ? 4 : 0),
+                    top: y,
+                    width: nodeWidth + (terminal ? 8 : 0),
+                    height: nodeHeight + (terminal ? 6 : 0),
+                  }}
+                  key={upgrade.id}
+                  onClick={() => onSelect(upgrade)}
+                >
+                  <Icon
+                    name={upgrade.icon}
+                    className="Hive-nodeIcon"
+                    aria-hidden="true"
+                  />
+                  <span className="Hive-nodeText">
+                    <strong>
+                      {upgrade.name}
+                      {external && ' ↗'}
+                    </strong>
+                    {external ? (
+                      <span>{upgrade.category}</span>
+                    ) : isComplete(upgrade) ? (
+                      <span className="Hive-owned">
+                        <Icon name="check" /> Изучено
+                      </span>
+                    ) : (
+                      <span
+                        className={upgrade.available ? 'Hive-price' : undefined}
+                      >
+                        {!upgrade.available && (
+                          <Icon name="lock" aria-label="Недоступно" />
+                        )}{' '}
+                        {upgrade.cost} биомассы
+                      </span>
+                    )}
+                    {!external && upgrade.maxLevel !== 1 && (
+                      <span>
+                        Куплено: {upgrade.level}
+                        {upgrade.maxLevel !== null && ` / ${upgrade.maxLevel}`}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

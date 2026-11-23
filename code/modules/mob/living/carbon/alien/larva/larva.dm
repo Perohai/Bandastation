@@ -45,7 +45,11 @@
 		/datum/action/cooldown/alien/larva_evolve,
 	)
 	grant_actions_by_list(innate_actions)
-	return ..()
+	// BANDASTATION EDIT START
+	. = ..()
+	if(. != INITIALIZE_HINT_QDEL)
+		get_xeno_hive().add_roster_member(src)
+	// BANDASTATION EDIT END
 
 /mob/living/carbon/alien/larva/Login()
 	. = ..()

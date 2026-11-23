@@ -9,7 +9,7 @@
 /datum/action/cooldown/alien/hivemind/form
 	name = "Воплотиться / вернуться в дух"
 	desc = "Позволяет за секунду обрести физическую оболочку или вернуться в форму духа. Для воплощения необходимо полное здоровье. Дух может двигаться только по траве; физическая оболочка уязвима."
-	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hivemind_source/actions.dmi'
+	button_icon = 'modular_bandastation/xeno_rework/icons/actions/tgmc/hivemind.dmi'
 	button_icon_state = "manifest"
 	/// Native do_after keeps the transition cancellable and visibly timed.
 	var/form_time = 1 SECONDS
@@ -43,7 +43,7 @@
 /datum/action/cooldown/alien/hivemind/return_core
 	name = "Вернуться к узлу"
 	desc = "Дух мгновенно возвращается к своему узлу. В физической оболочке способность недоступна."
-	button_icon = 'modular_bandastation/xeno_rework/icons/tgmc/hivemind_source/actions.dmi'
+	button_icon = 'modular_bandastation/xeno_rework/icons/actions/tgmc/hivemind.dmi'
 	button_icon_state = "lay_hivemind"
 	cooldown_time = 5 SECONDS
 
@@ -146,7 +146,7 @@
 	parent_type = /datum/action/cooldown/alien/hivemind/support
 	name = "Смоляной бальзам"
 	desc = "Восстанавливает союзнику в пределах трёх клеток до 30 единиц урона от ушибов, затем — от ожогов. Подготовка занимает секунду, стоимость — 150 плазмы."
-	button_icon = 'modular_bandastation/xeno_rework/icons/new_actions.dmi'
+	button_icon = 'modular_bandastation/xeno_rework/icons/actions/hive_abilities.dmi'
 	button_icon_state = "grow_fruit"
 	plasma_cost = 150
 	cooldown_time = 5 SECONDS
@@ -204,7 +204,7 @@
 /datum/action/cooldown/alien/hivemind/pheromones
 	name = "Восстановительные феромоны"
 	desc = "Общая адаптация улья: восстанавливает союзникам в пределах пяти клеток по 5 единиц урона от ушибов и ожогов."
-	button_icon = 'modular_bandastation/xeno_rework/icons/hive_actions.dmi'
+	button_icon = 'modular_bandastation/xeno_rework/icons/actions/hive_abilities.dmi'
 	button_icon_state = "pheromones"
 	requires_body = TRUE
 	plasma_cost = 100
@@ -223,7 +223,7 @@
 /datum/action/cooldown/alien/hivemind/rally
 	name = "Созвать улей"
 	desc = "Назначить свою точку сбора на видимой клетке. После покупки связи охотников её можно выбрать в составе улья."
-	button_icon = 'modular_bandastation/xeno_rework/icons/brood_actions.dmi'
+	button_icon = 'modular_bandastation/xeno_rework/icons/actions/hive_abilities.dmi'
 	button_icon_state = "rally"
 	click_to_activate = TRUE
 	cooldown_time = 15 SECONDS

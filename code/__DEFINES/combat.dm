@@ -146,8 +146,6 @@ DEFINE_BITFIELD(status_flags, list(
 #define LEAP_ATTACK 5
 /// We're being attacked with an oversized object, perhaps a road roller. Not that anyone use such a thing as a waepon. So only relevant for certain mech based attacks.
 #define OVERWHELMING_ATTACK 6
-// reworked pounces and acid waves can be deflected by held shields.
-#define XENO_DEFLECTABLE_ATTACK 7
 
 /// Used in check block to get what mob is attacking the blocker.
 #define GET_ASSAILANT(weapon) (get(weapon, /mob/living))

@@ -4,7 +4,8 @@
 /datum/component/ghost_direct_control
 	/// Message to display upon successful possession
 	var/assumed_control_message
-	/// Type of ban you can get to prevent you from accepting this role
+	// BANDASTATION EDIT
+	/// Ban category or list of categories that prevent accepting this role
 	var/ban_type
 	/// Any extra checks which need to run before we take over
 	var/datum/callback/extra_control_checks
@@ -126,7 +127,7 @@
 	if (QDELETED(src))
 		to_chat(harbinger, span_warning("Offer to possess creature has expired!"))
 		return
-	if (is_banned_from(harbinger.ckey, list(ban_type)))
+	if (is_banned_from(harbinger.ckey, islist(ban_type) ? ban_type : list(ban_type))) // BANDASTATION EDIT
 		to_chat(harbinger, span_warning("You are banned from playing as this role!"))
 		return
 	if (!(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER))

@@ -109,6 +109,7 @@
 #include "vampire/_vampire.dme"
 #include "weapon/_weapon.dme"
 #include "world_topics/_world_topics.dme"
+// BANDASTATION EDIT
 #include "xeno_rework/_xeno_rework.dme"
 // --- MODULES END --- //
 

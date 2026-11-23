@@ -286,9 +286,10 @@ SUBSYSTEM_DEF(polling)
 /datum/controller/subsystem/polling/proc/is_eligible(mob/potential_candidate, role, check_jobban, the_ignore_category)
 	if(isnull(potential_candidate.key) || isnull(potential_candidate.client))
 		return FALSE
-	// only free observers can sign up for hive larvae.
+	// BANDASTATION EDIT START
 	if(the_ignore_category == POLL_IGNORE_ALIEN_LARVA && !can_claim_hive_larva(potential_candidate))
 		return FALSE
+	// BANDASTATION EDIT END
 	if(the_ignore_category)
 		if(potential_candidate.ckey in GLOB.poll_ignore[the_ignore_category])
 			return FALSE

@@ -488,12 +488,10 @@
 
 /datum/dynamic_ruleset/midround/from_ghosts/xenomorph/execute()
 	. = ..()
-	// warn fifteen minutes after spawning the event larvae.
-	addtimer(CALLBACK(src, PROC_REF(announce_xenos)), 15 MINUTES)
+	addtimer(CALLBACK(src, PROC_REF(announce_xenos)), 15 MINUTES) // BANDASTATION EDIT
 
 /datum/dynamic_ruleset/midround/from_ghosts/xenomorph/proc/announce_xenos()
-	// report the threat without its location.
-	priority_announce("На станции обнаружена биологическая угроза.", "Биологическая угроза", ANNOUNCER_ALIENS)
+	priority_announce("На станции обнаружена биологическая угроза.", "Биологическая угроза", ANNOUNCER_ALIENS) // BANDASTATION EDIT
 
 /datum/dynamic_ruleset/midround/from_ghosts/xenomorph/false_alarm()
 	announce_xenos()

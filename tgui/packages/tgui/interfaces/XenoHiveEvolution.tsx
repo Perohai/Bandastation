@@ -13,7 +13,11 @@ import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
 import { HiveTree, isComplete } from './XenoHiveEvolution/HiveTree';
-import type { Upgrade } from './XenoHiveEvolution/layoutTree';
+import type {
+  Upgrade,
+  UpgradeDefinition,
+  UpgradeState,
+} from './XenoHiveEvolution/layoutTree';
 
 type Data = {
   biomass: number;
@@ -34,8 +38,11 @@ type Data = {
   busy: boolean;
   canPlace: boolean;
   canPack: boolean;
-  nodes: Upgrade[];
+  nodes: UpgradeDefinition[];
+  nodeState: Record<string, UpgradeState>;
 };
+
+const emptyDefinitions: UpgradeDefinition[] = [];
 
 const categories = [
   { name: 'Эволюция', icon: 'dna' },
@@ -49,12 +56,17 @@ export function XenoHiveEvolution() {
   const [category, setCategory] = useState(categories[0].name);
   const [selectedId, setSelectedId] = useState<string>();
   const [targetId, setTargetId] = useState<string | null>(null);
-  const byId = new Map(data.nodes.map((node) => [node.id, node]));
+  const definitions = data.nodes ?? emptyDefinitions;
+  const upgrades = definitions.map((node) => ({
+    ...node,
+    ...(data.nodeState?.[node.id] ?? { cost: 0, level: 0, available: false }),
+  }));
+  const byId = new Map(upgrades.map((node) => [node.id, node]));
   const current = selectedId ? byId.get(selectedId) : undefined;
   const selected =
     current?.category === category
       ? current
-      : data.nodes.find((node) => node.category === category);
+      : upgrades.find((node) => node.category === category);
 
   function selectNode(node: Upgrade) {
     setSelectedId(node.id);
@@ -126,12 +138,14 @@ export function XenoHiveEvolution() {
           {data.core && data.crew === 0 && (
             <NoticeBox>
               Доход выводка остановлен: среди живого экипажа нет существ,
-              учитываемых экономикой улья. Призраки и ксеноморфы на рост не влияют.
+              учитываемых экономикой улья. Призраки и ксеноморфы на рост не
+              влияют.
             </NoticeBox>
           )}
           {data.broodBlocked && (
             <NoticeBox>
-              Рядом с ядром не осталось места для яиц. Накопленные очки сохранятся.
+              Рядом с ядром не осталось места для яиц. Накопленные очки
+              сохранятся.
             </NoticeBox>
           )}
           <Tabs fluid>
@@ -153,7 +167,8 @@ export function XenoHiveEvolution() {
             <HiveTree
               key={category}
               category={category}
-              upgrades={data.nodes}
+              definitions={definitions}
+              upgradesById={byId}
               selectedId={selected?.id}
               targetId={targetId}
               onSelect={selectNode}
@@ -196,7 +211,9 @@ export function XenoHiveEvolution() {
                     </div>
                   )}
                   {selected.id === 'larva' && !data.core && (
-                    <NoticeBox>Для создания яйца нужно установить ядро улья.</NoticeBox>
+                    <NoticeBox>
+                      Для создания яйца нужно установить ядро улья.
+                    </NoticeBox>
                   )}
                 </div>
                 <div className="Hive-detailActions">
@@ -221,7 +238,8 @@ export function XenoHiveEvolution() {
             {data.busy ? 'Королева уже развивает улей. ' : ''}
             Изучение адаптации занимает 5 секунд. Движение, получение урона или
             потеря сознания прервут процесс. Биомасса списывается только после
-            завершения. Можно развивать несколько ветвей, но сбросить улучшения нельзя.
+            завершения. Можно развивать несколько ветвей, но сбросить улучшения
+            нельзя.
           </NoticeBox>
         </div>
       </Window.Content>

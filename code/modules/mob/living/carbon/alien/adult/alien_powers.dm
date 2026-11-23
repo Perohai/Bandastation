@@ -27,10 +27,11 @@ Doesn't work on other aliens/AI.*/
 	. = ..()
 	if(!.)
 		return FALSE
-	// reworked xenos must stand up before powers; Rest remains available.
+	// BANDASTATION EDIT START
 	var/mob/living/carbon/carbon_owner = owner
 	if((istype(owner, /mob/living/carbon/alien/adult/banda) || istype(owner, /mob/living/carbon/alien/brood)) && carbon_owner.resting && !istype(src, /datum/action/cooldown/alien/banda/sleepytime))
 		return FALSE
+	// BANDASTATION EDIT END
 	if(!iscarbon(owner))
 		return FALSE
 	if(carbon_owner.getPlasma() < plasma_cost)
@@ -123,8 +124,7 @@ Doesn't work on other aliens/AI.*/
 	plasma_cost = 10
 
 /datum/action/cooldown/alien/whisper/Activate(atom/target)
-	// preserve the actor across both asynchronous inputs.
-	var/mob/whisperer = owner
+	var/mob/whisperer = owner // BANDASTATION EDIT
 	var/list/possible_recipients = list()
 	for(var/mob/living/recipient in oview(owner))
 		possible_recipients += recipient
@@ -134,13 +134,11 @@ Doesn't work on other aliens/AI.*/
 		return FALSE
 
 	var/mob/living/chosen_recipient = tgui_input_list(owner, "Select whisper recipient", "Whisper", sort_names(possible_recipients))
-	// recipients must still be visible after selection.
-	if(QDELETED(src) || QDELETED(whisperer) || owner != whisperer || !IsAvailable() || QDELETED(chosen_recipient) || !(chosen_recipient in possible_recipients) || !(chosen_recipient in oview(7, whisperer)))
+	if(QDELETED(src) || QDELETED(whisperer) || owner != whisperer || !IsAvailable() || QDELETED(chosen_recipient) || !(chosen_recipient in possible_recipients) || !(chosen_recipient in oview(7, whisperer))) // BANDASTATION EDIT
 		return FALSE
 
 	var/to_whisper = tgui_input_text(owner, title = "Alien Whisper", max_length = MAX_MESSAGE_LEN)
-	// movement or possession during text input invalidates the whisper.
-	if(QDELETED(chosen_recipient) || QDELETED(src) || QDELETED(whisperer) || owner != whisperer || !IsAvailable(feedback = TRUE) || !(chosen_recipient in oview(7, whisperer)) || !to_whisper)
+	if(QDELETED(chosen_recipient) || QDELETED(src) || QDELETED(whisperer) || owner != whisperer || !IsAvailable(feedback = TRUE) || !(chosen_recipient in oview(7, whisperer)) || !to_whisper) // BANDASTATION EDIT
 		return FALSE
 	if(chosen_recipient.can_block_magic(MAGIC_RESISTANCE_MIND, charge_cost = 0))
 		to_chat(owner, span_warning("As you reach into [chosen_recipient]'s mind, you are stopped by a mental blockage. It seems you've been foiled."))

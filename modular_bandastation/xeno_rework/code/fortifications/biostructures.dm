@@ -20,7 +20,7 @@
 /obj/structure/alien/acid_mine
 	name = "кислотная мина"
 	desc = "Раздутый мешок кислоты в переплетении смолы."
-	icon = 'modular_bandastation/xeno_rework/icons/hive_fortifications.dmi'
+	icon = 'modular_bandastation/xeno_rework/icons/structures/hive_fortifications.dmi'
 	icon_state = "acid_mine"
 	layer = LOW_OBJ_LAYER
 	anchored = TRUE
@@ -58,7 +58,7 @@
 /obj/structure/alien/acid_turret
 	name = "кислотная турель"
 	desc = "Неподвижная железа, выплёвывающая кислоту во врагов улья."
-	icon = 'modular_bandastation/xeno_rework/icons/hive_fortifications.dmi'
+	icon = 'modular_bandastation/xeno_rework/icons/structures/hive_fortifications.dmi'
 	icon_state = "acid_turret"
 	anchored = TRUE
 	density = TRUE

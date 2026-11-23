@@ -67,9 +67,10 @@
 /datum/candidate_poll/proc/sign_up(mob/candidate, silent = FALSE)
 	if(!istype(candidate) || isnull(candidate.key) || isnull(candidate.client))
 		return FALSE
-	// stale larva offers cannot be accepted from a living body.
+	// BANDASTATION EDIT START
 	if(ignoring_category == POLL_IGNORE_ALIEN_LARVA && !can_claim_hive_larva(candidate))
 		return FALSE
+	// BANDASTATION EDIT END
 	if(candidate in signed_up)
 		if(!silent)
 			to_chat(candidate, span_warning(response_messages[POLL_RESPONSE_ALREADY_SIGNED]))

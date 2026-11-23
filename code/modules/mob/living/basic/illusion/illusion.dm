@@ -72,15 +72,15 @@
 	appearance = original.appearance
 	setDir(original.dir)
 
-	if (!isnull(hp)) // BANDASTATION EDIT - apply supplied illusion values, preserve defaults only for null.
+	if (!isnull(hp)) // BANDASTATION EDIT
 		maxHealth = hp
 		updatehealth() // re-cap health to new value
 
-	if (!isnull(damage)) // BANDASTATION EDIT - honor caller's damage, including zero-damage decoys.
+	if (!isnull(damage)) // BANDASTATION EDIT
 		melee_damage_lower = damage
 		melee_damage_upper = damage
 
-	if (!isnull(replicate)) // BANDASTATION EDIT - honor an explicit replication chance.
+	if (!isnull(replicate)) // BANDASTATION EDIT
 		multiply_chance = replicate
 
 	remove_faction(FACTION_NEUTRAL)

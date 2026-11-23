@@ -54,7 +54,7 @@ export function XenoHiveStatus() {
           }
         >
           {members.length === 0 ? (
-            <Section color="label">Улей пока пуст.</Section>
+            <Section color="label">Других обитателей улья пока нет.</Section>
           ) : (
             <Table>
               <Table.Row header>

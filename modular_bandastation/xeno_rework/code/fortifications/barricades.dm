@@ -2,7 +2,7 @@
 /obj/item/folding_barricade
 	name = "folded field barricade"
 	desc = "Переносная складная баррикада. Используйте предмет в руке, чтобы развернуть баррикаду перед собой. Чтобы сложить установленную баррикаду, нажмите на неё пустой рукой."
-	icon = 'modular_bandastation/xeno_rework/icons/fortifications/barricades.dmi'
+	icon = 'modular_bandastation/xeno_rework/icons/structures/barricades.dmi'
 	icon_state = "folding_3"
 	w_class = WEIGHT_CLASS_BULKY
 	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 4)
@@ -49,7 +49,7 @@
 /obj/structure/railing/folding
 	name = "field barricade"
 	desc = "Складная полевая баррикада. Перекрывает проход между клетками, но позволяет стрелять поверх и перелезать через неё. Ремонтируется сварочным аппаратом. Чтобы сложить, нажмите пустой рукой."
-	icon = 'modular_bandastation/xeno_rework/icons/fortifications/barricades.dmi'
+	icon = 'modular_bandastation/xeno_rework/icons/structures/barricades.dmi'
 	icon_state = "folding_0"
 	max_integrity = 140
 	armor_type = /datum/armor/folding_barricade

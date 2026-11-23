@@ -1,15 +1,20 @@
-export type Upgrade = {
+export type UpgradeDefinition = {
   id: string;
   name: string;
   description: string;
   category: string;
   icon: string;
-  cost: number;
-  level: number;
   maxLevel: number | null;
   requires: string[];
+};
+
+export type UpgradeState = {
+  cost: number;
+  level: number;
   available: boolean;
 };
+
+export type Upgrade = UpgradeDefinition & UpgradeState;
 
 export const nodeWidth = 192;
 export const nodeHeight = 68;
@@ -18,7 +23,7 @@ const rowGap = 58;
 const padding = 20;
 
 type TreeNode = {
-  upgrade: Upgrade;
+  upgrade: UpgradeDefinition;
   external: boolean;
   x: number;
   y: number;
@@ -26,7 +31,7 @@ type TreeNode = {
 };
 
 export function layoutTree(
-  upgrades: Upgrade[],
+  upgrades: UpgradeDefinition[],
   category: string,
   viewportWidth: number,
 ) {
@@ -66,7 +71,7 @@ export function layoutTree(
   }
 
   const nodes: TreeNode[] = [];
-  const links: { path: string; owned: boolean; key: string }[] = [];
+  const links: { path: string; sourceId: string; key: string }[] = [];
   const remaining = new Set(visible.map(({ id }) => id));
   let width = 0;
   let x = padding;
@@ -204,7 +209,7 @@ export function layoutTree(
         path += ` V ${endY - 3} m -4 -5 l 4 5 l 4 -5`;
         links.push({
           path,
-          owned: source.upgrade.level > 0,
+          sourceId: parent,
           key: `${parent}:${id}`,
         });
       }
