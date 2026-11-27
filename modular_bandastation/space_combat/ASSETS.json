@@ -29,23 +29,23 @@
 		},
 		{
 			"path": "modular_bandastation/space_combat/icons/patrol_pod.dmi",
-			"sha256": "1244ce7d92b648865db8051f50b0f075856a224e11349a8ea51b802c45c743c0",
+			"sha256": "bedd14b88beb6d8dae203c3f1f568c075a759fe8879ae8e4a924158502300a1d",
 			"license": "CC-BY-SA-3.0",
 			"authors": [
 				"StationTrauma / BandaStation contributors"
 			],
 			"source": null,
-			"changes": "Original pixel artwork for a two-seat capsule cabin and its separate hatch."
+			"changes": "Original 32x48 pixel artwork for the two-seat capsule, with recessed crash seats, a separate glazed pressure hatch and landing skids. Redrawn on the native pixel grid from a generated concept."
 		},
 		{
 			"path": "modular_bandastation/space_combat/icons/drop_pod_view.dmi",
-			"sha256": "78c6b66f643dfc07bfe0e92f1cd6dd427e5ba72b7f53849b3dfd651ed3e383f5",
+			"sha256": "a97aaacbccbffde9778ffce2381335f7128e3f478c1e7522b172e0fbff6bf64e",
 			"license": "CC-BY-SA-3.0",
 			"authors": [
 				"StationTrauma / BandaStation contributors"
 			],
 			"source": null,
-			"changes": "Original pixel-art pressure window, instruments, star field and braking jets. Two native 16-frame passenger-view loops."
+			"changes": "Passenger view of the patrol capsule's low roof, chamfered hatch glass, release handle and ochre shoulder stripes. Generated interior plate, matched to the exterior palette. Two 16-frame loops animate the star field, instruments and braking reflections."
 		},
 		{
 			"path": "modular_bandastation/space_combat/icons/patrol_ammunition.dmi",
