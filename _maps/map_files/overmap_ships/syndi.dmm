@@ -307,8 +307,8 @@
 	combat_power_managed = 1;
 	dir = 1;
 	preferred_direction = 1;
-	overmap_x = -360;
-	overmap_y = 160
+	overmap_x = -2060;
+	overmap_y = 360
 	},
 /obj/structure/cable,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
