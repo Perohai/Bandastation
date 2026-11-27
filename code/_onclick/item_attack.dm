@@ -200,7 +200,8 @@
 /mob/living/attackby(obj/item/attacking_item, mob/living/user, list/modifiers, list/attack_modifiers)
 	if(..())
 		return TRUE
-	user.changeNext_move(attacking_item.attack_speed)
+	if(!LAZYACCESS(attack_modifiers, AUTONOMOUS_MELEE_STRIKE))
+		user.changeNext_move(attacking_item.attack_speed)
 	return attacking_item.attack(src, user, modifiers, attack_modifiers)
 
 /mob/living/attackby_secondary(obj/item/weapon, mob/living/user, list/modifiers, list/attack_modifiers)

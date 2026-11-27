@@ -191,6 +191,14 @@
 /// Mooniverse's legendary energy sword.
 /obj/item/dualsaber/legendary_saber/dark_star
 	name = "Dark Star"
+	bond_time_multiplier = 2
+	legendary_abilities = list(
+		/datum/action/cooldown/legendary_sword/star_judgment_cut,
+		/datum/action/cooldown/legendary_sword/star_phantom_blades,
+		/datum/action/cooldown/legendary_sword/star_void_slash,
+		/datum/action/cooldown/legendary_sword/star_deep_stinger,
+		/datum/action/cooldown/legendary_sword/star_eclipse_double,
+	)
 	desc = "\"Тёмная Звезда\" - Тёмная звезда - легендарный энергетический меч, цвета ночного неба,  по легенде он был создан из осколков упавшей звезды. Тот кто его носит, обречен на странствия, одиночество и скорбь, ибо звёзды светят лишь в ночи."
 	ckey_whitelist = list("mooniverse")
 	icon_state = "ds_dualsaber0"

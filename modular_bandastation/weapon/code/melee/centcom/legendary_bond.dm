@@ -201,13 +201,16 @@
 	var/required_bond
 	/// Prevents our pre-attack signal from canceling the sequence's own strike.
 	var/performing_strike = FALSE
+	/// Most sequences occupy the wielder's hands until their attacks finish.
+	var/locks_manual_attacks = TRUE
 
 /datum/status_effect/legendary_sword_sequence/on_apply(obj/item/dualsaber/legendary_saber/saber, required_bond)
 	src.saber = saber
 	src.required_bond = required_bond
 	if(!can_continue())
 		return FALSE
-	RegisterSignals(owner, list(COMSIG_USER_PRE_ITEM_ATTACK, COMSIG_USER_PRE_ITEM_ATTACK_SECONDARY), PROC_REF(block_manual_attack))
+	if(locks_manual_attacks)
+		RegisterSignals(owner, list(COMSIG_USER_PRE_ITEM_ATTACK, COMSIG_USER_PRE_ITEM_ATTACK_SECONDARY), PROC_REF(block_manual_attack))
 	RegisterSignal(owner, COMSIG_MOB_STATCHANGE, PROC_REF(check_stat))
 	RegisterSignals(owner, list(SIGNAL_ADDTRAIT(TRAIT_INCAPACITATED), SIGNAL_ADDTRAIT(TRAIT_IMMOBILIZED), SIGNAL_ADDTRAIT(TRAIT_HANDS_BLOCKED)), PROC_REF(stop_sequence))
 	RegisterSignals(saber, list(COMSIG_TWOHANDED_UNWIELD, COMSIG_ITEM_DROPPED, COMSIG_MOVABLE_MOVED, COMSIG_QDELETING), PROC_REF(stop_sequence))

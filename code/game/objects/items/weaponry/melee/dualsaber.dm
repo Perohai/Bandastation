@@ -143,7 +143,7 @@
 			user.dropItemToGround(src, force=TRUE)
 			return
 	..()
-	if(!HAS_TRAIT(src, TRAIT_WIELDED))
+	if(!HAS_TRAIT(src, TRAIT_WIELDED) || LAZYACCESS(attack_modifiers, AUTONOMOUS_MELEE_STRIKE))
 		return
 
 	if(HAS_TRAIT(user, TRAIT_CLUMSY) && prob(40))
