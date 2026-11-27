@@ -3,7 +3,7 @@
 /turf/open/space/basic,
 /area/space)
 "ab" = (
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/exterior)
 "ac" = (
 /obj/machinery/power/shuttle_engine/propulsion/standard,
@@ -14,10 +14,10 @@
 /turf/open/floor/engine/airless,
 /area/shuttle/stationtrauma_space/syndi/exterior)
 "ae" = (
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/engineering)
 "as" = (
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/armory)
 "ax" = (
 /obj/item/storage/medkit/tactical{
@@ -109,9 +109,6 @@
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
 /obj/machinery/airalarm/directional/north,
 /obj/effect/mapping_helpers/airalarm/syndicate_access,
-/turf/open/floor/mineral/plastitanium,
-/area/shuttle/stationtrauma_space/syndi/armory)
-"aK" = (
 /obj/structure/closet/crate/secure/syndicate/gorlex/weapons{
 	name = "Корабельный боезапас"
 	},
@@ -145,19 +142,22 @@
 /obj/item/stack/stationtrauma_autocannon_shell/heavy{
 	amount = 8
 	},
+/turf/open/floor/mineral/plastitanium,
+/area/shuttle/stationtrauma_space/syndi/armory)
+"aK" = (
 /obj/structure/cable,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
-/turf/open/floor/mineral/plastitanium,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/armory)
 "aL" = (
 /obj/structure/cable,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
-/turf/closed/wall/mineral/plastitanium/survival,
-/area/shuttle/stationtrauma_space/syndi/engineering)
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
+/area/shuttle/stationtrauma_space/syndi)
 "aV" = (
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi)
 "aW" = (
 /turf/closed/wall/mineral/plastitanium/redpod,
@@ -171,7 +171,7 @@
 "aZ" = (
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
 /area/shuttle/stationtrauma_space/syndi)
 "ba" = (
 /obj/machinery/door/airlock/stationtrauma_docking/ship{
@@ -275,7 +275,7 @@
 /turf/open/floor/mineral/plastitanium,
 /area/shuttle/stationtrauma_space/syndi)
 "bm" = (
-/turf/closed/wall/mineral/plastitanium/survival/nodiagonal,
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
 /area/shuttle/stationtrauma_space/syndi)
 "bn" = (
 /obj/machinery/stationtrauma_drop_launcher{
@@ -337,7 +337,7 @@
 /turf/open/floor/mineral/plastitanium,
 /area/shuttle/stationtrauma_space/syndi)
 "bu" = (
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/medical)
 "bv" = (
 /obj/effect/spawner/surgery_tray/full/deployed,
@@ -402,7 +402,7 @@
 /turf/open/floor/carpet/neon,
 /area/shuttle/stationtrauma_space/syndi/crew)
 "bG" = (
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/crew)
 "bH" = (
 /obj/effect/spawner/structure/window/survival_pod,
@@ -459,10 +459,7 @@
 /turf/open/floor/mineral/plastitanium/red,
 /area/shuttle/stationtrauma_space/syndi/medical)
 "bS" = (
-/turf/closed/wall/mineral/plastitanium/survival,
-/area/shuttle/stationtrauma_space/syndi/bridge)
-"bT" = (
-/turf/closed/wall/mineral/plastitanium/survival/nodiagonal,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/bridge)
 "bU" = (
 /obj/machinery/door/airlock/highsecurity/syndicate{
@@ -478,16 +475,16 @@
 /turf/open/floor/mineral/plastitanium/red,
 /area/shuttle/stationtrauma_space/syndi/crew)
 "bW" = (
-/obj/machinery/computer/stationtrauma_drop_pod_console{
-	dir = 4
-	},
-/turf/open/floor/mineral/plastitanium/red,
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
 /area/shuttle/stationtrauma_space/syndi/bridge)
 "bX" = (
 /obj/structure/cable,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
 /obj/machinery/power/apc/auto_name/directional/south,
 /obj/effect/mapping_helpers/apc/syndicate_access,
+/obj/machinery/computer/stationtrauma_drop_pod_console{
+	dir = 1
+	},
 /turf/open/floor/mineral/plastitanium/red,
 /area/shuttle/stationtrauma_space/syndi/bridge)
 "bY" = (
@@ -500,14 +497,15 @@
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
 /obj/machinery/airalarm/directional/south,
 /obj/effect/mapping_helpers/airalarm/syndicate_access,
-/turf/open/floor/mineral/plastitanium/red,
-/area/shuttle/stationtrauma_space/syndi/bridge)
-"ca" = (
 /obj/machinery/computer/stationtrauma_engine_console{
-	dir = 8
+	dir = 1
 	},
 /turf/open/floor/mineral/plastitanium/red,
 /area/shuttle/stationtrauma_space/syndi/bridge)
+"ca" = (
+/obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
+/area/shuttle/stationtrauma_space/syndi)
 "cb" = (
 /obj/machinery/stationtrauma_autocannon/heavy{
 	dir = 1
@@ -597,22 +595,19 @@
 /area/shuttle/stationtrauma_space/syndi/bridge)
 "eL" = (
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
-/obj/machinery/door/airlock/highsecurity/syndicate{
-	name = "Реакторная";
-	req_access = list("syndicate")
-	},
+/obj/structure/window/reinforced/survival_pod/spawner/directional/east,
 /turf/open/floor/engine,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "fJ" = (
 /obj/machinery/atmospherics/pipe/smart/manifold4w/cyan/hidden/layer5,
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "gd" = (
 /obj/machinery/door/airlock/highsecurity/syndicate{
 	req_access = list("syndicate")
 	},
 /turf/open/floor/mineral/plastitanium,
-/area/shuttle/stationtrauma_space/syndi/engineering)
+/area/shuttle/stationtrauma_space/syndi)
 "gB" = (
 /obj/machinery/atmospherics/components/unary/portables_connector/visible{
 	dir = 8
@@ -622,8 +617,11 @@
 /turf/open/floor/mineral/plastitanium,
 /area/shuttle/stationtrauma_space/syndi/engineering)
 "gI" = (
-/turf/closed/wall/mineral/plastitanium/redpod,
-/area/shuttle/stationtrauma_space/syndi/engineering/reactor)
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
+/area/shuttle/stationtrauma_space/syndi/armory)
+"hM" = (
+/turf/open/floor/mineral/plastitanium,
+/area/shuttle/stationtrauma_space/syndi)
 "mV" = (
 /obj/machinery/atmospherics/pipe/smart/manifold4w/orange/hidden,
 /turf/closed/wall/mineral/plastitanium/survival,
@@ -643,7 +641,7 @@
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/dark/hidden,
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "qo" = (
 /obj/structure/cable/layer1,
@@ -651,7 +649,7 @@
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/dark/hidden,
-/turf/open/floor/mineral/plastitanium,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/engineering)
 "rl" = (
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
@@ -680,8 +678,14 @@
 /turf/open/floor/mineral/plastitanium,
 /area/shuttle/stationtrauma_space/syndi/armory)
 "sD" = (
-/obj/machinery/atmospherics/pipe/smart/manifold4w/orange/hidden,
-/turf/closed/wall/mineral/plastitanium/redpod,
+/obj/structure/cable,
+/obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
+/obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
+/obj/machinery/door/airlock/highsecurity/syndicate{
+	name = "Реакторная";
+	req_access = list("syndicate")
+	},
+/turf/open/floor/engine,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "tJ" = (
 /obj/effect/turf_decal/stripes/box,
@@ -753,6 +757,8 @@
 "CG" = (
 /obj/structure/cable/layer1,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/dark/hidden,
+/obj/machinery/airalarm/directional/north,
+/obj/effect/mapping_helpers/airalarm/syndicate_access,
 /turf/open/floor/engine,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "Et" = (
@@ -765,17 +771,17 @@
 /obj/machinery/atmospherics/pipe/smart/manifold4w/dark/hidden,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "FI" = (
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "GH" = (
 /turf/open/floor/engine,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "JQ" = (
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi)
 "Mb" = (
 /obj/structure/cable,
@@ -787,7 +793,7 @@
 /obj/structure/cable,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/supply/hidden/layer4,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubbers/hidden/layer2,
-/turf/closed/wall/mineral/plastitanium/survival,
+/turf/closed/wall/mineral/plastitanium/wall_fill,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "PD" = (
 /obj/machinery/light/directional/east,
@@ -803,9 +809,7 @@
 /turf/open/floor/mineral/plastitanium,
 /area/shuttle/stationtrauma_space/syndi/engineering)
 "Uc" = (
-/obj/machinery/airalarm/directional/north,
-/obj/effect/mapping_helpers/airalarm/syndicate_access,
-/turf/open/floor/engine,
+/turf/closed/wall/mineral/plastitanium/nodiagonal,
 /area/shuttle/stationtrauma_space/syndi/engineering/reactor)
 "Uz" = (
 /obj/structure/cable/layer1,
@@ -831,8 +835,8 @@ aV
 ba
 aV
 ss
-aa
-aa
+as
+as
 aa
 aa
 aa
@@ -848,12 +852,12 @@ bu
 bu
 bH
 bu
-aW
+aV
 bb
 aW
 tJ
+gI
 as
-aa
 aa
 aa
 aa
@@ -869,9 +873,9 @@ bH
 bR
 bI
 bv
-aV
+bm
 bc
-JQ
+ca
 vN
 ax
 as
@@ -929,23 +933,23 @@ aa
 aa
 aa
 aa
-aa
+bu
 bu
 bu
 bm
 bf
-aV
+bm
 aJ
 az
 as
 FI
 FI
-ab
+FI
 aa
 aa
 "}
 (7,1,1) = {"
-aa
+bS
 bS
 cc
 cc
@@ -955,12 +959,12 @@ aa
 aV
 bn
 bd
-aV
+bm
 aK
 as
-as
-FI
-GH
+gI
+Uc
+Uc
 FI
 ab
 ab
@@ -970,19 +974,19 @@ bS
 cn
 cj
 cd
-bW
+bS
 bS
 aV
 aV
 bo
 bd
-aV
-MG
+hM
+sD
 rl
 rl
 zJ
 GH
-sD
+mV
 ad
 ac
 "}
@@ -992,12 +996,12 @@ co
 ck
 ce
 bX
-bT
+bS
 bL
 bz
 bp
 bd
-ae
+bm
 MG
 Mb
 GH
@@ -1034,14 +1038,14 @@ cq
 ck
 cg
 bZ
-bT
+bS
 bM
 bB
 br
 bg
-ae
+bm
 pm
-Uc
+GH
 GH
 GH
 GH
@@ -1054,24 +1058,24 @@ bS
 cn
 cm
 ch
-ca
 bS
+bW
 aV
 aV
 bs
 bd
-gd
+bm
 qo
 eL
 PD
 yn
 xO
-sD
+mV
 ad
 ac
 "}
 (13,1,1) = {"
-aa
+bS
 bS
 cc
 cc
@@ -1081,13 +1085,13 @@ aa
 aV
 bt
 bh
-aV
+bm
 za
 aC
 fJ
 fJ
+Uc
 FI
-gI
 ab
 ab
 "}
@@ -1097,18 +1101,18 @@ aa
 aa
 aa
 aa
-aa
+bG
 bG
 bG
 bm
 bd
-aV
+bm
 os
 aD
 ae
 ae
-ab
-ab
+FI
+FI
 aa
 aa
 "}
@@ -1121,9 +1125,9 @@ bG
 bG
 bN
 bD
-bm
-be
 aV
+be
+bm
 sa
 aE
 ae
@@ -1165,7 +1169,7 @@ bP
 bF
 aV
 bi
-aV
+gd
 XR
 zC
 ae
@@ -1184,9 +1188,9 @@ bG
 bG
 bQ
 bG
-aW
+aV
 bj
-aW
+bm
 gB
 TY
 ae
@@ -1210,7 +1214,7 @@ bk
 aV
 ae
 ae
-aa
+ae
 aa
 aa
 aa
