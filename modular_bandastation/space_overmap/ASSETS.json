@@ -12,11 +12,11 @@
 		},
 		{
 			"path": "modular_bandastation/space_overmap/icons/nt_patrol_areas.dmi",
-			"sha256": "7eabfbc11064776f41135835879b5624c2ce73e46b4c6dca443f165a77412087",
+			"sha256": "19dc1ba27cc76a60726d7a908d7d416f1305b1e42831f20b52581e0092bfaf3a",
 			"license": "CC-BY-SA-3.0",
 			"authors": ["BandaStation contributors"],
 			"source": null,
-			"changes": "Original mapper icons for the NT patrol destroyer's compartments."
+			"changes": "Original mapper icons for ship compartments, including the Syndicate shuttle's reactor room."
 		},
 		{
 			"path": "modular_bandastation/space_overmap/icons/wallcloset.dmi",
