@@ -12,6 +12,14 @@
 	name = "Bridge"
 	icon_state = "bridge"
 
+/area/station/command/bridge_low
+	name = "Bridge lower level"
+	icon_state = "bridge"
+
+/area/station/command/bridge_low2
+	name = "Bridge lower level2"
+	icon_state = "bridge"
+
 /area/station/command/meeting_room
 	name = "Heads of Staff Meeting Room"
 	icon_state = "meeting"
@@ -93,6 +101,16 @@
 /area/station/command/heads_quarters/qm
 	name = "Quartermaster's Office"
 	icon_state = "qm_office"
+
+/area/station/command/heads_quarters/Bs
+	name = "bridge assistant Office"
+	icon_state = "command"
+
+/area/station/command/heads_quarters/Jo
+	name = "junior officer"
+	icon_state = "command"
+
+
 
 /*
 * Command - Teleporter
