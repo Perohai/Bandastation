@@ -10,6 +10,7 @@
 #include "code/melee/centcom/baseball_bat.dm"
 #include "code/melee/centcom/legendary_swords.dm"
 #include "code/melee/centcom/legendary_bond.dm"
+#include "code/melee/centcom/legendary_liar.dm"
 #include "code/melee/centcom/legendary_dark_star.dm"
 #include "code/melee/centcom/legendary_dark_star_eclipse_double.dm"
 #include "code/melee/centcom/legendary_dark_star_eclipse_fx.dm"
