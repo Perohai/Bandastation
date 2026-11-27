@@ -175,6 +175,19 @@
 	reserved_berth.docking_owner = attacker
 	..()
 	attacker.navigation_notice("Начат абордаж объекта «[reserved_berth.docking_target.name]». Удерживайте дистанцию и скорость до [ST_BOARDING_SPEED] км/с.")
+	if(!is_station_level(reserved_berth.berth.z))
+		return
+
+	var/message = "Корабль начал несанкционированную стыковку с причалом «[html_encode(reserved_berth.name)]». До захвата причала [ST_BOARDING_TIME / (1 SECONDS)] с."
+	var/announcement = create_announcement_div("[span_bold("Диспетчерская станции")]<br>[message]", "red")
+	for(var/mob/recipient as anything in GLOB.player_list)
+		var/turf/position = get_turf(recipient)
+		if(isnewplayer(recipient) || !position || !is_station_level(position.z))
+			continue
+		to_chat(recipient, announcement)
+		// The siren must play immediately even if announcement TTS is unavailable.
+		if(!HAS_TRAIT(recipient, TRAIT_DEAF) && recipient.client?.prefs.read_preference(/datum/preference/toggle/sound_announcements))
+			SEND_SOUND(recipient, sound('sound/effects/siren.ogg'))
 
 /datum/stationtrauma_boarding_attempt/station/Destroy()
 	if(!QDELETED(reserved_berth) && reserved_berth.docking_owner == attacker && attacker?.docked != reserved_berth)
