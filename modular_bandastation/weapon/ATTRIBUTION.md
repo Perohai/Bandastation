@@ -4,7 +4,7 @@ Imported from [BandaStation #2461](https://github.com/ss220club/BandaStation/pul
 
 - **Dark Star** sprites (`ds_dualsaber0`, `ds_dualsaberdarkstar1` in `icons/melee/legendary.dmi` and both `icons/melee/inhands` files): **Mooniverse**.
 - **Dark Star** and **Liar** sounds (`sound/melee/ds_saber_*.ogg`, `sound/melee/lz_saber_*.ogg`): **Fullonibus**.
-- **Liar** sprites (`lz_dualsaber0`, `lz_dualsaberliar1` in the same DMI files): **author not yet identified**. Attribution must be completed before this draft is merged.
+- **Liar** sprites (`lz_dualsaber0`, `lz_dualsaberliar1` in the same DMI files): [BandaStation #2461](https://github.com/ss220club/BandaStation/pull/2461), commit `df77130c6ede3bb27b1f55993e19118c18c703ca`.
 
 The known credits above were confirmed by Fullonibus on 2026-10-30. The source PR did not record the Liar sprite author.
 
@@ -63,6 +63,21 @@ The following Dark Star ability sounds in `sound/melee/` are edits of the suppli
 | Void Slash | `ds_void_open.ogg`, `ds_void_collapse.ogg` | The first sweep opens the rift. A reversed sweep and a shorter accent accompany its collapse. |
 | Чёрная комета | `ds_stinger_launch.ogg`, `ds_stinger_pulse.ogg`, `ds_stinger_wall.ogg` | Separate edits for launch, recurring contact and impact against a wall. |
 | Eclipse Double | `ds_eclipse_summon.ogg`, `ds_eclipse_echo.ogg`, `ds_eclipse_cross.ogg` | A layered summon, a short swung echo and two overlapping strikes for the final cross. |
+
+## Liar
+
+The Backstep, Last Lie and Four Faces buttons in `icons/melee/liar_abilities.dmi` use the active Liar sprite (`lz_dualsaberliar1`) from `icons/melee/legendary.dmi`. The additional trails and reflections were drawn for these buttons. The artwork uses the repository's CC BY-SA 3.0 asset license.
+
+The six Liar ability cues in `sound/melee/` were assembled from Fullonibus's Liar ignition, shutdown and impact recordings. Each cue is a mono edit for positional playback in the game.
+
+| Cue | Source and edit |
+| --- | --- |
+| `lz_backstep_jump.ogg` | A reversed `lz_saber_off.ogg` sweep runs into an accelerating edge from `lz_saber_on.ogg`. |
+| `lz_backstep_hit.ogg` | A shortened `lz_saber_hit.ogg` with a low copy of the impact and a bright ignition transient. |
+| `lz_last_lie_vanish.ogg` | A slowing `lz_saber_off.ogg` with a reversed, fading layer from the ignition sustain. |
+| `lz_last_lie_return.ogg` | The ignition returns with a higher reflection and a quiet reversed shutdown tail. |
+| `lz_four_faces_cast.ogg` | Four staggered cuts of `lz_saber_on.ogg` rise in pitch and diminish in level. |
+| `lz_four_faces_hit.ogg` | A central `lz_saber_hit.ogg` impact and three short, progressively lighter reflections. |
 
 # Legacy display revolvers
 

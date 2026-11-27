@@ -214,6 +214,11 @@
 /// MiracleSpirit's legendary energy sword.
 /obj/item/dualsaber/legendary_saber/liar
 	name = "Liar"
+	legendary_abilities = list(
+		/datum/action/cooldown/legendary_sword/liar_backstep,
+		/datum/action/cooldown/legendary_sword/liar_last_lie,
+		/datum/action/cooldown/legendary_sword/liar_four_faces,
+	)
 	desc = "\"Лжец \" - один из легендарных энергетических мечей Галактики. Его природа так же обманчива, как и имя: титановая рукоять с багровыми прожилками и особой формой делает удары непредсказуемыми. Жёлтый мерцающий клинок создан был для защиты - отсюда и название. Ведь, как сказано, искусство существует, чтобы люди не умерли от правды. И в этом случае правда буквальна - единственная неизбежная истина мира это смерть."
 	ckey_whitelist = list("miraclespirit")
 	icon_state = "lz_dualsaber0"
