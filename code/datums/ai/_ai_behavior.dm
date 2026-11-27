@@ -6,7 +6,7 @@
 	var/behavior_flags = NONE
 	///Cooldown between perform() calls; do not read directly  use get_cooldown()
 	var/time_between_perform = 0
-	/// TRUE after setup() has been called and before finish_action() completes.
+	/// TRUE after successful setup() and until the behavior starts finishing.
 	var/running = FALSE
 	/// world.time when perform() may next be called.
 	var/next_perform_time = 0
@@ -47,9 +47,18 @@
 		if(length(controller.bt_execution_log) < BT_EXECUTION_LOG_MAX)
 			controller.bt_execution_log += execution_index
 
+	var/previous_ticking_index = controller.ticking_execution_index
+	controller.ticking_execution_index = execution_index
 	if(!running)
 		if(!setup(controller))
 			EVLOG_TEXT(controller, EVLOG_CATEGORY_AI_BEHAVIORS, "[controller.pawn] [type]: setup() failed")
+			controller.ticking_execution_index = previous_ticking_index
+			return BT_FAILURE
+		if(controller.cancelled_during_tick)
+			// The reset saw this leaf before setup had finished acquiring its state.
+			if(!QDELETED(src) && !QDELETED(controller.pawn))
+				finish_action(controller, FALSE)
+			controller.ticking_execution_index = previous_ticking_index
 			return BT_FAILURE
 		EVLOG_TEXT(controller, EVLOG_CATEGORY_AI_BEHAVIORS, "[controller.pawn] starting [type]")
 		running = TRUE
@@ -58,18 +67,32 @@
 
 	if(process_flags & AI_BEHAVIOR_DELAY)
 		next_perform_time = world.time + get_cooldown(controller)
+	if(controller.cancelled_during_tick)
+		// The next tick still needs the correct result while waiting out this cooldown.
+		if(process_flags & AI_BEHAVIOR_SUCCEEDED)
+			failed_last_perform = FALSE
+		else if(process_flags & AI_BEHAVIOR_FAILED)
+			failed_last_perform = TRUE
+		controller.ticking_execution_index = previous_ticking_index
+		return BT_FAILURE
+
+	. = BT_RUNNING
 	if(process_flags & AI_BEHAVIOR_SUCCEEDED)
 		EVLOG_TEXT(controller, EVLOG_CATEGORY_AI_BEHAVIORS, "[controller.pawn] [type]: succeeded")
 		failed_last_perform = FALSE
+		// A finish hook can send a signal that resets this leaf again.
+		running = FALSE
 		finish_action(controller, TRUE)
-		return BT_SUCCESS
-	if(process_flags & AI_BEHAVIOR_FAILED)
+		. = BT_SUCCESS
+	else if(process_flags & AI_BEHAVIOR_FAILED)
 		EVLOG_TEXT(controller, EVLOG_CATEGORY_AI_BEHAVIORS, "[controller.pawn] [type]: failed")
 		failed_last_perform = TRUE
+		running = FALSE
 		finish_action(controller, FALSE)
-		return BT_FAILURE
-	controller.active_execution_index = execution_index
-	return BT_RUNNING
+		. = BT_FAILURE
+	else
+		controller.active_execution_index = execution_index
+	controller.ticking_execution_index = previous_ticking_index
 
 /// Returns the cooldown to apply after a AI_BEHAVIOR_DELAY perform(). Override for conditional delays.
 /datum/bt_node/ai_behavior/proc/get_cooldown(datum/ai_controller/cooldown_for)
@@ -127,5 +150,6 @@
 
 /datum/bt_node/ai_behavior/reset_tick_state()
 	if(running)
+		running = FALSE
 		finish_action(owning_controller, FALSE)
 	..()

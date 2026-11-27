@@ -135,6 +135,7 @@
 #include "abductor_spawn.dm"
 #include "ablative_hud.dm"
 #include "achievements.dm"
+#include "ai_behavior_tree.dm"
 #include "ai_pathfinding.dm"
 #include "alerts.dm"
 #include "anchored_mobs.dm"
