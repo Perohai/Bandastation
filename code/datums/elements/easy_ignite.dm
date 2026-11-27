@@ -71,7 +71,6 @@
 	if (!item_ignition(source, tool, user))
 		return ITEM_INTERACT_BLOCKING
 
-	ignite(source, user)
 	return ITEM_INTERACT_SUCCESS
 
 /datum/element/easy_ignite/proc/projectile_react(obj/item/source, obj/projectile/shot)

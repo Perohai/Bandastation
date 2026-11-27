@@ -23,8 +23,8 @@
 	TEST_ASSERT_EQUAL(length(bond_by_icon), 0, "Malice did not grant all five abilities.")
 
 	for(var/sword_type in subtypesof(/obj/item/dualsaber/legendary_saber))
-		if(ispath(sword_type, /obj/item/dualsaber/legendary_saber/sister))
-			continue // Light Sister has its own ability registry.
+		if(ispath(sword_type, /obj/item/dualsaber/legendary_saber/sister) || ispath(sword_type, /obj/item/dualsaber/legendary_saber/dark_star))
+			continue // Both swords have their own ability registry tests.
 		var/obj/item/dualsaber/legendary_saber/other = allocate(sword_type)
 		TEST_ASSERT_EQUAL(other.attack_spin_chance, 50, "[sword_type] lost its usual melee spin chance.")
 		TEST_ASSERT(istype(other.enchant, /datum/enchantment/dash), "[sword_type] lost its original dash.")

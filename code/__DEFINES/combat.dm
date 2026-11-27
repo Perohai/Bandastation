@@ -414,6 +414,10 @@ GLOBAL_LIST_INIT(all_precise_body_zones, list(BODY_ZONE_PRECISE_EYES, BODY_ZONE_
 #define MELEE_EFFECT_ORIGIN "melee_effect_origin"
 /// The caller supplies the animation and sound for a damaging hit. A harmless swing keeps its normal feedback.
 #define REPLACE_MELEE_HIT_EFFECTS "replace_melee_hit_effects"
+/// The attack came from a legendary sword ability rather than an ordinary swing.
+#define LEGENDARY_ABILITY_STRIKE "legendary_ability_strike"
+/// An independent strike uses the weapon without another swing or click delay for the wielder.
+#define AUTONOMOUS_MELEE_STRIKE "autonomous_melee_strike"
 /// Set towards the end of an attack with how much actual damage was dealt
 #define DAMAGE_DONE "damage_done"
 
