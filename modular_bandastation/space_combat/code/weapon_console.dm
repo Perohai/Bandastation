@@ -68,7 +68,12 @@
 			status = "low_power"
 		if(!isnull(gun.last_shot_time) && world.time - gun.last_shot_time <= 1 SECONDS)
 			var/obj/projectile/bullet/stationtrauma_kinetic/round_type = gun.projectile_type
-			muzzle_flashes += list(list("id" = "[REF(gun)]-[gun.last_shot_time]", "heading" = gun.last_shot_heading, "color" = initial(round_type.plot_color)))
+			muzzle_flashes += list(list(
+				"id" = "[REF(gun)]-[gun.last_shot_time]",
+				"heading" = gun.last_shot_heading,
+				"color" = initial(round_type.plot_color),
+				"plasma" = ispath(round_type, /obj/projectile/bullet/stationtrauma_kinetic/energy/plasma),
+			))
 		weapons += list(list(
 			"id" = REF(gun),
 			"name" = gun.name,

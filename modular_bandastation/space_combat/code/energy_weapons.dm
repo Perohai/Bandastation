@@ -33,12 +33,31 @@
 	capacitor_capacity = 60 KILO JOULES
 	projectile_type = /obj/projectile/bullet/stationtrauma_kinetic/energy/plasma
 	firing_sound = 'sound/items/weapons/pulse3.ogg'
-	muzzle_flash_type = /obj/effect/projectile/muzzle/plasma_cutter/ship
+	muzzle_flash_type = /obj/effect/projectile/muzzle/ship_plasma
 	muzzle_flash_color = LIGHT_COLOR_PURPLE
 
-/obj/effect/projectile/muzzle/plasma_cutter/ship
-	// Shift the cyan fringe into violet while preserving the bright core and transparency.
-	color = list(0.2,0.8,0,0, 0.8,0.2,0,0, 0,0,1,0, 0,0,0,1, 0,0,0,0)
+/obj/machinery/stationtrauma_autocannon/heavy/plasma/show_muzzle_flash(turf/muzzle, local_angle)
+	var/obj/effect/projectile/muzzle/flash = ..()
+	var/obj/structure/stationtrauma_autocannon_barrel/plasma/barrel = locate() in get_step(src, dir)
+	if(barrel)
+		// Pinch at the fixed prongs, then steer the discharge onto the bolt's actual line.
+		var/half_tile = world.icon_size / 2
+		flash.pixel_x += (barrel.x - muzzle.x) * half_tile
+		flash.pixel_y += (barrel.y - muzzle.y) * half_tile
+		flick("barrel_fire", barrel)
+		animate(flash,
+			pixel_x = initial(flash.pixel_x) - sin(local_angle) * half_tile,
+			pixel_y = initial(flash.pixel_y) - cos(local_angle) * half_tile,
+			time = 0.05 SECONDS,
+		)
+	flick(flash.icon_state, flash)
+	return flash
+
+/obj/effect/projectile/muzzle/ship_plasma
+	icon = 'modular_bandastation/space_combat/icons/ship_plasma_muzzle.dmi'
+	icon_state = "plasma_muzzle"
+	pixel_x = -32
+	pixel_y = -32
 
 /obj/structure/stationtrauma_autocannon_barrel/plasma
 	name = "фокусирующая секция плазменной пушки"

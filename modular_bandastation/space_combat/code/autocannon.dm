@@ -261,15 +261,20 @@
 	if(get_dist(user, sound_origin) > SOUND_RANGE)
 		user.playsound_local(get_turf(console), firing_sound, 60, TRUE, pressure_affected = FALSE)
 	var/local_angle = WRAP(angle - map.course + dir2angle(map.vessel.preferred_direction), 0, 360)
-	var/obj/effect/projectile/muzzle/flash = new muzzle_flash_type(muzzle)
-	flash.turn_to(local_angle)
-	flash.set_light(2, 3, muzzle_flash_color)
-	QDEL_IN(flash, PROJECTILE_TRACER_DURATION)
+	show_muzzle_flash(muzzle, local_angle)
 	round.fire(local_angle)
 	last_shot_time = world.time
 	last_shot_heading = angle
 	SStgui.update_uis(console)
 	return TRUE
+
+/// Show the discharge along the outgoing projectile's deck-space heading.
+/obj/machinery/stationtrauma_autocannon/proc/show_muzzle_flash(turf/muzzle, local_angle)
+	var/obj/effect/projectile/muzzle/flash = new muzzle_flash_type(muzzle)
+	flash.turn_to(local_angle)
+	flash.set_light(2, 3, muzzle_flash_color)
+	QDEL_IN(flash, PROJECTILE_TRACER_DURATION)
+	return flash
 
 /** Inside the hull, the loading tray feeds the gun across a sealed panel. */
 /obj/machinery/stationtrauma_autocannon_loader

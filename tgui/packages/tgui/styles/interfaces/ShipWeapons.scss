@@ -185,6 +185,10 @@
     animation: ship-weapon-muzzle 300ms ease-out forwards;
   }
 
+  &__plasma-fronts {
+    animation: ship-plasma-fronts 300ms ease-out forwards;
+  }
+
   &__command {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 56px 104px;
@@ -370,8 +374,25 @@
   }
 }
 
+@keyframes ship-plasma-fronts {
+  from {
+    opacity: 1;
+    transform: scale(0.55);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.65);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ShipWeapons__muzzle-flash {
+  .ShipWeapons__muzzle-flash,
+  .ShipWeapons__plasma-fronts {
     animation: none;
   }
 }

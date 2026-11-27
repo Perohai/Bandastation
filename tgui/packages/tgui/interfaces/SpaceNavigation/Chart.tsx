@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'tgui-core/components';
+import type { BooleanLike } from 'tgui-core/react';
 
 import { useApproachClock } from './Descent';
 import {
@@ -60,6 +61,7 @@ export type MuzzleFlash = {
   id: string;
   heading: number;
   color?: string | null;
+  plasma?: BooleanLike;
 };
 
 type Props = {
@@ -690,15 +692,35 @@ export function Chart({
           </g>
           {muzzleFlashes?.map((flash) => (
             <g key={flash.id} transform={`rotate(${flash.heading})`}>
-              <path
-                className="ShipWeapons__muzzle-flash"
-                d="M0 -15 L-5 -22 L-2 -21 L0 -34 L2 -21 L5 -23 Z"
-                fill={flash.color ?? '#fff3ae'}
-                stroke={flash.color ?? '#ff9344'}
-                strokeWidth={1.5}
-              >
-                <title>Выстрел орудия</title>
-              </path>
+              <title>Выстрел орудия</title>
+              {flash.plasma ? (
+                <g transform="translate(0 -15)">
+                  <path
+                    className="ShipWeapons__muzzle-flash"
+                    d="M0 1 Q-3.5 -1 -2 -6 L0 -17 L2 -6 Q3.5 -1 0 1Z"
+                    fill="#fff5ff"
+                    stroke="#c18be1"
+                    strokeWidth={1.5}
+                  />
+                  <path
+                    className="ShipWeapons__plasma-fronts"
+                    d="M3.5 -8.3 A6 2 -12 1 0 5.8 -7.4 M4.6 -16.3 A8.5 2.5 -12 1 0 8.2 -15"
+                    fill="none"
+                    stroke="#ca94ff"
+                    strokeWidth={1.2}
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </g>
+              ) : (
+                <path
+                  className="ShipWeapons__muzzle-flash"
+                  d="M0 -15 L-5 -22 L-2 -21 L0 -34 L2 -21 L5 -23 Z"
+                  fill={flash.color ?? '#fff3ae'}
+                  stroke={flash.color ?? '#ff9344'}
+                  strokeWidth={1.5}
+                />
+              )}
             </g>
           ))}
         </g>

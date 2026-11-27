@@ -89,13 +89,23 @@
 		},
 		{
 			"path": "modular_bandastation/space_combat/icons/ship_energy_weapons.dmi",
-			"sha256": "160c3fe5cc97d073a541ffe584127b3651b208e45a7c62ddb23b89ad3329637e",
+			"sha256": "bd2f063cb46c4624570b6e211eee7f11e483a41d7688848b99c7b17186d212a1",
 			"license": "CC-BY-SA-3.0",
 			"authors": [
 				"StationTrauma / BandaStation contributors"
 			],
 			"source": null,
-			"changes": "Original 32x32 pixel artwork for the directional laser, two-tile plasma cannon, loader and charge cassettes, with red and violet projectile sprites."
+			"changes": "Original 32x32 pixel artwork for the directional laser, two-tile plasma cannon, loader and charge cassettes, including the firing animation of the focusing coils and the looping plasma bolt."
+		},
+		{
+			"path": "modular_bandastation/space_combat/icons/ship_plasma_muzzle.dmi",
+			"sha256": "87a8496813f26e8d398afdbd84494f4a49683d0c8175789f2bed1e5f90d1718a",
+			"license": "CC-BY-SA-3.0",
+			"authors": [
+				"StationTrauma / BandaStation contributors"
+			],
+			"source": null,
+			"changes": "Original four-frame pixel animation of the white-hot plasma discharge, expanding violet rings and fading filaments."
 		}
 	]
 }
