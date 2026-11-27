@@ -37,9 +37,10 @@
  * * direction - Astern, the way the drift carried it
  */
 /datum/stationtrauma_overmap/space/proc/strand(atom/movable/drifter, direction)
+	var/datum/stationtrauma_overmap_sector/space/departure_sector = sector
 	var/datum/stationtrauma_lost_space/loss = lost_space()
 	// Creating a level can wait on another one: the drifter may have been caught meanwhile.
-	if(!loss?.level || QDELETED(src) || QDELETED(drifter) || !exterior || get_area(drifter) != exterior)
+	if(!loss?.level || QDELETED(src) || !departure_sector || sector != departure_sector || QDELETED(drifter) || !exterior || get_area(drifter) != exterior)
 		return FALSE
 	// Enter at the far side, so the throw crosses the whole level while a nearby wreck loads.
 	var/margin = TRANSITIONEDGE + 8
@@ -47,6 +48,7 @@
 	var/entry_y = direction == NORTH ? margin : direction == SOUTH ? world.maxy - margin : rand(margin * 4, world.maxy - margin * 4)
 	var/turf/entry = locate(entry_x, entry_y, loss.level.z_value)
 	drifter.forceMove(entry)
+	loss.track_casualties(drifter)
 	if(isliving(drifter))
 		var/mob/living/lost = drifter
 		shake_camera(lost, 3 SECONDS, 2)
@@ -61,6 +63,8 @@
 
 /** Reuse the rescue pipeline for a crew lost at a captured chart position. */
 /proc/stationtrauma_open_space(datum/stationtrauma_overmap_sector/space/here, x, y, datum/stationtrauma_overmap/space/navigation)
+	if(QDELETED(here))
+		return null
 	var/datum/stationtrauma_lost_space/idle
 	for(var/datum/stationtrauma_lost_space/loss as anything in GLOB.stationtrauma_lost_spaces)
 		if((navigation ? loss.navigation_ref?.resolve() == navigation : !loss.navigation_ref) && loss.sector_id == here.id && world.time - loss.last_loss < ST_LOST_SHARED_TIME && (loss.pos_x - x) ** 2 + (loss.pos_y - y) ** 2 <= ST_LOST_WRECK_RANGE ** 2)
@@ -107,10 +111,115 @@ GLOBAL_LIST_EMPTY(stationtrauma_lost_spaces)
 	/// Distress destination charted while a beacon transmits on this level.
 	var/datum/stationtrauma_overmap_site/space/distress/signal
 
+	/// Stranded humans on this level, each mapped to their own lazily charted rescue approach.
+	var/list/casualties = list()
+	/// Includes sites kept alive by a docking manoeuvre after the person is recovered.
+	var/list/rescue_sites = list()
+	/// Monotonic chart ID for each individual rescue approach across reuses of the level.
+	var/next_rescue_id = 0
+	/// A rescue seam takes over the level borders once. Later beacons or castaways keep those passages intact.
+	var/edge_destination
+	/// Invalidates older cooperative border updates when a new destination takes over.
+	var/edge_revision = 0
+	/// Whether the latest border update is still in progress.
+	var/setting_edges = FALSE
+
+/datum/stationtrauma_lost_space/Destroy()
+	GLOB.stationtrauma_lost_spaces -= src
+	for(var/mob/living/carbon/human/person as anything in casualties.Copy())
+		remove_casualty(person)
+	drop_signal()
+	for(var/datum/stationtrauma_overmap_site/space/distress/casualty/site as anything in rescue_sites)
+		site.loss = null
+	rescue_sites.Cut()
+	level = null
+	wreck = null
+	navigation_ref = null
+	return ..()
+
+/** Only those actually swept away or landed in a lost capsule are castaways. */
+/datum/stationtrauma_lost_space/proc/track_casualties(atom/movable/drifter)
+	for(var/mob/living/carbon/human/person as anything in drifter.get_all_contents_type(/mob/living/carbon/human))
+		if((person in casualties) || !on_loss_level(person))
+			continue
+		casualties += person
+		person.become_area_sensitive(REF(src))
+		RegisterSignal(person, COMSIG_QDELETING, PROC_REF(remove_casualty))
+		RegisterSignals(person, list(COMSIG_MOVABLE_Z_CHANGED, COMSIG_ENTER_AREA), PROC_REF(casualty_moved))
+
+/datum/stationtrauma_lost_space/proc/on_loss_level(mob/living/carbon/human/person)
+	var/turf/tile = get_turf(person)
+	return level && tile?.z == level.z_value && !istype(tile.loc, /area/shuttle)
+
+/datum/stationtrauma_lost_space/proc/has_casualty(mob/living/carbon/human/person)
+	return !QDELETED(person) && (person in casualties) && on_loss_level(person)
+
+/datum/stationtrauma_lost_space/proc/casualty_moved(mob/living/carbon/human/person)
+	SIGNAL_HANDLER
+	if(!on_loss_level(person))
+		remove_casualty(person)
+
+/datum/stationtrauma_lost_space/proc/remove_casualty(mob/living/carbon/human/person)
+	SIGNAL_HANDLER
+	UnregisterSignal(person, list(COMSIG_QDELETING, COMSIG_MOVABLE_Z_CHANGED, COMSIG_ENTER_AREA))
+	person.lose_area_sensitivity(REF(src))
+	var/datum/stationtrauma_overmap_site/space/distress/casualty/site = casualties[person]
+	casualties -= person
+	withdraw_site(site)
+
+/// Release the chart entry immediately; keep a reserved berth until docking or departure finishes.
+/datum/stationtrauma_lost_space/proc/withdraw_site(datum/stationtrauma_overmap_site/space/distress/site)
+	if(!site)
+		return
+	var/datum/stationtrauma_overmap_sector/space/sector = SSstationtrauma_space_voyage.sectors[sector_id]
+	if(sector?.sites[site.id] == site)
+		sector.sites -= site.id
+	site.failed = TRUE
+	// Departure releases an orphaned dock after dismantling its real passage.
+	if(!site.docking_owner)
+		qdel(site)
+	else if(site.docking_owner.docked != site)
+		INVOKE_ASYNC(site, TYPE_PROC_REF(/datum/stationtrauma_overmap_site/space/distress, finish_cancelled_docking))
+
+/** Chart an approach to this particular person. A beacon elsewhere must retain its own berth. */
+/datum/stationtrauma_lost_space/proc/rescue_site(mob/living/carbon/human/person)
+	if(!has_casualty(person))
+		return null
+	var/datum/stationtrauma_overmap_sector/space/sector = SSstationtrauma_space_voyage.sectors[sector_id]
+	if(QDELETED(sector))
+		return null
+	var/datum/stationtrauma_overmap_site/space/distress/casualty/site = casualties[person]
+	if(!QDELETED(site))
+		if(site.berth && !site.docking_owner && site.entrance != get_turf(person))
+			qdel(site.berth, force = TRUE)
+			site.berth = null
+			site.map_loader = CALLBACK(src, PROC_REF(place_rescue_berth), site)
+		return site
+	site = new
+	site.loss = src
+	site.person_ref = WEAKREF(person)
+	site.id = "rescue_[GLOB.stationtrauma_lost_spaces.Find(src)]_[++next_rescue_id]"
+	site.pos_x = pos_x
+	site.pos_y = pos_y
+	site.map_loader = CALLBACK(src, PROC_REF(place_rescue_berth), site)
+	casualties[person] = site
+	rescue_sites += site
+	sector.sites[site.id] = site
+	return site
+
 /** Whether anyone still needs this level: a fresh loss, the living, a transmitting beacon or a rescue in progress. */
 /datum/stationtrauma_lost_space/proc/busy()
 	if(!level || world.time - last_loss < ST_LOST_SHARED_TIME || signal?.docking_owner)
 		return TRUE
+	for(var/mob/living/carbon/human/person as anything in casualties)
+		if(has_casualty(person))
+			return TRUE
+		remove_casualty(person)
+	for(var/datum/stationtrauma_overmap_site/space/distress/casualty/site as anything in rescue_sites)
+		if(site.docking_owner)
+			return TRUE
+		if(site.failed)
+			qdel(site)
 	if(length(stationtrauma_distress_callsigns(level.z_value)))
 		return TRUE
 	for(var/mob/living/lost as anything in GLOB.mob_living_list)
@@ -120,13 +229,13 @@ GLOBAL_LIST_EMPTY(stationtrauma_lost_spaces)
 
 /** Take the level for a new loss of `navigation` at its current chart position. */
 /datum/stationtrauma_lost_space/proc/claim(datum/stationtrauma_overmap_sector/space/sector, x, y, datum/stationtrauma_overmap/space/navigation)
+	drop_signal()
 	revision++
 	navigation_ref = navigation ? WEAKREF(navigation) : null
 	sector_id = sector.id
 	pos_x = x
 	pos_y = y
 	last_loss = world.time
-	drop_signal()
 	wreck = null
 	var/closest = ST_LOST_WRECK_RANGE
 	for(var/id in sector.sites)
@@ -148,8 +257,11 @@ GLOBAL_LIST_EMPTY(stationtrauma_lost_spaces)
 	var/datum/stationtrauma_overmap_site/space/target = wreck
 	target.load_map()
 	UNTIL(!target.loading_map)
-	if(revision != expected || wreck != target || target.failed || QDELETED(target.berth) || signal?.berth)
+	if(revision != expected || wreck != target || target.failed || QDELETED(target.berth) || signal?.berth || signal?.loading_map)
 		return
+	for(var/datum/stationtrauma_overmap_site/space/distress/casualty/site as anything in rescue_sites)
+		if(site.berth || site.loading_map)
+			return
 	set_edges(target.berth.z)
 
 /**
@@ -159,6 +271,9 @@ GLOBAL_LIST_EMPTY(stationtrauma_lost_spaces)
  * * target_z - Receiving level; this level itself loops, null leaves plain borders
  */
 /datum/stationtrauma_lost_space/proc/set_edges(target_z)
+	var/update = ++edge_revision
+	edge_destination = target_z
+	setting_edges = TRUE
 	var/z = level.z_value
 	var/inner_max_x = world.maxx - TRANSITIONEDGE
 	var/inner_max_y = world.maxy - TRANSITIONEDGE
@@ -169,11 +284,15 @@ GLOBAL_LIST_EMPTY(stationtrauma_lost_spaces)
 	var/list/x_arrival = list(0, 0, TRANSITIONEDGE + 2, inner_max_x - 1)
 	var/list/y_arrival = list(TRANSITIONEDGE + 2, inner_max_y - 1, 0, 0)
 	for(var/side in 1 to 4)
+		if(update != edge_revision)
+			return
 		for(var/turf/open/tile in block(x_low[side], y_low[side], z, x_high[side], y_high[side], z))
 			tile.destination_x = target_z ? (x_arrival[side] || tile.x) : null
 			tile.destination_y = target_z ? (y_arrival[side] || tile.y) : null
 			tile.destination_z = target_z
 		CHECK_TICK
+	if(update == edge_revision)
+		setting_edges = FALSE
 
 /** Chart or withdraw the distress destination as beacons on this level switch on and off. */
 /datum/stationtrauma_lost_space/proc/refresh_signal()
@@ -183,41 +302,32 @@ GLOBAL_LIST_EMPTY(stationtrauma_lost_spaces)
 		if(!sector)
 			return
 		signal = new
-		signal.id = "distress_[GLOB.stationtrauma_lost_spaces.Find(src)]"
+		signal.id = "distress_[GLOB.stationtrauma_lost_spaces.Find(src)]_[revision]"
 		signal.loss = src
 		signal.pos_x = pos_x
 		signal.pos_y = pos_y
-		signal.map_loader = CALLBACK(src, PROC_REF(place_rescue_berth))
+		signal.map_loader = CALLBACK(src, PROC_REF(place_rescue_berth), signal)
 		sector.sites[signal.id] = signal
 	else if(!transmitting && signal && !signal.docking_owner)
 		drop_signal()
 
 /** Withdraw the distress destination and its berth. */
 /datum/stationtrauma_lost_space/proc/drop_signal()
-	if(!signal)
-		return
-	var/datum/stationtrauma_overmap_sector/space/sector = SSstationtrauma_space_voyage.sectors[sector_id]
-	if(sector?.sites[signal.id] == signal)
-		sector.sites -= signal.id
-	if(signal.berth)
-		qdel(signal.berth, force = TRUE)
-		signal.berth = null
-	QDEL_NULL(signal)
+	var/datum/stationtrauma_overmap_site/space/distress/old_signal = signal
+	signal = null
+	withdraw_site(old_signal)
 
-/** The rescue approach puts the berth beside the transmitting beacon; the seam needs plain borders, so they stop looping. */
-/datum/stationtrauma_lost_space/proc/place_rescue_berth()
-	var/turf/beacon_tile
-	for(var/obj/item/stationtrauma_distress_beacon/beacon as anything in GLOB.stationtrauma_distress_beacons)
-		var/turf/tile = get_turf(beacon)
-		if(beacon.active && tile?.z == level.z_value)
-			beacon_tile = tile
-			break
-	if(!beacon_tile || !signal)
+/// Use the current physical target after clearing the edges, which can yield to movement or an entirely new loss.
+/datum/stationtrauma_lost_space/proc/place_rescue_berth(datum/stationtrauma_overmap_site/space/distress/site)
+	if(!isnull(edge_destination))
+		set_edges(null)
+	UNTIL(!setting_edges || QDELETED(site))
+	var/turf/tile = site?.rescue_turf()
+	if(QDELETED(site) || !tile)
 		return FALSE
-	set_edges(null)
 	var/margin = ST_LOST_BERTH_MARGIN
-	signal.berth = new /obj/docking_port/stationary/stationtrauma_space_site(locate(clamp(beacon_tile.x, margin, world.maxx - margin), clamp(beacon_tile.y, margin, world.maxy - margin), level.z_value))
-	signal.entrance = beacon_tile
+	site.berth = new /obj/docking_port/stationary/stationtrauma_space_site(locate(clamp(tile.x, margin, world.maxx - margin), clamp(tile.y, margin, world.maxy - margin), level.z_value))
+	site.entrance = tile
 	return TRUE
 
 /** Distress destination at the chart point of a loss, listed while a beacon transmits on its open-space level. */
@@ -230,12 +340,48 @@ GLOBAL_LIST_EMPTY(stationtrauma_lost_spaces)
 	/// Loss whose level this destination leads to.
 	var/datum/stationtrauma_lost_space/loss
 
+/// A target can leave while the docking code still owns its berth and is dismantling a partial passage.
+/datum/stationtrauma_overmap_site/space/distress/proc/finish_cancelled_docking()
+	UNTIL(QDELETED(src) || QDELETED(docking_owner) || docking_owner.docked == src)
+	if(!QDELETED(src) && QDELETED(docking_owner))
+		qdel(src)
+
 /datum/stationtrauma_overmap_site/space/distress/Destroy()
+	if(berth)
+		qdel(berth, force = TRUE)
+		berth = null
 	loss = null
 	return ..()
 
 /datum/stationtrauma_overmap_site/space/distress/distress_callsigns()
 	return loss?.level ? stationtrauma_distress_callsigns(loss.level.z_value) : list()
+
+/datum/stationtrauma_overmap_site/space/distress/proc/rescue_turf()
+	if(loss?.signal != src)
+		return null
+	for(var/obj/item/stationtrauma_distress_beacon/beacon as anything in GLOB.stationtrauma_distress_beacons)
+		var/turf/tile = get_turf(beacon)
+		if(beacon.active && tile?.z == loss.level.z_value)
+			return tile
+	return null
+
+/datum/stationtrauma_overmap_site/space/distress/casualty
+	name = "Человек за бортом"
+	/// The specific body whose physical position supplies this berth when docking begins.
+	var/datum/weakref/person_ref
+
+/datum/stationtrauma_overmap_site/space/distress/casualty/rescue_turf()
+	var/mob/living/carbon/human/person = person_ref?.resolve()
+	return loss?.has_casualty(person) ? get_turf(person) : null
+
+/datum/stationtrauma_overmap_site/space/distress/casualty/distress_callsigns()
+	return list()
+
+/datum/stationtrauma_overmap_site/space/distress/casualty/Destroy()
+	if(loss)
+		loss.rescue_sites -= src
+	person_ref = null
+	return ..()
 
 /// Hull-relative drift on a flight level; past the native transit border the drifter is swept into open space.
 /datum/component/shuttle_cling/stationtrauma

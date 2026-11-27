@@ -4,6 +4,7 @@ import type { BooleanLike } from 'tgui-core/react';
 
 import { useApproachClock } from './Descent';
 import {
+  BiosignatureGlyph,
   JumpPointGlyph,
   PlanetGlyph,
   ShipGlyph,
@@ -13,6 +14,7 @@ import {
 } from './DisplayArt';
 import {
   type ChartData,
+  contactName,
   distanceLabel,
   type FiringSector,
   type LandingPad,
@@ -569,7 +571,7 @@ export function Chart({
               className={`SpaceNavigation__marker ${contact.id === focusedContact ? 'is-selected' : ''} ${hoveredTarget === `contact:${contact.id}` ? 'is-hovered' : ''}`}
               role="button"
               tabIndex={0}
-              aria-label={`Контакт ${contact.id} · ${contact.identity?.callsign || 'Неопознанное судно'}`}
+              aria-label={`${contact.fauna ? 'Биосигнатура' : 'Контакт'} ${contact.id} · ${contactName(contact)}`}
               aria-pressed={contact.id === focusedContact}
               onClick={(event) => {
                 onContact(contact.id);
@@ -586,7 +588,7 @@ export function Chart({
                 }
               }}
             >
-              <title>{`К${contact.id} · ${contact.identity?.callsign || 'Неопознанное судно'} · ${Math.floor(contact.age)} с`}</title>
+              <title>{`К${contact.id} · ${contactName(contact)} · ${Math.floor(contact.age)} с`}</title>
               <circle cx={p.x} cy={p.y} r={13} fill="transparent" />
               <circle
                 className="nav-marker-focus"
@@ -595,27 +597,31 @@ export function Chart({
                 r="10"
                 pointerEvents="none"
               />
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r={5}
-                fill="none"
-                stroke={
+              <g
+                transform={`translate(${p.x} ${p.y})`}
+                color={
                   contact.id === focusedContact
                     ? '#edc587'
                     : contact.age >= 20
                       ? '#6e7664'
-                      : '#d2a46a'
+                      : contact.fauna
+                        ? '#9cdcb1'
+                        : '#d2a46a'
                 }
-              />
+              >
+                {contact.fauna ? (
+                  <BiosignatureGlyph dead={!!contact.fauna.dead} />
+                ) : (
+                  <circle r={5} fill="none" stroke="currentColor" />
+                )}
+              </g>
               <text
                 className="nav-object-label nav-chart-label nav-chart-label--contact"
                 x={p.x + 12}
                 y={p.y + 4}
                 pointerEvents="none"
               >
-                К{contact.id}
-                {contact.identity ? ` / ${contact.identity.callsign}` : ' / ?'}
+                К{contact.id} / {contactName(contact, '?')}
               </text>
               {contact.id === focusedContact &&
                 contact.vx !== undefined &&

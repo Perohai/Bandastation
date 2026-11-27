@@ -6,6 +6,12 @@
 [overmap_ships/ATTRIBUTION.md](../overmap_ships/ATTRIBUTION.md), руины — в
 [overmap_ruins/ATTRIBUTION.md](../overmap_ruins/ATTRIBUTION.md).
 
+## Космический глист
+
+Исходный рисунок глиста создан для BandaStation генератором изображений OpenAI.
+Для игры подготовлены палитра и восемь кадров движения размером 96×192 пикселя.
+Лицензия CC BY-SA 3.0. [Спрайт глиста](icons/space_worm.dmi)
+
 ## Посадка и взлёт на планетах
 
 Виды с борта и с поверхности, анимации, спрайты и звуковые эффекты взяты из Voidcrew. Автор Jackriip и участники Voidcrew. Код адаптирован под навигацию, освещение, профили планет и перемещение шаттлов Primera по AGPL-3.0. Файлы DMI и OGG перенесены без изменений по CC BY-SA 3.0. Пути и контрольные суммы указаны в `ASSETS.json`. [Voidcrew PR #588](https://github.com/voidcrew/Voidcrew/pull/588) · [Лицензия исходной ревизии](https://github.com/voidcrew/Voidcrew/blob/5e0a0d9dbfb307bed03c95301e80f53d3336f8b4/README.md#license).

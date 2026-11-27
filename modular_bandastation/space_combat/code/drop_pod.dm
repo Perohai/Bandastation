@@ -232,6 +232,7 @@
 		landing = get_turf(pod)
 	pod.touchdown(landing)
 	if(loss?.level)
+		loss.track_casualties(pod)
 		var/obj/item/stationtrauma_distress_beacon/beacon = new(landing)
 		beacon.active = TRUE
 		beacon.callsign = "Дроп-под [number]"

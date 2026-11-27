@@ -8,7 +8,7 @@ import { Chart, type MuzzleFlash } from './SpaceNavigation/Chart';
 import { ZoomKnob } from './SpaceNavigation/DisplayArt';
 import {
   type ChartData,
-  type Contact,
+  contactName,
   distanceLabel,
   type FiringSector,
   type Position,
@@ -416,10 +416,6 @@ function pointProblem(origin: Position, sector: FiringSector, aim: Position) {
   const offAxis = Math.abs(((bearing - sector.heading + 540) % 360) - 180);
   if (offAxis > sector.arc) return 'Вне сектора';
   return '';
-}
-
-function contactName(contact: Contact) {
-  return contact.identity?.callsign || 'Неопознанное судно';
 }
 
 function contactDistance(chart: ChartData, contact: Position) {

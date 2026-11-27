@@ -163,6 +163,8 @@
 
 /** A chart discovery alone cannot disclose or select a ship-owned bay. */
 /datum/stationtrauma_overmap/space/knows_site(datum/stationtrauma_overmap_site/site)
+	if(site && site == biosignature_waypoint)
+		return TRUE
 	var/datum/stationtrauma_overmap_site/space/destination = site
 	if(istype(destination) && destination.host)
 		return !QDELETED(site) && sites[site.id] == site && can_use_carrier_site(destination)

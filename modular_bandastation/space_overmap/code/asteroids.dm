@@ -70,7 +70,7 @@
 	return ..()
 
 /** Project bounded nearby contacts into the stationary ship's current physical orientation. */
-/datum/stationtrauma_overmap/space/proc/update_asteroids()
+/datum/stationtrauma_overmap/space/proc/update_exterior_contacts()
 	var/list/bounds = vessel.return_coords()
 	var/cx = round((bounds[1] + bounds[3]) / 2)
 	var/cy = round((bounds[2] + bounds[4]) / 2)
@@ -81,8 +81,8 @@
 		if(!rock.blocking || dx ** 2 + dy ** 2 > 55 ** 2)
 			rock.hide(src)
 			continue
-		var/turf/tile = locate(cx + round(dx * cos(rotation) - dy * sin(rotation)), cy + round(dx * sin(rotation) + dy * cos(rotation)), vessel.z)
-		if(!isspaceturf(tile) || vessel.shuttle_areas[get_area(tile)])
+		var/turf/tile = exterior_contact_turf(cx, cy, rotation, dx, dy)
+		if(!tile)
 			rock.hide(src)
 			continue
 		var/obj/structure/stationtrauma_asteroid/marker = rock.markers[src]
@@ -94,3 +94,12 @@
 			marker.update_integrity(rock.integrity)
 		else
 			marker.forceMove(tile)
+	var/datum/stationtrauma_overmap_sector/space/here = sector
+	for(var/datum/stationtrauma_space_worm/worm as anything in here?.space_worms)
+		update_worm_projection(worm, cx, cy, rotation)
+
+/** Rotate a sector offset into the flight deck and reject positions inside the hull. */
+/datum/stationtrauma_overmap/space/proc/exterior_contact_turf(cx, cy, rotation, dx, dy)
+	var/turf/tile = locate(cx + round(dx * cos(rotation) - dy * sin(rotation)), cy + round(dx * sin(rotation) + dy * cos(rotation)), vessel.z)
+	if(isspaceturf(tile) && !vessel.shuttle_areas[get_area(tile)])
+		return tile

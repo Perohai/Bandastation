@@ -80,6 +80,72 @@ export function ShipGlyph() {
   );
 }
 
+export function BiosignatureGlyph({ dead = false }: { dead?: boolean }) {
+  return (
+    <path
+      d={dead ? 'M-8 0H8M-6-2v4M6-2v4' : 'M-8 1h4l2-6 3 10 2-6 1 2h4'}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      pointerEvents="none"
+    />
+  );
+}
+
+export function HumanBiosignatureGlyph() {
+  return (
+    <g
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cy="-33" r="10" fill="currentColor" fillOpacity=".08" />
+      <path
+        d="M-10-20Q-18-20-20-13L-26 5Q-28 12-22 13L-12-5L-10 8L-13 41Q-13 46-8 46H-5L0 16L5 46H8Q13 46 13 41L10 8L12-5L22 13Q28 12 26 5L20-13Q18-20 10-20Z"
+        fill="currentColor"
+        fillOpacity=".12"
+      />
+      <path d="M-8-16Q0-12 8-16M-9 4Q0 8 9 4" strokeOpacity=".65" />
+    </g>
+  );
+}
+
+export function SpaceWormGlyph() {
+  return (
+    <g
+      transform="rotate(27)"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      pointerEvents="none"
+    >
+      <path
+        d="M-15-27C-25-13-22 2-10 12C-2 19 8 22 11 30C14 39 6 46-6 50C10 50 23 41 21 28C19 16 8 10 3 2C-3-7-1-16 12-25Z"
+        fill="currentColor"
+        fillOpacity=".08"
+      />
+      <path
+        d="M-16-24Q-22-32-14-43L-10-38Q-4-42 4-39L9-45Q20-39 17-29L13-22Q0-16-16-24Z"
+        fill="currentColor"
+        fillOpacity=".15"
+      />
+      <ellipse cx="-1" cy="-31" rx="10" ry="6" />
+      <path d="m-8-35 2 4 2-5m4 0 1 4 3-4m-6 10 1-4 3 3" strokeWidth="1.2" />
+      <path
+        d="M-18-20Q-7-13 6-18M-20-12Q-10-5 1-11M-20-4Q-11 2 0-4M-16 5Q-7 8 2 3M-10 12Q-2 14 6 8M-2 18Q5 20 12 14M7 24Q13 25 17 20M11 31Q17 31 21 27M10 39Q16 38 20 34"
+        strokeOpacity=".8"
+        strokeWidth="1.4"
+      />
+    </g>
+  );
+}
+
 export function StationGlyph() {
   return (
     <g

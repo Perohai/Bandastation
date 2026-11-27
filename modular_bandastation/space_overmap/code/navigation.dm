@@ -25,6 +25,7 @@
 	return ..()
 
 /datum/stationtrauma_overmap/space/Destroy()
+	clear_biosignature_course()
 	QDEL_LIST_ASSOC_VAL(planet_surveys)
 	chosen_pads = null
 	QDEL_NULL(planet_flight)
@@ -85,6 +86,7 @@
 		return
 	var/datum/stationtrauma_overmap_site/space/target = sites[selected_destination]
 	if(selected_destination && (QDELETED(target) || (target.host && !knows_site(target))))
+		clear_biosignature_course()
 		selected_destination = null
 		prepared_site = null
 		cancel_station_docking()
@@ -104,6 +106,7 @@
 /datum/stationtrauma_overmap/space/proc/listen()
 	next_listen = world.time + 2 SECONDS
 	observe_ships(sensor_range, passive = TRUE, tracked_reach = fire_control_sensor_range())
+	observe_biosignatures(sensor_range / 2, "passive")
 
 /** Nominal drive load distinguishes powered manoeuvres from unpowered drift. */
 /datum/stationtrauma_overmap/space/detection_signature()
@@ -215,6 +218,8 @@
 		return sail()
 
 /datum/stationtrauma_overmap/space/stop(reason = "Корабль остановлен")
+	if(biosignature_waypoint)
+		clear_biosignature_course()
 	cancel_jump()
 	throttle = 0
 	maneuver_direction = NONE
@@ -310,6 +315,7 @@
 	if(.)
 		if(id != previous_destination)
 			cancel_station_docking()
+		clear_biosignature_course()
 		prepared_site = sites[id]
 
 /** Leave virtual docks in place; planetary departures first return the real hull to its flight berth. */

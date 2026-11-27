@@ -105,6 +105,10 @@
 /datum/stationtrauma_overmap/proc/record_ship_observation(id, datum/stationtrauma_overmap/other, mode)
 	if(QDELETED(other) || !sector || other == src || sector.ships[id] != other)
 		return 0
+	return record_contact_observation(id, other.pos_x, other.pos_y, mode, other.transponder_identity())
+
+/** Store a sampled position under the crew's contact number, independent of what produced the echo. */
+/datum/stationtrauma_overmap/proc/record_contact_observation(id, sample_x, sample_y, mode, list/identity, list/fauna)
 	var/list/previous = ship_observations[id]
 	if(previous && world.time - previous["seen"] >= ST_NAV_SHIP_MEMORY)
 		previous = null
@@ -114,7 +118,7 @@
 	else
 		next_contact_number++
 		number = next_contact_number
-	var/list/observation = list("id" = number, "x" = other.pos_x, "y" = other.pos_y, "seen" = world.time, "mode" = mode)
+	var/list/observation = list("id" = number, "x" = sample_x, "y" = sample_y, "seen" = world.time, "mode" = mode)
 	if(previous)
 		if(mode != "active" && mode != "passive")
 			if(previous["mode"] == "active" || previous["mode"] == "passive")
@@ -123,13 +127,14 @@
 				observation["sensor_sample"] = previous["sensor_sample"]
 		var/seconds = (world.time - previous["seen"]) / (1 SECONDS)
 		if(seconds > 0)
-			observation["vx"] = (other.pos_x - previous["x"]) / seconds
-			observation["vy"] = (other.pos_y - previous["y"]) / seconds
+			observation["vx"] = (sample_x - previous["x"]) / seconds
+			observation["vy"] = (sample_y - previous["y"]) / seconds
 		else if(!isnull(previous["vx"]))
 			// Active, passive and radio samples may arrive in the same tick.
 			observation["vx"] = previous["vx"]
 			observation["vy"] = previous["vy"]
-	var/list/identity = other.transponder_identity()
+	if(fauna)
+		observation["fauna"] = fauna
 	if(identity)
 		observation["identity"] = identity.Copy()
 	ship_observations[id] = observation
@@ -149,6 +154,8 @@
 		if(!isnull(record["vx"]))
 			echo["vx"] = record["vx"]
 			echo["vy"] = record["vy"]
+		if(record["fauna"])
+			echo["fauna"] = record["fauna"]
 		var/list/identity = record["identity"]
 		if(identity)
 			echo["identity"] = identity.Copy()

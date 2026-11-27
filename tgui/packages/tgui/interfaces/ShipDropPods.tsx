@@ -89,7 +89,9 @@ function DropControl({ data }: { data: Data }) {
   const launchers = [...data.launchers].sort((a, b) => a.number - b.number);
   const launcher =
     launchers.find((entry) => entry.id === launcherId) ?? launchers[0];
-  const ship = data.ship_contacts.find((entry) => entry.id === targetId);
+  const ship = data.ship_contacts.find(
+    (entry) => entry.id === targetId && !entry.fauna,
+  );
   const site = data.routes.find(
     (entry) => entry.id === targetId && data.drop_sites?.includes(entry.id),
   );

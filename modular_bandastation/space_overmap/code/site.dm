@@ -105,6 +105,8 @@
 
 /** Crew-facing name: space objects stay unidentified; planets and stations are charted. */
 /datum/stationtrauma_overmap/space/proc/site_label(datum/stationtrauma_overmap_site/space/site)
+	if(site && (site == biosignature_waypoint || istype(site, /datum/stationtrauma_overmap_site/space/distress/casualty)))
+		return site.name
 	// A pad shares its parent's chart entry.
 	if(site.pad_parent)
 		return site_label(site.pad_parent)
@@ -127,9 +129,10 @@
 	var/found = 0
 	var/reach = sensor_range
 	found += observe_ships(reach)
+	found += observe_biosignatures(reach, "active")
 	for(var/id in sites)
 		var/datum/stationtrauma_overmap_site/site = sites[id]
-		if(!knows_site(site) && !site.failed && distance_to(site) <= reach)
+		if(!istype(site, /datum/stationtrauma_overmap_site/space/distress/casualty) && !knows_site(site) && !site.failed && distance_to(site) <= reach)
 			discover_site(site)
 			found++
 	for(var/datum/stationtrauma_overmap_zone/zone as anything in zones)

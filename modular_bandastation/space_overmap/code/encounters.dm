@@ -25,6 +25,20 @@
 	/// Sensor noise from 0 to 1 the crew sees on the chart.
 	var/interference = 0
 
+/** Spawn on the usual orbital band, or inside a selected ship's active sonar envelope. */
+/datum/stationtrauma_overmap_sector/space/proc/spawn_space_worm(datum/stationtrauma_overmap/space/ship)
+	if(ship)
+		if(QDELETED(ship) || !ship.is_operational() || ship.sector != src || ships[ship.vessel.shuttle_id] != ship)
+			return null
+		var/clearance = ship.radius + /datum/stationtrauma_space_worm::radius
+		if(clearance >= ship.sensor_range)
+			return null
+		var/distance = clearance + (ship.sensor_range - clearance) * rand(50, 75) / 100
+		var/bearing = rand(0, 359)
+		return new /datum/stationtrauma_space_worm(src, ship.pos_x + sin(bearing) * distance, ship.pos_y + cos(bearing) * distance)
+	var/list/point = random_position(700, 1400, 180, reserve = FALSE)
+	return new /datum/stationtrauma_space_worm(src, point[1], point[2])
+
 /** Create round-local encounter regions and persistent obstacles at random points of the system. */
 /datum/stationtrauma_overmap_sector/space/proc/build_encounters()
 	zones += new /datum/stationtrauma_overmap_zone("Корона звезды", "corona", 0, 0, ST_STAR_CORONA_RADIUS)
@@ -81,7 +95,7 @@
 		encounter_status = "[zone.name]: опасность столкновения с обломками"
 	encounter_x = pos_x
 	encounter_y = pos_y
-	update_asteroids()
+	update_exterior_contacts()
 	if(world.time < next_detection)
 		return
 	next_detection = world.time + 1 SECONDS
@@ -122,6 +136,7 @@
 
 /** Cancel objects before a native relocation or safe docking, retaining chart and salvage state. */
 /datum/stationtrauma_overmap/space/proc/clear_encounters()
+	clear_worm_projections()
 	for(var/obj/effect/meteor/meteor as anything in live_meteors)
 		UnregisterSignal(meteor, COMSIG_QDELETING)
 	QDEL_LIST(live_meteors)

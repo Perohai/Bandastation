@@ -145,26 +145,34 @@
 /datum/stationtrauma_overmap/proc/discover_site(datum/stationtrauma_overmap_site/site)
 	discovered_sites[site.id] = TRUE
 
+/** Current helm destination, including a crew-private waypoint supplied by an environment. */
+/datum/stationtrauma_overmap/proc/flight_destination()
+	RETURN_TYPE(/datum/stationtrauma_overmap_site)
+	return sites[selected_destination]
+
 /** Integrate motion with swept collision detection. */
 /datum/stationtrauma_overmap/proc/advance()
 	var/seconds = max(0, world.time - last_update) / (1 SECONDS)
 	last_update = world.time
 	if(!seconds || !helm_engaged || arrival_pending)
 		return
+	var/datum/stationtrauma_overmap_site/site = flight_destination()
 	var/turn = WRAP(ordered_course - course + 180, 0, 360) - 180
 	if(autopilot)
+		if(QDELETED(site))
+			stop("Точка назначения недоступна")
+			return
 		steer_autopilot()
 		if(!helm_engaged)
 			return
 		turn = WRAP(ordered_course - course + 180, 0, 360) - 180
 	course = WRAP(course + clamp(turn, -turn_rate() * seconds, turn_rate() * seconds), 0, 360)
-	var/datum/stationtrauma_overmap_site/site = sites[selected_destination]
 	var/available = get_target_speed()
 	if(autopilot && length(autopilot_path))
 		var/list/node = autopilot_path[1]
 		var/distance = sqrt((node[1] - pos_x) ** 2 + (node[2] - pos_y) ** 2)
 		var/margin = length(autopilot_path) == 1 ? max(0, radius + site.radius - 2) : 10
-		if(length(autopilot_path) == 1 && (prepared_site != sites[selected_destination] || preparing))
+		if(length(autopilot_path) == 1 && (prepared_site != site || preparing))
 			margin += ST_NAV_APPROACH + 4
 		var/remaining = max(0, distance - margin)
 		available = min(available, 0.7 * sqrt(2 * get_braking_acceleration() * remaining), remaining)
@@ -229,7 +237,7 @@
 /datum/stationtrauma_overmap/proc/sail()
 	if(arrival_pending || !is_operational() || !propulsion_available())
 		return FALSE
-	var/datum/stationtrauma_overmap_site/site = sites[selected_destination]
+	var/datum/stationtrauma_overmap_site/site = flight_destination()
 	if(site && (!knows_site(site) || site.failed))
 		return FALSE
 	helm_engaged = TRUE
@@ -252,7 +260,7 @@
 
 /** Recheck after any yielded preparation; a stop invalidates pending arrival. */
 /datum/stationtrauma_overmap/proc/can_arrive(datum/stationtrauma_overmap_site/site)
-	return knows_site(site) && is_operational() && helm_engaged && arrival_pending && (!braking || autopilot) && speed <= ST_NAV_STOPPED_SPEED && !preparing && prepared_site == site && sites[selected_destination] == site && in_arrival_range(site)
+	return knows_site(site) && is_operational() && helm_engaged && arrival_pending && (!braking || autopilot) && speed <= ST_NAV_STOPPED_SPEED && !preparing && prepared_site == site && flight_destination() == site && in_arrival_range(site)
 
 /** Environment adapters must validate and activate their physical connection before calling the parent. */
 /datum/stationtrauma_overmap/proc/arrive(datum/stationtrauma_overmap_site/site)

@@ -3,6 +3,14 @@
 	"scope": "Non-audio maps, imported icons and generated previews introduced or modified by space-overmap modules. Embedded code and existing referenced assets retain their original notices.",
 	"assets": [
 		{
+			"path": "modular_bandastation/space_overmap/icons/space_worm.dmi",
+			"sha256": "79167cef627457103e0faa52fd48db0dc27b0c68fbc78e0f01d1fdae2dec656b",
+			"license": "CC-BY-SA-3.0",
+			"authors": ["OpenAI image generation for BandaStation"],
+			"source": null,
+			"changes": "Original space worm artwork reduced to a pixel palette and animated in eight north-facing 96x192 frames."
+		},
+		{
 			"path": "modular_bandastation/space_overmap/icons/bluespace_tunnel.dmi",
 			"sha256": "6a930708ab31418e937924ddddd0fa5e7b808f891509e90fecb906f8321d19f2",
 			"license": "CC-BY-SA-3.0",

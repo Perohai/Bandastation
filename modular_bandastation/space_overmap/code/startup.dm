@@ -130,5 +130,7 @@ SUBSYSTEM_DEF(stationtrauma_space_voyage)
 		if(!vessel.overmap.place_starting_dock())
 			stack_trace("Failed to place sector ship [vessel.shuttle_id] at [vessel.starting_dock]")
 			return SS_INIT_FAILURE
+	var/datum/stationtrauma_overmap_sector/space/home/worm_sector = sectors["epsilon_eridani"]
+	worm_sector.spawn_space_worm()
 	log_mapping("Space sectors ready: [length(sectors)] sectors, [length(vessels)] ships")
 	return SS_INIT_SUCCESS

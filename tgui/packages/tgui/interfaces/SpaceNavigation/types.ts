@@ -17,8 +17,17 @@ export type Contact = Position & {
   mode: string;
   vx?: number;
   vy?: number;
+  fauna?: { kind: string; name: string; dead: BooleanLike };
   identity?: { callsign: string; faction: string };
 };
+
+export function contactName(contact: Contact, unknown = 'Неопознанное судно') {
+  if (contact.fauna) {
+    return `${contact.fauna.name} · ${contact.fauna.dead ? 'мёртв' : 'жив'}`;
+  }
+  return contact.identity?.callsign || unknown;
+}
+
 export type CelestialBody = Position & {
   name: string;
   radius: number;
@@ -105,6 +114,9 @@ export type NavigationData = Position & {
   engine_fault: BooleanLike;
   can_start_engines: BooleanLike;
   helm: BooleanLike;
+  control_revision: number;
+  can_approach_biosignature: BooleanLike;
+  selected_biosignature: number | null;
   autopilot: BooleanLike;
   preparing: BooleanLike;
   planning: BooleanLike;

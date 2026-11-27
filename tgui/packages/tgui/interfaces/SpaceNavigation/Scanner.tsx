@@ -1,13 +1,20 @@
+import { Button } from 'tgui-core/components';
+
+import { useBackend } from '../../backend';
 import {
+  BiosignatureGlyph,
+  HumanBiosignatureGlyph,
   JumpPointGlyph,
   PlanetGlyph,
   RuinGlyph,
   ShipGlyph,
+  SpaceWormGlyph,
   StationGlyph,
   ZoneArt,
 } from './DisplayArt';
 import {
   closestApproach,
+  contactName,
   distanceLabel,
   type NavigationData,
   speedLabel,
@@ -26,6 +33,7 @@ function bearing(data: NavigationData, x: number, y: number) {
 
 /** Sensor readout of the selected target: what it reads as, where it lies and how it moves. */
 export function Scanner({ data, focusedContact }: Props) {
+  const { act } = useBackend();
   const distance = (value: number) => distanceLabel(value, data.au_scale);
   const contact =
     focusedContact !== null
@@ -107,7 +115,9 @@ export function Scanner({ data, focusedContact }: Props) {
           role="img"
           aria-label={
             contact
-              ? 'Схематичное изображение корабля'
+              ? contact.fauna
+                ? contactName(contact)
+                : 'Схематичное изображение корабля'
               : site?.kind === 'planet'
                 ? 'Схематичное изображение планеты'
                 : 'Схематичное изображение объекта'
@@ -120,8 +130,19 @@ export function Scanner({ data, focusedContact }: Props) {
             strokeWidth=".5"
             strokeDasharray="2 3"
           />
-          <g transform="translate(100 66)" style={{ color: '#b8d8b8' }}>
-            {contact ? (
+          <g
+            transform="translate(100 66)"
+            color={contact?.fauna?.dead ? '#a9aca7' : '#b8d8b8'}
+          >
+            {contact?.fauna?.kind === 'worm' ? (
+              <SpaceWormGlyph />
+            ) : contact?.fauna?.kind === 'human' ? (
+              <HumanBiosignatureGlyph />
+            ) : contact?.fauna ? (
+              <g transform="scale(4.5)">
+                <BiosignatureGlyph dead={!!contact.fauna.dead} />
+              </g>
+            ) : contact ? (
               <g transform="scale(3)">
                 <ShipGlyph />
               </g>
@@ -154,7 +175,7 @@ export function Scanner({ data, focusedContact }: Props) {
         <figcaption>
           <strong>
             {contact
-              ? `К${contact.id} / ${contact.identity?.callsign || 'НЕТ ОТВЕТА'}`
+              ? `К${contact.id} / ${contactName(contact, 'НЕТ ОТВЕТА')}`
               : site?.kind === 'signal' && !site.sos
                 ? site.type
                 : site?.name}
@@ -162,6 +183,21 @@ export function Scanner({ data, focusedContact }: Props) {
           {contact?.identity && <small>{contact.identity.faction}</small>}
         </figcaption>
       </figure>
+      {contact?.fauna && (
+        <Button
+          className="SpaceNavigation__approach-biosignature"
+          icon="location-arrow"
+          disabled={!data.can_approach_biosignature}
+          onClick={() =>
+            act('approach_biosignature', {
+              value: contact.id,
+              revision: data.control_revision,
+            })
+          }
+        >
+          Подлететь
+        </Button>
+      )}
       <div role="list">
         {rows.map(([label, value]) => (
           <div

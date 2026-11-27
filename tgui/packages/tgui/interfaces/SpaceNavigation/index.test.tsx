@@ -43,6 +43,51 @@ it('distinguishes throttle buttons from the lever and sounds local tabs', () => 
   }
 });
 
+it('approaches the inspected person and docks only to their own rescue site', () => {
+  const sendAct = spyOn(actions, 'sendAct').mockImplementation(() => {});
+  try {
+    const human = { kind: 'human', name: 'Человек', dead: 0 };
+    store.set(gameDataAtom, {
+      ...fixture.data,
+      control_revision: 17,
+      can_approach_biosignature: 1,
+      can_dock: 1,
+      selected: 'rescue-site',
+      selected_biosignature: 8,
+      ship_contacts: [
+        { id: 7, x: 805, y: 420, age: 1, mode: 'active', fauna: human },
+        {
+          id: 8,
+          x: 820,
+          y: 400,
+          age: 2,
+          mode: 'active',
+          fauna: { ...human, dead: 1 },
+        },
+      ],
+    });
+    render(<SpaceNavigation />);
+
+    fireEvent.click(screen.getByLabelText('Биосигнатура 7 · Человек · жив'));
+    fireEvent.click(screen.getByText('Подлететь'));
+    expect(sendAct).toHaveBeenLastCalledWith('approach_biosignature', {
+      value: 7,
+      revision: 17,
+    });
+    expect(
+      screen
+        .getByLabelText('Стыковка недоступна')
+        .classList.contains('Button--disabled'),
+    ).toBe(true);
+
+    fireEvent.click(screen.getByLabelText('Биосигнатура 8 · Человек · мёртв'));
+    fireEvent.click(screen.getByLabelText('Стыковка с зоной спасения'));
+    expect(sendAct).toHaveBeenLastCalledWith('dock', { value: 'rescue-site' });
+  } finally {
+    sendAct.mockRestore();
+  }
+});
+
 it('starts the plotted entry only at the announced atmospheric cue', () => {
   const approach: NonNullable<NavigationData['approach']> = {
     elapsed: 0,

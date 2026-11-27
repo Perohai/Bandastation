@@ -20,6 +20,8 @@
 	var/ready = FALSE
 	/// Per-hull discoveries retained between sector visits; contains no vessel references.
 	var/list/ship_charts = list()
+	/// Living space worms owned by this sector, independent of the ship registry.
+	var/list/datum/stationtrauma_space_worm/space_worms = list()
 	/// Sector-owned encounter regions.
 	var/list/zones = list()
 	/// Chart-only bodies: name, position, symbol radius and orbit centre; never landing targets.
@@ -46,6 +48,8 @@
 	var/list/away_sites = list()
 
 /datum/stationtrauma_overmap_sector/space/Destroy()
+	for(var/datum/stationtrauma_space_worm/worm as anything in space_worms.Copy())
+		qdel(worm)
 	fixed_combat_sites.Cut()
 	for(var/ship_id in station_docking_requests.Copy())
 		qdel(station_docking_requests[ship_id])
@@ -92,7 +96,9 @@
 
 /datum/stationtrauma_overmap_sector/space/unregister(datum/stationtrauma_overmap/space/navigation)
 	if(navigation.sector == src)
+		navigation.clear_biosignature_course()
 		navigation.cancel_station_docking()
+		navigation.clear_worm_projections()
 	if(!..())
 		return FALSE
 	navigation.discovered_sites = list()
@@ -356,11 +362,11 @@
 
 /** Load a charted fixed location on its own level; the first approach runs this. */
 /**
- * A free point on a ring around the star, at least `gap` from every point already taken; it is taken in turn.
+ * A free point on a ring around the star, at least `gap` from points already taken. Permanent locations reserve the result.
  *
  * Gives up spacing after a few tries rather than fail the sector, so a crowded ring still places everything.
  */
-/datum/stationtrauma_overmap_sector/space/proc/random_position(min_radius, max_radius, gap)
+/datum/stationtrauma_overmap_sector/space/proc/random_position(min_radius, max_radius, gap, reserve = TRUE)
 	var/list/point
 	for(var/attempt in 1 to 30)
 		var/angle = rand(0, 359)
@@ -373,7 +379,8 @@
 				break
 		if(clear)
 			break
-	taken_positions += list(point)
+	if(reserve)
+		taken_positions += list(point)
 	return point
 
 /datum/stationtrauma_overmap_sector/space/proc/load_location(datum/stationtrauma_overmap_site/space/site, map_path, parallax)

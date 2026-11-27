@@ -282,8 +282,9 @@
  */
 /datum/stationtrauma_overmap/space/proc/approach(datum/stationtrauma_overmap_site/space/site, revision)
 	var/controlled = station_clearance_required(site)
-	// A rescue at a distress beacon stops alongside at once; a non-zero length keeps the console's approach clock finite.
-	var/duration = length(site.distress_callsigns()) ? 1 SECONDS : site.landing ? ST_SPACE_LANDING_TIME : site.physical_docking ? ST_SPACE_MOORING_TIME : ST_SPACE_APPROACH_TIME
+	// An open-space rescue stops alongside immediately; the approach clock needs a non-zero duration.
+	var/rescue = istype(site, /datum/stationtrauma_overmap_site/space/distress/casualty) || length(site.distress_callsigns())
+	var/duration = rescue ? 1 SECONDS : site.landing ? ST_SPACE_LANDING_TIME : site.physical_docking ? ST_SPACE_MOORING_TIME : ST_SPACE_APPROACH_TIME
 	begin_approach(site, duration)
 	var/obj/docking_port/stationary/stationtrauma_space_station/standard/slot = site.berth
 	var/illuminate_pad = istype(slot) && slot.hangar

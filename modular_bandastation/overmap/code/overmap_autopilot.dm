@@ -125,7 +125,7 @@
 
 /** A yielded plan cannot revive a manually stopped or retargeted vessel. */
 /datum/stationtrauma_overmap/proc/engage_autopilot()
-	var/datum/stationtrauma_overmap_site/site = sites[selected_destination]
+	var/datum/stationtrauma_overmap_site/site = flight_destination()
 	if(!site || !knows_site(site) || site.failed || planning || arrival_pending || throttle <= 0 || !propulsion_available())
 		return FALSE
 	planning = TRUE
@@ -133,7 +133,7 @@
 	var/list/position = site_position(site)
 	var/list/path = position ? plan_course(position[1], position[2]) : null
 	planning = FALSE
-	if(QDELETED(src) || !is_operational() || revision != control_revision || site != sites[selected_destination] || !knows_site(site))
+	if(QDELETED(src) || !is_operational() || revision != control_revision || site != flight_destination() || !knows_site(site))
 		return FALSE
 	if(!length(path) || !path_clear(pos_x, pos_y, path[1][1], path[1][2]))
 		stop("Автопилот: безопасный маршрут не найден")

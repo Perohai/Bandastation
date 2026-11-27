@@ -933,8 +933,16 @@
     display: block;
   }
   &__scanner {
-    overflow-y: hidden;
+    overflow-y: auto;
     padding: 4px 8px 6px;
+
+    .Button.SpaceNavigation__approach-biosignature {
+      margin: 2px 0 5px;
+      padding: 5px 8px;
+      border: 1px solid #527e6e;
+      background: #1b342c;
+      color: #d3ead9;
+    }
   }
   &__scanner-preview svg {
     height: 104px;

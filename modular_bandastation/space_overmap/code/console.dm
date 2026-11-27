@@ -111,7 +111,7 @@
 				continue
 			var/obj/machinery/atmospherics/components/unary/ship_engine_heater/feed = engine.combustion_feed?.resolve()
 			engine_fault = !feed || !!feed.unavailable_reason()
-	var/datum/stationtrauma_overmap_site/space/target = map.sites[map.selected_destination]
+	var/datum/stationtrauma_overmap_site/space/target = map.flight_destination()
 	if(!map.knows_site(target))
 		target = null
 	var/datum/stationtrauma_overmap_site/space/dock_target = map.selected_docking_site()
@@ -122,6 +122,8 @@
 	var/list/data = map.navigation_chart_data()
 	data += list(
 		"status" = map.status,
+		"control_revision" = map.control_revision, "selected_biosignature" = map.selected_biosignature,
+		"can_approach_biosignature" = map.can_approach_biosignature(),
 		"jumping" = !!map.jump_target,
 		"ordered_course" = map.ordered_course,
 		"speed" = map.speed, "throttle" = map.approach_started ? round(100 * map.commanded_thrust()) * vessel.engines_running : map.throttle, "speed_scale" = ST_SPACE_MAX_SPEED,
@@ -219,7 +221,7 @@
 	return data
 
 /** Validate and dispatch a helm command. */
-/obj/machinery/computer/stationtrauma_space_navigation/proc/navigation_command(action, value)
+/obj/machinery/computer/stationtrauma_space_navigation/proc/navigation_command(action, value, revision)
 	var/datum/stationtrauma_overmap/space/map = vessel?.overmap
 	if(!map || panel_open || (machine_stat & (NOPOWER|BROKEN)))
 		return FALSE
@@ -232,6 +234,11 @@
 		return FALSE
 	map.advance()
 	switch(action)
+		if("approach_biosignature")
+			if(!isnum(revision) || revision != map.control_revision)
+				return FALSE
+			inspected_site = null
+			return map.approach_biosignature(value)
 		if("board_ship")
 			return map.request_boarding(value)
 		if("board_site")
@@ -303,10 +310,10 @@
 			map.command_course(map.ordered_course)
 			return map.sail()
 		if("autopilot")
-			if(map.preparing || map.ship_docking || map.planning || map.throttle <= 0 || map.docked?.id == map.selected_destination || map.docked?.docking_target?.id == map.selected_destination || map.docked?.pad_parent?.id == map.selected_destination)
+			var/next = inspected_site || map.flight_destination()?.id
+			if(!next || map.preparing || map.ship_docking || map.planning || map.throttle <= 0 || map.docked?.id == next || map.docked?.docking_target?.id == next || map.docked?.pad_parent?.id == next)
 				return FALSE
 			if(inspected_site)
-				var/next = inspected_site
 				inspected_site = null
 				if(!map.select_site(next))
 					return FALSE
@@ -333,7 +340,7 @@
 		return FALSE
 	if(action == "interface_click")
 		return TRUE
-	return navigation_command(action, params["value"])
+	return navigation_command(action, params["value"], params["revision"])
 
 /** Navigation buttons use the supplied tone; the throttle lever keeps the native mechanical click. */
 /obj/machinery/computer/stationtrauma_space_navigation/play_ui_sound(action, list/params)

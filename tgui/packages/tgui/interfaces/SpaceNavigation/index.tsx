@@ -12,7 +12,12 @@ import { Docking } from './Docking';
 import { AnalogDial, FuelGauges } from './Fuel';
 import { Scanner } from './Scanner';
 import { SegmentedProgress } from './SegmentedProgress';
-import { distanceLabel, type NavigationData, speedLabel } from './types';
+import {
+  contactName,
+  distanceLabel,
+  type NavigationData,
+  speedLabel,
+} from './types';
 import { useHelm } from './useHelm';
 
 export const SpaceNavigation = () => {
@@ -43,6 +48,7 @@ function Navigation({ data }: { data: NavigationData }) {
   const contact = data.ship_contacts.find(
     (record) => record.id === focusedContact,
   );
+  const shipContact = contact?.fauna ? undefined : contact;
   const boarding = data.boarding;
   const siteBoarding =
     focusedContact === null && data.can_board_site != null && !moored;
@@ -62,7 +68,15 @@ function Navigation({ data }: { data: NavigationData }) {
   let dockDisabled = !data.can_dock;
   let dockTooltip = data.landing ? 'Посадка' : 'Стыковка';
   let clearanceStatus = '';
-  if (focusedContact !== null) {
+  if (contact?.fauna) {
+    const rescueTarget =
+      contact.fauna.kind === 'human' &&
+      data.selected_biosignature === contact.id;
+    dockDisabled ||= !rescueTarget;
+    dockTooltip = rescueTarget
+      ? 'Стыковка с зоной спасения'
+      : 'Стыковка недоступна';
+  } else if (focusedContact !== null) {
     dockAction = 'ship_dock';
     dockValue = focusedContact;
     dockDisabled = !contact || !data.dockable_contacts.includes(contact.id);
@@ -127,6 +141,11 @@ function Navigation({ data }: { data: NavigationData }) {
           : data.speed > 0.05
             ? 'ПОЛЁТ'
             : 'СТОП';
+  const inspectContact = (id: number, showScanner = true) => {
+    act('interface_click');
+    setFocusedContact(id);
+    if (showScanner) setPanel('scanner');
+  };
   const selectSite = (id: string) => {
     setFocusedContact(null);
     act('select', { value: id });
@@ -222,22 +241,16 @@ function Navigation({ data }: { data: NavigationData }) {
                     <Button
                       key={`contact-${record.id}`}
                       fluid
-                      tooltip={
-                        record.identity?.callsign || 'Неопознанное судно'
-                      }
+                      tooltip={contactName(record)}
                       selected={record.id === focusedContact}
                       onMouseEnter={() =>
                         setHoveredTarget(`contact:${record.id}`)
                       }
                       onMouseLeave={() => setHoveredTarget(null)}
-                      onClick={() => {
-                        act('interface_click');
-                        setFocusedContact(record.id);
-                      }}
+                      onClick={() => inspectContact(record.id, !!record.fauna)}
                     >
                       <span>
-                        К{record.id} ·{' '}
-                        {record.identity?.callsign || 'Неопознанное судно'}
+                        К{record.id} · {contactName(record)}
                       </span>
                       <span>
                         {distance(
@@ -271,11 +284,7 @@ function Navigation({ data }: { data: NavigationData }) {
               hoveredTarget={hoveredTarget}
               data={data}
               focusedContact={focusedContact}
-              onContact={(id) => {
-                act('interface_click');
-                setFocusedContact(id);
-                setPanel('scanner');
-              }}
+              onContact={inspectContact}
               onSite={selectSite}
               onPad={(number) => act('landing_pad', { value: number })}
             />
@@ -703,7 +712,10 @@ function Navigation({ data }: { data: NavigationData }) {
         >
           <span className="SpaceNavigation__status-dot" />
           <span>{boardingStatus || clearanceStatus || data.status}</span>
-          {(contact || siteBoarding || boarding || data.boarding_connected) && (
+          {(shipContact ||
+            siteBoarding ||
+            boarding ||
+            data.boarding_connected) && (
             <div className="SpaceNavigation__boarding">
               {boarding?.incoming ? (
                 <div className="SpaceNavigation__boarding-warning" role="alert">
@@ -724,8 +736,8 @@ function Navigation({ data }: { data: NavigationData }) {
                       : !boarding &&
                         !(siteBoarding
                           ? data.can_board_site
-                          : contact &&
-                            data.boardable_contacts?.includes(contact.id))
+                          : shipContact &&
+                            data.boardable_contacts?.includes(shipContact.id))
                   }
                   tooltip={
                     data.boarding_connected
@@ -747,8 +759,8 @@ function Navigation({ data }: { data: NavigationData }) {
                       );
                     } else if (boarding) {
                       act('cancel_boarding');
-                    } else if (contact) {
-                      act('board_ship', { value: contact.id });
+                    } else if (shipContact) {
+                      act('board_ship', { value: shipContact.id });
                     } else if (siteBoarding) {
                       act('board_site', { value: data.selected });
                     }

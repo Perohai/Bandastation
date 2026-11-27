@@ -1,3 +1,45 @@
+/** Spawn one predator near the selected ship, or at a random location in the selected system. */
+ADMIN_VERB(spawn_overmap_space_worm, R_ADMIN, "Overmap - Создать космического глиста", "Создать глиста в радиусе сонара корабля или в случайной точке сектора.", ADMIN_CATEGORY_EVENTS)
+	var/list/choices = list()
+	for(var/id in SSstationtrauma_space_voyage.sectors)
+		var/datum/stationtrauma_overmap_sector/space/listed_sector = SSstationtrauma_space_voyage.sectors[id]
+		if(QDELETED(listed_sector) || !listed_sector.ready)
+			continue
+		for(var/ship_id in listed_sector.ships)
+			var/datum/stationtrauma_overmap/space/listed_ship = listed_sector.ships[ship_id]
+			if(!QDELETED(listed_ship) && listed_ship.is_operational())
+				choices["У корабля [listed_ship.vessel.name] ([ship_id], [listed_sector.name])"] = WEAKREF(listed_ship)
+		choices["Случайная точка — [listed_sector.name] ([id])"] = WEAKREF(listed_sector)
+	if(!length(choices) || SSstationtrauma_space_voyage.loading)
+		to_chat(user, span_warning("Нет готовых секторов овермапы."), confidential = TRUE)
+		return
+	var/choice = tgui_input_list(user, "Выберите корабль, чтобы глист появился в радиусе его сонара, или случайную точку в секторе.", "Космическая фауна", choices)
+	if(!(choice in choices) || !check_rights_for(user, R_ADMIN) || SSstationtrauma_space_voyage.loading)
+		return
+	var/datum/weakref/selection = choices[choice]
+	var/datum/location = selection.resolve()
+	var/datum/stationtrauma_overmap/space/ship
+	var/datum/stationtrauma_overmap_sector/space/sector
+	if(istype(location, /datum/stationtrauma_overmap/space))
+		ship = location
+		sector = ship.sector
+	else
+		sector = location
+	if(QDELETED(sector) || !sector.ready || SSstationtrauma_space_voyage.sectors[sector.id] != sector)
+		to_chat(user, span_warning("Выбранный корабль или сектор больше недоступен."), confidential = TRUE)
+		return
+	var/datum/stationtrauma_space_worm/worm = sector.spawn_space_worm(ship)
+	if(!worm)
+		to_chat(user, span_warning("Не удалось разместить глиста в радиусе сонара выбранного корабля."), confidential = TRUE)
+		return
+	var/ship_info = ""
+	if(ship)
+		var/distance = sqrt((worm.pos_x - ship.pos_x) ** 2 + (worm.pos_y - ship.pos_y) ** 2)
+		ship_info = " — [ship.vessel.name] ([ship.vessel.shuttle_id]), [round(distance * ST_SPACE_AU_SCALE, 0.001)] а.е."
+	var/coordinates = "([round(worm.pos_x)], [round(worm.pos_y)])"
+	log_admin("[key_name(user)] spawned a space worm in [sector.id] [coordinates][ship_info].")
+	message_admins("[key_name_admin(user)] создал космического глиста в секторе [sector.name] [coordinates][html_encode(ship_info)].")
+
 ADMIN_VERB(stationtrauma_overmap_jump, R_DEBUG, "Overmap - Переместить корабль к объекту", "Переместить корабль к координатам объекта без стыковки.", ADMIN_CATEGORY_DEBUG)
 	// Dialogs sleep, so only IDs survive them; the ship and site are looked up again after each one.
 	var/list/ships = list()
@@ -48,6 +90,7 @@ ADMIN_VERB(stationtrauma_overmap_jump, R_DEBUG, "Overmap - Переместит�
 	if(!is_operational() || preparing || relocating || planning || arrival_pending || docked || ship_docking || QDELETED(site) || sites[site.id] != site || (!site.berth && !site.awaits_map() && !istype(site, /datum/stationtrauma_overmap_site/space/jump_point)) || site.failed)
 		return FALSE
 	stop("Движение остановлено")
+	clear_biosignature_course()
 	clear_encounters()
 	pos_x = encounter_x = site.pos_x
 	pos_y = encounter_y = site.pos_y

@@ -4,7 +4,7 @@
 	var/obj/projectile/bullet/stationtrauma_kinetic/projectile_type = /obj/projectile/bullet/stationtrauma_kinetic
 	/// Sector at launch, also used to reject an invalidated departure.
 	var/datum/weakref/sector_ref
-	/// Firing hull, excluded from collisions and always shown its own shot.
+	/// Firing hull or animal, excluded from collisions and able to track its own shot.
 	var/datum/weakref/source_ref
 	/// Crew attribution retained through the transfer between maps.
 	var/datum/weakref/gunner_ref
@@ -91,17 +91,22 @@
 	source.advance()
 	if(source.sector != sector || !source.kinetic_flight_ready())
 		return FALSE
+	start_sector_travel(sector)
+	return TRUE
+
+/** Start a round in sector space after its physical muzzle or natural emitter has released it. */
+/datum/stationtrauma_kinetic_shot/proc/start_sector_travel(datum/stationtrauma_overmap_sector/space/sector)
 	sector.next_kinetic_shot++
 	number = sector.next_kinetic_shot
 	sector.kinetic_shots += src
 	last_update = world.time
 	START_PROCESSING(SSfastprocess, src)
-	return TRUE
 
 /** Swept point-circle collision in the hull's moving frame. */
 /datum/stationtrauma_kinetic_shot/proc/contact_fraction(dx, dy, hull_x, hull_y, hull_dx, hull_dy, radius)
 	return stationtrauma_circle_hit(pos_x, pos_y, dx - hull_dx, dy - hull_dy, hull_x, hull_y, radius)
 
+/** Advance to the earliest terrain, fauna, installation or hull on the firing line. */
 /datum/stationtrauma_kinetic_shot/process(seconds_per_tick)
 	var/datum/stationtrauma_overmap_sector/space/sector = sector_ref?.resolve()
 	if(QDELETED(sector))
@@ -127,7 +132,20 @@
 		if(!isnull(contact) && (isnull(fraction) || contact < fraction))
 			fraction = contact
 
-	var/datum/stationtrauma_overmap/space/firing_ship = source_ref?.resolve()
+	var/datum/emitter = source_ref?.resolve()
+	var/datum/stationtrauma_space_worm/worm_target
+	for(var/datum/stationtrauma_space_worm/worm as anything in sector.space_worms)
+		if(worm == emitter || worm.health <= 0)
+			continue
+		var/elapsed = (last_update - worm.last_update) / (1 SECONDS)
+		var/contact = contact_fraction(dx, dy,
+			worm.pos_x + worm.velocity_x * elapsed, worm.pos_y + worm.velocity_y * elapsed,
+			worm.velocity_x * seconds, worm.velocity_y * seconds, worm.radius,
+		)
+		if(!isnull(contact) && (isnull(fraction) || contact < fraction))
+			worm_target = worm
+			fraction = contact
+
 	var/datum/stationtrauma_overmap_site/space/docking_target/fixed_target
 	var/datum/stationtrauma_overmap_site/space/fixed_berth
 	var/datum/stationtrauma_overmap/space/target
@@ -147,7 +165,7 @@
 		offset_y = pos_y + dy * fraction - site.pos_y
 	for(var/id in sector.ships)
 		var/datum/stationtrauma_overmap/space/candidate = sector.ships[id]
-		if(QDELETED(candidate) || candidate == firing_ship || !candidate.kinetic_exposed())
+		if(QDELETED(candidate) || candidate == emitter || !candidate.kinetic_exposed())
 			continue
 		var/elapsed = (last_update - candidate.last_update) / (1 SECONDS)
 		var/hull_x = candidate.pos_x + candidate.velocity_x * elapsed
@@ -173,6 +191,8 @@
 			project_into_hull(target, offset_x, offset_y, strength)
 	else if(fixed_target)
 		project_into_site(fixed_target, fixed_berth, offset_x, offset_y)
+	else if(worm_target)
+		worm_target.take_damage(initial(projectile_type.damage))
 	if(!isnull(fraction) || distance >= remaining)
 		pos_x += dx * (isnull(fraction) ? 1 : fraction)
 		pos_y += dy * (isnull(fraction) ? 1 : fraction)
