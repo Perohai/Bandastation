@@ -425,7 +425,7 @@
 			if(!releasable(departing, revision))
 				problem = "утрачена тяга или отменён приказ"
 			else if(collar && !collar.clear_for_release())
-				problem = "переход или шлюз занят"
+				problem = "стыковочный шлюз не закрыт или занят"
 			else
 				problem = "стоянка корабля перекрыта"
 		closing = FALSE

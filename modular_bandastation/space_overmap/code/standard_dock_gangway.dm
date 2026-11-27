@@ -731,19 +731,11 @@
 			return TRUE
 	return FALSE
 
-/datum/stationtrauma_dock_gangway/ship_to_ship/proc/passage_occupied()
-	for(var/turf/tile as anything in floors)
-		if(tile_obstruction(tile))
-			return TRUE
-	return FALSE
-
-/** Close intact hatches before either the passage or a hull moves. An occupied collar stays in place. */
+/** Close intact hatches before release. Retracting the collar leaves its occupants in place. */
 /datum/stationtrauma_dock_gangway/ship_to_ship/proc/seal_for_release()
 	if(busy)
 		return "шлюзы заняты"
 	busy = TRUE
-	if(passage_occupied())
-		return "освободите стыковочный трап"
 	for(var/obj/machinery/door/airlock/door as anything in doors)
 		if(QDELETED(door))
 			continue
@@ -754,7 +746,7 @@
 	return null
 
 /datum/stationtrauma_dock_gangway/ship_to_ship/proc/clear_for_release()
-	if(!busy || passage_occupied())
+	if(!busy)
 		return FALSE
 	for(var/obj/machinery/door/airlock/door as anything in doors)
 		if(!QDELETED(door) && (!door.density || door.operating || doorway_occupied(door)))

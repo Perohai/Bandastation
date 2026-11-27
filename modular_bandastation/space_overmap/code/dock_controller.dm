@@ -276,13 +276,13 @@
 			setDir(turn(dir, -90))
 			layout_revision++
 			clear_layout_previews()
-			show_layout(user, proposed_anchor(), dir, slot_width, slot_height, hangar)
+			show_layout(ui, slot)
 			return TRUE
 		if("rename")
 			name_dock(user, slot)
 			return TRUE
 		if("preview")
-			show_layout(user, slot ? get_turf(slot) : proposed_anchor(), slot?.dir || dir, slot?.width || slot_width, slot?.height || slot_height, hangar)
+			show_layout(ui, slot)
 			return TRUE
 		if("check")
 			check_layout(ui, slot)
@@ -321,7 +321,7 @@
 /obj/machinery/computer/stationtrauma_dock_controller/proc/send_layout_report(datum/tgui/ui, message, failed = FALSE)
 	ui.send_update(list("report" = list("layout_key" = layout_key(), "message" = message, "failed" = failed)))
 
-/obj/machinery/computer/stationtrauma_dock_controller/proc/check_layout(datum/tgui/ui, obj/docking_port/stationary/stationtrauma_space_station/standard/runtime/slot)
+/obj/machinery/computer/stationtrauma_dock_controller/proc/check_layout(datum/tgui/ui, obj/docking_port/stationary/stationtrauma_space_station/standard/runtime/slot, list/turf/problem_tiles)
 	var/datum/stationtrauma_overmap_site/space/site = slot?.published_site
 	if(slot && (slot.active_berth || site?.docking_owner || site?.shuttle_order))
 		send_layout_report(ui, dock_status(slot))
@@ -330,7 +330,7 @@
 	var/datum/stationtrauma_overmap/space/host = stationtrauma_carrier_at(src)
 	var/datum/stationtrauma_overmap_sector/space/sector = host?.sector || SSstationtrauma_space_voyage.sectors["epsilon_eridani"]
 	var/mapped_outpost = site_id && !host && sector?.trade_outpost_names?["[z]"]
-	var/problem = stationtrauma_standard_dock_problem(anchor, slot?.dir || dir, slot?.width || slot_width, slot?.height || slot_height, slot, host, hangar = hangar, outpost = mapped_outpost)
+	var/problem = stationtrauma_standard_dock_problem(anchor, slot?.dir || dir, slot?.width || slot_width, slot?.height || slot_height, slot, host, hangar = hangar, outpost = mapped_outpost, problem_tiles = problem_tiles)
 	var/ready_message = hangar ? "Посадочная площадка свободна." : "Площадка и коридор свободны, все секции стены на месте."
 	send_layout_report(ui, problem || ready_message, !!problem)
 
@@ -455,21 +455,38 @@
 	layout_revision++
 	return null
 
-/obj/machinery/computer/stationtrauma_dock_controller/proc/show_layout(mob/user, turf/anchor, facing, dock_width, dock_height, hangar)
+/obj/machinery/computer/stationtrauma_dock_controller/proc/show_layout(datum/tgui/ui, obj/docking_port/stationary/stationtrauma_space_station/standard/runtime/slot)
+	var/mob/user = ui.user
 	if(!user.client || !COOLDOWN_FINISHED(src, preview_cooldown))
 		return
-	var/list/tiles = stationtrauma_standard_dock_tiles(anchor, facing, dock_width, dock_height, hangar)
+	var/turf/anchor = slot ? get_turf(slot) : proposed_anchor()
+	var/dock_width = slot?.width || slot_width
+	var/dock_height = slot?.height || slot_height
+	var/list/tiles = stationtrauma_standard_dock_tiles(anchor, slot?.dir || dir, dock_width, dock_height, hangar)
 	if(!length(tiles))
 		to_chat(user, span_warning("Разметка выходит за границы палубы."))
 		return
 	COOLDOWN_START(src, preview_cooldown, 2 SECONDS)
+	var/list/turf/problem_tiles = list()
+	check_layout(ui, slot, problem_tiles)
 	var/list/images = list()
 	for(var/turf/tile as anything in tiles)
 		var/column = tiles[tile]
-		var/color_state = column < dock_width ? "green" : column == dock_width ? "blue" : column == dock_width + 1 ? "red" : null
-		if(!color_state)
+		var/color_state
+		if(tile in problem_tiles)
+			color_state = "red"
+		else if(column < dock_width)
+			color_state = "green"
+		else if(column == dock_width)
+			color_state = "blue"
+		else if(column == dock_width + 1)
+			color_state = "white"
+		else
 			continue
 		var/image/marker = image('icons/effects/alphacolors.dmi', tile, color_state, ABOVE_NORMAL_TURF_LAYER)
+		if(color_state == "white")
+			marker.color = COLOR_ORANGE
+			marker.alpha = 65
 		SET_PLANE(marker, ABOVE_GAME_PLANE, tile)
 		marker.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 		images += marker
@@ -480,9 +497,9 @@
 	viewer.images += images
 	addtimer(CALLBACK(src, PROC_REF(hide_layout_preview), viewer_ref, images), 12 SECONDS, TIMER_CLIENT_TIME)
 	if(hangar)
-		to_chat(user, span_notice("Зелёным показана посадочная площадка [dock_width]×[dock_height]."))
+		to_chat(user, span_notice("Зелёным показана посадочная площадка [dock_width]×[dock_height], красным — проблемные клетки."))
 	else
-		to_chat(user, span_notice("Зелёным показана площадка [dock_width]×[dock_height], синим — полоса трапа, красным — клетки секций стены. Монтажный комплект сам выставит направление на этих клетках."))
+		to_chat(user, span_notice("Зелёным показана площадка [dock_width]×[dock_height], синим — полоса трапа, оранжевым — секции стены, красным — проблемные клетки. Монтажный комплект сам выставит направление на клетках стены."))
 
 /obj/machinery/computer/stationtrauma_dock_controller/proc/hide_layout_preview(datum/weakref/viewer_ref, list/images)
 	if(preview_viewers?[viewer_ref] != images)
@@ -526,8 +543,8 @@
 		return NONE
 	return turn(facing, 90)
 
-/** Verify the complete installation at commissioning and before a runtime berth is reserved. */
-/proc/stationtrauma_standard_dock_problem(turf/anchor, facing, dock_width, dock_height, obj/docking_port/stationary/stationtrauma_space_station/standard/current_slot, datum/stationtrauma_overmap/space/host, hangar = FALSE, outpost = FALSE)
+/** Verify the installation, returning the first issue and optionally collecting all affected tiles for the preview. */
+/proc/stationtrauma_standard_dock_problem(turf/anchor, facing, dock_width, dock_height, obj/docking_port/stationary/stationtrauma_space_station/standard/current_slot, datum/stationtrauma_overmap/space/host, hangar = FALSE, outpost = FALSE, list/turf/problem_tiles)
 	host ||= current_slot?.host
 	if(current_slot)
 		hangar = current_slot.hangar
@@ -537,6 +554,7 @@
 	if(hangar && !stationtrauma_hangar_top_level(anchor, host))
 		return "Ангар можно разместить только на верхней палубе."
 	var/turf/last = tiles[length(tiles)]
+	var/first_problem
 	for(var/obj/docking_port/stationary/other in SSshuttle.stationary_docking_ports)
 		if(other == current_slot || other == current_slot?.active_berth || other.z != anchor.z || QDELETED(other) || (host && (other == host.flight_berth || other == host.vessel.get_docked())))
 			continue
@@ -546,38 +564,48 @@
 			var/list/rotation = stationtrauma_port_rotation(other_slot.dir)
 			bounds[3] += 3 * rotation[1]
 			bounds[4] += 3 * rotation[2]
-		if(max(min(anchor.x, last.x), min(bounds[1], bounds[3])) <= min(max(anchor.x, last.x), max(bounds[1], bounds[3])) \
-			&& max(min(anchor.y, last.y), min(bounds[2], bounds[4])) <= min(max(anchor.y, last.y), max(bounds[2], bounds[4])))
-			return "Разметка пересекает другой причал."
+		var/overlap_left = max(min(anchor.x, last.x), min(bounds[1], bounds[3]))
+		var/overlap_right = min(max(anchor.x, last.x), max(bounds[1], bounds[3]))
+		var/overlap_bottom = max(min(anchor.y, last.y), min(bounds[2], bounds[4]))
+		var/overlap_top = min(max(anchor.y, last.y), max(bounds[2], bounds[4]))
+		if(overlap_left > overlap_right || overlap_bottom > overlap_top)
+			continue
+		first_problem = "Разметка пересекает другой причал."
+		if(isnull(problem_tiles))
+			return first_problem
+		problem_tiles |= block(locate(overlap_left, overlap_bottom, anchor.z), locate(overlap_right, overlap_top, anchor.z))
 	var/wall_direction = turn(facing, 90)
 	for(var/turf/tile as anything in tiles)
+		var/column = tiles[tile]
+		var/tile_problem
 		if(hangar)
 			if(!isfloorturf(tile) || !stationtrauma_standard_dock_clear_space(tile, host))
-				return "Для посадочной площадки нужен свободный пол на ([tile.x], [tile.y])."
-			continue
-		var/column = tiles[tile]
-		if(host && column > dock_width && stationtrauma_carrier_at(tile) != host)
-			return "Стена и коридор причала должны находиться на одном носителе."
-		if(column <= dock_width)
+				tile_problem = "Для посадочной площадки нужен свободный пол на ([tile.x], [tile.y])."
+		else if(host && column > dock_width && stationtrauma_carrier_at(tile) != host)
+			tile_problem = "Стена и коридор причала должны находиться на одном носителе."
+		else if(column <= dock_width)
 			if(!stationtrauma_standard_dock_clear_space(tile, host))
-				if(column == dock_width)
-					return "Полоса трапа перекрыта на ([tile.x], [tile.y])."
-				return "Площадка для корпуса перекрыта на ([tile.x], [tile.y])."
+				tile_problem = column == dock_width ? "Полоса трапа перекрыта на ([tile.x], [tile.y])." : "Площадка для корпуса перекрыта на ([tile.x], [tile.y])."
 		else if(column == dock_width + 1)
 			var/obj/machinery/door/airlock/stationtrauma_docking/wall/wall = locate() in tile
 			if(!isfloorturf(tile))
-				return "Восстановите пол под секцией стены на ([tile.x], [tile.y])."
-			if(QDELETED(wall))
-				return "Восстановите секцию стены на ([tile.x], [tile.y]) монтажным комплектом."
-			if(!wall.anchored || wall.dir != wall_direction || !wall.density || wall.operating || wall.gangway)
-				return "На ([tile.x], [tile.y]) нужна закрытая секция стены, направленная к площадке."
-			if(!wall.hasPower())
-				return "Секция стены на ([tile.x], [tile.y]) обесточена."
-			if(tile.is_blocked_turf(exclude_mobs = TRUE, ignore_atoms = list(wall)))
-				return "Проём секции стены на ([tile.x], [tile.y]) перекрыт."
+				tile_problem = "Восстановите пол под секцией стены на ([tile.x], [tile.y])."
+			else if(QDELETED(wall))
+				tile_problem = "Восстановите секцию стены на ([tile.x], [tile.y]) монтажным комплектом."
+			else if(!wall.anchored || wall.dir != wall_direction || !wall.density || wall.operating || wall.gangway)
+				tile_problem = "На ([tile.x], [tile.y]) нужна закрытая секция стены, направленная к площадке."
+			else if(!wall.hasPower())
+				tile_problem = "Секция стены на ([tile.x], [tile.y]) обесточена."
+			else if(tile.is_blocked_turf(exclude_mobs = TRUE, ignore_atoms = list(wall)))
+				tile_problem = "Проём секции стены на ([tile.x], [tile.y]) перекрыт."
 		else if(!isfloorturf(tile) || tile.is_blocked_turf(exclude_mobs = TRUE))
-			return "Коридор за стыковочной стеной перекрыт на ([tile.x], [tile.y])."
-	return null
+			tile_problem = "Коридор за стыковочной стеной перекрыт на ([tile.x], [tile.y])."
+		if(tile_problem)
+			if(isnull(problem_tiles))
+				return tile_problem
+			first_problem ||= tile_problem
+			problem_tiles |= tile
+	return first_problem
 
 /** A constructed berth owns its registry entry until the controller retires it and it becomes idle. */
 /obj/docking_port/stationary/stationtrauma_space_station/standard/runtime

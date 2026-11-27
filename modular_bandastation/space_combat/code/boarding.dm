@@ -284,7 +284,7 @@
 		release_at = null
 		if(collar)
 			collar.busy = FALSE
-		announce_release("Расстыковка прервана: [problem || "проверьте тягу, стоянку и проход"]. Захваты удерживаются.")
+		announce_release("Расстыковка прервана: [problem || "проверьте тягу, стоянку и шлюзы"]. Захваты удерживаются.")
 		return FALSE
 	announce_release("Абордажные захваты разомкнуты.")
 	qdel(src)
