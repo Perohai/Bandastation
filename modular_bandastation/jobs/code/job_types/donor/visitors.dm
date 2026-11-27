@@ -135,6 +135,7 @@
 	description = "Представляйте интересы ТСФ в переговорах с командованием станции и оформляйте достигнутые договорённости."
 	config_tag = "REPRESENTATIVE_TSF"
 	display_order = JOB_DISPLAY_ORDER_DONOR_REPRESENTATIVE_TSF
+	tgui_icon = FA_ICON_SUN
 	supervisors = "дипломатической службой ТСФ"
 	outfit = /datum/outfit/job/donor/representative_tsf
 
@@ -166,6 +167,7 @@
 	description = "Представляйте интересы КССП в переговорах с командованием станции, принимайте обращения и ведите дипломатическую переписку."
 	config_tag = "REPRESENTATIVE_USSP"
 	display_order = JOB_DISPLAY_ORDER_DONOR_REPRESENTATIVE_USSP
+	tgui_icon = FA_ICON_ATOM
 	supervisors = "дипломатической службой КССП"
 	outfit = /datum/outfit/job/donor/representative_ussp
 
@@ -196,6 +198,7 @@
 	description = "Представляйте Империю Скреллов на переговорах с командованием станции. Принимайте обращения её подданных и помогайте им уладить споры с Нанотрейзен."
 	config_tag = "REPRESENTATIVE_SKRELL"
 	display_order = JOB_DISPLAY_ORDER_DONOR_REPRESENTATIVE_SKRELL
+	tgui_icon = FA_ICON_CIRCLE_NODES
 	supervisors = "дипломатической службой Империи Скреллов"
 	outfit = /datum/outfit/job/donor/representative_skrell
 
@@ -223,6 +226,7 @@
 	description = "Ведите переговоры от имени Доминиона Элизиум. Обсуждайте с командованием условия сотрудничества и оформляйте соглашения для обеих сторон."
 	config_tag = "REPRESENTATIVE_ELYSIUM"
 	display_order = JOB_DISPLAY_ORDER_DONOR_REPRESENTATIVE_ELYSIUM
+	tgui_icon = FA_ICON_DIAMOND
 	supervisors = "дипломатической службой Доминиона Элизиум"
 	outfit = /datum/outfit/job/donor/representative_elysium
 
@@ -254,6 +258,7 @@
 	description = "Передавайте командованию обращения из Вольных Секторов. Помогайте независимым экипажам договариваться со станцией о поставках и условиях захода в порт."
 	config_tag = "REPRESENTATIVE_FREE_SECTORS"
 	display_order = JOB_DISPLAY_ORDER_DONOR_REPRESENTATIVE_FREE_SECTORS
+	tgui_icon = FA_ICON_FIRE_FLAME_CURVED
 	supervisors = "общинами Вольных Секторов, которые вас направили"
 	outfit = /datum/outfit/job/donor/representative_free_sectors
 

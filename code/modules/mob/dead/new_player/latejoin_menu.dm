@@ -121,7 +121,6 @@ GLOBAL_DATUM_INIT(latejoin_menu, /datum/latejoin_menu, new)
 	return data
 
 /datum/latejoin_menu/ui_static_data(mob/user)
-	var/static/list/premium_job_icons = list()
 	var/list/departments = list()
 
 	for(var/datum/job_department/department as anything in SSjob.joinable_departments)
@@ -137,16 +136,10 @@ GLOBAL_DATUM_INIT(latejoin_menu, /datum/latejoin_menu, new)
 			if(LAZYLEN(job_datum.departments_list) > 1 && job_datum.departments_list[1] != department.type && !(department.department_bitflags & DEPARTMENT_BITFLAG_COMMAND))
 				continue
 
-			var/list/job_data = list(
+			department_jobs[job_datum.title] = list(
 				"command" = !!(job_datum.departments_bitflags & DEPARTMENT_BITFLAG_COMMAND),
 				"description" = job_datum.description,
 			)
-			if(job_datum.required_donator_level)
-				if(isnull(premium_job_icons[job_datum.type]))
-					premium_job_icons[job_datum.type] = icon2base64(get_job_hud_icon(job_datum)) || ""
-				job_data["job_icon"] = premium_job_icons[job_datum.type]
-
-			department_jobs[job_datum.title] = job_data
 
 	return list("departments_static" = departments)
 

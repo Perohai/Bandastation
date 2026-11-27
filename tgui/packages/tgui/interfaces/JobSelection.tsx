@@ -35,7 +35,6 @@ type Job = {
 type JobDetails = {
   command: BooleanLike;
   description: string;
-  job_icon?: string;
 };
 
 type Department = {
@@ -70,7 +69,7 @@ type JobEntryProps = {
 
 function JobEntry(props: JobEntryProps) {
   const { jobName, job, details, color, disabled, onClick } = props;
-  const jobIcon = job.jobIcon || JOB2ICON[ReverseJobsRu(jobName)];
+  const jobIcon = job.jobIcon || JOB2ICON[ReverseJobsRu(jobName)] || 'briefcase';
   const title = job.public_title || JOBS_RU[jobName] || jobName;
   const unavailable = disabled || !!job.unavailable_reason;
   const departmentColor = Color.fromHex(color);
@@ -109,22 +108,10 @@ function JobEntry(props: JobEntryProps) {
       tooltipPosition="top"
       onClick={onClick}
     >
-      <Stack fill>
-        {(details?.job_icon || jobIcon) && (
-          <Stack.Item shrink={0}>
-            {details?.job_icon ? (
-              <img
-                src={`data:image/png;base64,${details.job_icon}`}
-                alt=""
-                width={16}
-                height={16}
-                style={{ imageRendering: 'pixelated', marginRight: '0.1em' }}
-              />
-            ) : (
-              <Icon style={{ marginRight: '0.1em' }} name={jobIcon} />
-            )}
-          </Stack.Item>
-        )}
+      <Stack fill align="center" g="var(--space-sm)">
+        <Stack.Item shrink={0}>
+          <Icon name={jobIcon} className="fa-fw" aria-hidden />
+        </Stack.Item>
         <Stack.Item
           grow
           minWidth={0}
