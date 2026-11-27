@@ -18,8 +18,7 @@ SUBSYSTEM_DEF(server_maint)
 	world.hub_password = "" //quickly! before the hubbies see us.
 
 /datum/controller/subsystem/server_maint/Initialize()
-	if (fexists("tmp/"))
-		fdel("tmp/")
+	clear_temp_files()
 
 	if (CONFIG_GET(flag/hub))
 		world.update_hub_visibility(TRUE)
@@ -80,8 +79,7 @@ SUBSYSTEM_DEF(server_maint)
 			return
 
 /datum/controller/subsystem/server_maint/Shutdown()
-	if (fexists("tmp/"))
-		fdel("tmp/")
+	clear_temp_files()
 	kick_clients_in_lobby(span_boldannounce("The round came to an end with you in the lobby."), TRUE) //second parameter ensures only afk clients are kicked
 	var/server = CONFIG_GET(string/server)
 	for(var/thing in GLOB.clients)
@@ -92,6 +90,12 @@ SUBSYSTEM_DEF(server_maint)
 		if(server) //if you set a server location in config.txt, it sends you there instead of trying to reconnect to the same world address. -- NeoFite
 			C << link("byond://[server]")
 
+/// Test worlds under tmp can contain directory junctions into the checkout.
+/datum/controller/subsystem/server_maint/proc/clear_temp_files()
+	for(var/directory in list("tmp/", "tmp/gags/icons/", "tmp/tts/"))
+		for(var/entry in flist(directory))
+			if(!endswith(entry, "/"))
+				fdel("[directory][entry]")
 
 /datum/controller/subsystem/server_maint/proc/UpdateHubStatus()
 	if(!CONFIG_GET(flag/hub) || !CONFIG_GET(number/max_hub_pop))
