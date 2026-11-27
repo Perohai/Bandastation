@@ -51,6 +51,8 @@
 	TEST_ASSERT_NOTNULL(mission, "The patrol destroyer must be available from the mission pool")
 	var/datum/job/away_mission/pilot = SSjob.get_job("Пилот патруля НТ")
 	TEST_ASSERT(pilot && pilot.get_away_mission() == mission, "The patrol roster must offer a pilot")
+	var/datum/job/away_mission/deputy = SSjob.get_job("Заместитель командира патруля НТ")
+	TEST_ASSERT(deputy && deputy.get_away_mission() == mission, "The patrol roster must offer a deputy commander")
 	SSmapping.current_map.space_overmap = original_overmap || list("station_id" = "unit_test")
 	SSjob.away_mission_limits = list(/datum/roundstart_away_mission/nt_patrol = 1)
 	SSjob.update_away_job_capacity()
@@ -220,7 +222,7 @@
 		var/datum/job/away_mission/job = SSjob.get_job_type(job_type)
 		candidates[job] = list()
 		var/volunteers = job.spawn_positions
-		if(istype(job, /datum/job/away_mission/nt_patrol_officer))
+		if(job.type == /datum/job/away_mission/nt_patrol_officer)
 			volunteers++ // The extra patrol volunteer must remain in the station queue.
 		for(var/index in 1 to volunteers)
 			var/mob/dead/new_player/player = make_volunteer()
@@ -271,7 +273,7 @@
 
 	var/list/optional_assignments = list()
 	TEST_ASSERT(mission.seat_crew(candidates, TRUE, optional_assignments, ship), "The full crew must be found even when the first commander candidate is the only medic")
-	TEST_ASSERT_EQUAL(length(SSjob.unassigned), 6, "Reserve one volunteer per role until other hulls have picked their crews")
+	TEST_ASSERT_EQUAL(length(SSjob.unassigned), 5, "Reserve one volunteer per role until other hulls have picked their crews")
 	var/datum/callback/fill_seats = optional_assignments[ship]
 	fill_seats.Invoke()
 	TEST_ASSERT_EQUAL(commander_player.assigned_job_character?.slot, profile_slot, "Roundstart must reserve the assigned character instead of the editing slot")
@@ -290,6 +292,15 @@
 				pilot_character.dress_up_as_job(pilot)
 				TEST_ASSERT(HAS_TRAIT(pilot_character, TRAIT_MINDSHIELD), "The pilot must receive the crew's Mindshield during outfitting")
 				qdel(pilot_character)
+			if(job == deputy)
+				TEST_ASSERT(istype(get_area(tile), /area/shuttle/stationtrauma_space/nt_patrol/bridge), "The deputy commander must spawn on the bridge")
+			if(job == medic)
+				var/mob/living/carbon/human/medic_character = allocate(/mob/living/carbon/human/consistent, tile)
+				medic_character.backpack = DBACKPACK
+				medic_character.dress_up_as_job(medic)
+				var/obj/item/defibrillator/compact/defibrillator = medic_character.get_item_by_slot(ITEM_SLOT_BELT)
+				TEST_ASSERT(istype(defibrillator) && defibrillator.powered, "The medic must spawn with a powered compact defibrillator on their belt")
+				qdel(medic_character)
 			destinations += tile
 	TEST_ASSERT_EQUAL(length(destinations), 10, "The complete roster must consume ten distinct role landmarks")
 	TEST_ASSERT(!ship.has_away_vacancy(commander), "A filled commander position must be closed on its own hull")

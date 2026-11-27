@@ -34,6 +34,8 @@
 
 Пиктограммы отсеков эсминца и реакторной шаттла «Шершень» нарисованы для редактора карт BandaStation. Авторы — участники BandaStation, лицензия CC BY-SA 3.0. [Атлас пиктограмм](icons/nt_patrol_areas.dmi)
 
+Значок заместителя в SecHUD нарисован для BandaStation на основе рамки ОБР участников TG и BandaStation. Лицензия CC BY-SA 3.0. [Атлас SecHUD](../../icons/mob/huds/hud.dmi)
+
 ## Настенные шкафчики
 
 Код и спрайты из [Voidcrew #469](https://github.com/voidcrew/Voidcrew/pull/469)

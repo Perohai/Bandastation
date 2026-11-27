@@ -21,6 +21,7 @@
 	ship_names = list("Брут", "Степь", "Рубеж", "Форпост", "Гранит", "Сапсан", "Дозорный", "Меридиан")
 	crew_jobs = list(
 		/datum/job/away_mission/nt_patrol_commander,
+		/datum/job/away_mission/nt_patrol_officer/deputy,
 		/datum/job/away_mission/nt_patrol_pilot,
 		/datum/job/away_mission/nt_patrol_engineer,
 		/datum/job/away_mission/nt_patrol_medic,
@@ -586,13 +587,20 @@
 	title = "Патрульный НТ"
 	description = "Охраняет экипаж и сопровождает досмотровую группу."
 	supervisors = "командиром патруля НТ"
-	spawn_positions = 6
-	total_positions = 6
+	spawn_positions = 5
+	total_positions = 5
 	outfit = /datum/outfit/job/nt_patrol
 	auto_deadmin_role_flags = DEADMIN_POSITION_SECURITY
 
 /datum/job/away_mission/nt_patrol_officer/is_role_banned(player_key)
 	return is_banned_from(player_key, list(title, JOB_SECURITY_OFFICER))
+
+/datum/job/away_mission/nt_patrol_officer/deputy
+	title = "Заместитель командира патруля НТ"
+	description = "Координирует патрульных и принимает командование эсминцем в отсутствие командира."
+	spawn_positions = 1
+	total_positions = 1
+	outfit = /datum/outfit/job/nt_patrol/deputy
 
 /// Map marker for a walkable, job-specific starting position aboard an away mission.
 /obj/effect/landmark/away_mission
@@ -601,6 +609,9 @@
 
 /obj/effect/landmark/away_mission/nt_patrol_commander
 	job_type = /datum/job/away_mission/nt_patrol_commander
+
+/obj/effect/landmark/away_mission/nt_patrol_deputy
+	job_type = /datum/job/away_mission/nt_patrol_officer/deputy
 
 /// Pilot's starting position next to the helm.
 /obj/effect/landmark/away_mission/nt_patrol_pilot
@@ -634,7 +645,7 @@
 	station_access.RemoveAll(ACCESS_CHANGE_IDS, ACCESS_BUDGET)
 	access |= list(ACCESS_NT_PATROL, ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING) | station_access
 
-/// The commander and patrol officers share access to the special equipment locker.
+/// Shipboard security and command share access to the special equipment locker.
 /datum/id_trim/nt_patrol/armory
 	assignment = /datum/job/away_mission/nt_patrol_officer::title
 	trim_state = "trim_securityofficer"
@@ -647,6 +658,10 @@
 	trim_state = "trim_ert_commander"
 	subdepartment_color = COLOR_CENTCOM_BLUE
 	sechud_icon_state = SECHUD_EMERGENCY_RESPONSE_TEAM_COMMANDER
+
+/datum/id_trim/nt_patrol/armory/deputy
+	assignment = /datum/job/away_mission/nt_patrol_officer/deputy::title
+	sechud_icon_state = SECHUD_NT_PATROL_DEPUTY
 
 /// Patrol credentials identifying the ship's pilot.
 /datum/id_trim/nt_patrol/pilot
@@ -708,6 +723,11 @@
 		/obj/item/clothing/head/beret/ert/red = 1,
 	)
 
+/datum/outfit/job/nt_patrol/deputy
+	name = "Заместитель командира патруля НТ"
+	jobtype = /datum/job/away_mission/nt_patrol_officer/deputy
+	id_trim = /datum/id_trim/nt_patrol/armory/deputy
+
 /// Patrol pilot's flight gear.
 /datum/outfit/job/nt_patrol/pilot
 	name = "Пилот патруля НТ"
@@ -744,11 +764,18 @@
 	suit = /obj/item/clothing/suit/armor/swat/ert
 	suit_store = /obj/item/gun/energy/disabler
 	glasses = /obj/item/clothing/glasses/hud/health/sunglasses
-	belt = /obj/item/storage/belt/medical/paramedic
+	belt = /obj/item/defibrillator/compact/loaded
 	r_pocket = /obj/item/healthanalyzer/advanced
 	backpack = /obj/item/storage/backpack/ert/medical
 	backpack_contents = list(
 		/obj/item/storage/medkit/regular = 1,
 		/obj/item/storage/medkit/surgery = 1,
+		/obj/item/sensor_device = 1,
+		/obj/item/stack/medical/wrap/gauze/twelve = 1,
+		/obj/item/tourniquet = 1,
+		/obj/item/bonesetter = 1,
+		/obj/item/reagent_containers/syringe = 1,
+		/obj/item/reagent_containers/cup/bottle/ammoniated_mercury = 1,
+		/obj/item/reagent_containers/cup/bottle/formaldehyde = 1,
 	)
 	skillchips = list(/obj/item/skillchip/entrails_reader)
