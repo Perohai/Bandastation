@@ -26,6 +26,9 @@
 	/// True only while a pounce throw is in flight.
 	var/pouncing = FALSE
 
+/mob/living/carbon/alien/adult/banda/final_caste/hunter/add_tts_component()
+	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/katrana)
+
 /mob/living/carbon/alien/adult/banda/final_caste/hunter/Initialize(mapload)
 	. = ..()
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/hunter_stealth)

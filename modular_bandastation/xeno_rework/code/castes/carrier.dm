@@ -29,6 +29,9 @@
 	/// Native TGMC baseline capacity.
 	var/hugger_capacity = 4
 
+/mob/living/carbon/alien/adult/banda/carrier/add_tts_component()
+	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/stargazer)
+
 /mob/living/carbon/alien/adult/banda/carrier/Initialize(mapload)
 	. = ..()
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/carrier_hugger)

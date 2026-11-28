@@ -19,6 +19,9 @@
 	/// Stockpiled neurotoxin globs, sharing the seven-glob capacity.
 	var/neuro_globs = 0
 
+/mob/living/carbon/alien/adult/banda/final_caste/boiler/add_tts_component()
+	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/anivia)
+
 /mob/living/carbon/alien/adult/banda/final_caste/boiler/Initialize(mapload)
 	default_organ_types_by_slot = default_organ_types_by_slot.Copy()
 	default_organ_types_by_slot[ORGAN_SLOT_XENO_PLASMAVESSEL] = /obj/item/organ/alien/plasmavessel/banda/large/boiler

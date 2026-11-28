@@ -28,6 +28,9 @@
 	/// Maximum speed is reached at fourteen steps.
 	var/max_steps_buildup = 14
 
+/mob/living/carbon/alien/adult/banda/final_caste/crusher/add_tts_component()
+	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/ysera)
+
 /mob/living/carbon/alien/adult/banda/final_caste/crusher/Initialize(mapload)
 	. = ..()
 	GRANT_ACTION(/datum/action/cooldown/alien/banda/crusher_charge)
