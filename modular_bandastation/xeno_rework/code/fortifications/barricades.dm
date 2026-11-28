@@ -121,7 +121,6 @@
 /obj/structure/railing/folding/atom_deconstruct(disassembled)
 	return // The ruined barrier cannot yield both a portable barrier and raw materials.
 
-/** The normal crafting system gates this recipe behind a learned instruction. */
 /datum/crafting_recipe/folding_barricade
 	name = "Складная полевая баррикада"
 	result = /obj/item/folding_barricade
@@ -129,28 +128,13 @@
 	tool_behaviors = list(TOOL_WELDER, TOOL_WRENCH)
 	time = 8 SECONDS
 	category = CAT_FURNITURE
-	crafting_flags = parent_type::crafting_flags | CRAFT_MUST_BE_LEARNED
 
-/** Reusable field instruction, using the native book-granted recipe machinery. */
-/obj/item/book/granter/crafting_recipe/folding_barricade
-	name = "field barricade instruction"
-	desc = "Инструкция по изготовлению складной баррикады. Для сборки нужны шесть листов стали и два листа пластиали, сварочный аппарат и гаечный ключ."
-	icon = 'icons/obj/service/bureaucracy.dmi'
-	icon_state = "paper"
-	pages_to_mastery = 1
-	reading_time = 3 SECONDS
-	uses = INFINITY
-	crafting_recipe_types = list(/datum/crafting_recipe/folding_barricade)
-	remarks = list("Шесть стальных и две пласталевые пластины, шарнир, сварные швы и стопорный механизм.")
-
-/** One shared initial stock per team; the reusable instruction permits later manufacture. */
 /obj/structure/closet/crate/field_fortifications
 	name = "field fortification supply crate"
-	desc = "В ящике 25 складных баррикад для отряда и инструкция по их изготовлению."
-	storage_capacity = 26
+	desc = "В ящике 25 складных баррикад для отряда."
+	storage_capacity = 25
 
 /obj/structure/closet/crate/field_fortifications/PopulateContents()
 	. = ..()
 	for(var/index in 1 to 25)
 		new /obj/item/folding_barricade(src)
-	new /obj/item/book/granter/crafting_recipe/folding_barricade(src)
