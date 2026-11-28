@@ -197,6 +197,8 @@
 
 /obj/effect/temp_visual/hivemind_support/Initialize(mapload, atom/recipient, pulse_color)
 	. = ..()
+	if(QDELETED(recipient))
+		return INITIALIZE_HINT_QDEL
 	color = pulse_color
 	animate(src, pixel_x = (recipient.x - x) * ICON_SIZE_X, pixel_y = (recipient.y - y) * ICON_SIZE_Y, time = 0.3 SECONDS)
 	animate(alpha = 0, time = 0.1 SECONDS)

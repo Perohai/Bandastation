@@ -212,7 +212,7 @@
 
 /datum/status_effect/xeno_evade_miss
 	id = "xeno_evade_miss"
-	duration = 1.5 SECONDS
+	duration = 1.6 SECONDS
 	alert_type = null
 	on_remove_on_mob_delete = TRUE
 

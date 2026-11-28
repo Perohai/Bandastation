@@ -536,6 +536,15 @@
 #include "../../../modular_bandastation/xeno_rework/code/tests/fortifications.dm"
 #include "../../../modular_bandastation/xeno_rework/code/tests/hivemind.dm"
 
+#ifdef PRIMERA_PR252_CI_SMOKE
+TEST_FOCUS(/datum/unit_test/status_effect_duration)
+TEST_FOCUS(/datum/unit_test/missing_icons/inhand_icon_state)
+TEST_FOCUS(/datum/unit_test/crafting)
+TEST_FOCUS(/datum/unit_test/create_and_destroy)
+TEST_FOCUS(/datum/unit_test/xeno_rework_evade)
+TEST_FOCUS(/datum/unit_test/xeno_rework_barricade_recipe)
+#endif
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

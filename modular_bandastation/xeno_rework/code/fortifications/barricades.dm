@@ -5,7 +5,7 @@
 	icon = 'modular_bandastation/xeno_rework/icons/structures/barricades.dmi'
 	icon_state = "folding_3"
 	w_class = WEIGHT_CLASS_BULKY
-	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 4)
+	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 6, /datum/material/alloy/plasteel = SHEET_MATERIAL_AMOUNT * 2)
 	/// Folding is transport, never free repair.
 	var/stored_integrity = 140
 	/// Serializes overlapping requests before do_after can yield.
@@ -53,7 +53,7 @@
 	icon_state = "folding_0"
 	max_integrity = 140
 	armor_type = /datum/armor/folding_barricade
-	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 4)
+	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 6, /datum/material/alloy/plasteel = SHEET_MATERIAL_AMOUNT * 2)
 	/// Folding preserves integrity and does not produce raw materials.
 	var/folding = FALSE
 	/// Time spent dismantling into the portable form.
