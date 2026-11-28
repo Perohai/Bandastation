@@ -1,5 +1,6 @@
 /** A pulsing glow following the owner's silhouette, shared by fruit buffs and empowerment. */
 /datum/status_effect/xeno_aura
+	id = STATUS_EFFECT_ID_ABSTRACT
 	alert_type = null
 	on_remove_on_mob_delete = TRUE
 	/// Color of this buff's glow, including the outside of the current mob sprite.
