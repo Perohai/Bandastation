@@ -382,31 +382,23 @@
 	var/datum/status_effect/stacking/xeno_intoxication/intoxication = victim.has_status_effect(/datum/status_effect/stacking/xeno_intoxication)
 	TEST_ASSERT_EQUAL(intoxication.stacks, 21, "Sting did not consume 30% of stacks")
 
-/datum/unit_test/xeno_rework_warrior
-	/// The CI config leaves the run delay at zero, which scales all movement modifiers to zero.
-	var/original_run_delay
-
-/datum/unit_test/xeno_rework_warrior/New()
-	. = ..()
-	original_run_delay = CONFIG_GET(number/movedelay/run_delay)
-	CONFIG_SET(number/movedelay/run_delay, 2.2)
-
-/datum/unit_test/xeno_rework_warrior/Destroy()
-	CONFIG_SET(number/movedelay/run_delay, original_run_delay)
-	return ..()
-
 /datum/unit_test/xeno_rework_warrior/Run()
 	var/mob/living/carbon/alien/adult/banda/warrior/warrior = allocate(/mob/living/carbon/alien/adult/banda/warrior)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human/consistent, get_step(warrior, NORTH))
 	warrior.adjustPlasma(warrior.get_max_plasma())
 	var/normal_move_delay = warrior.cached_multiplicative_slowdown
 	warrior.enter_agility()
-	TEST_ASSERT(warrior.cached_multiplicative_slowdown < normal_move_delay, "Agility did not speed up the warrior")
+	var/datum/movespeed_modifier/agility_boost = warrior.has_movespeed_modifier(/datum/movespeed_modifier/warrior_agility)
+	TEST_ASSERT_NOTNULL(agility_boost, "Agility did not apply its movement modifier")
+	TEST_ASSERT(agility_boost.multiplicative_slowdown < 0, "Agility's movement modifier must speed up the warrior")
+	// The effective bonus scales with RUN_DELAY, which the minimal CI config leaves at zero.
+	TEST_ASSERT(abs(warrior.cached_multiplicative_slowdown - normal_move_delay - agility_boost.get_rp_speed()) < 0.01, "The agility modifier was not included in the warrior's move delay")
 	warrior.apply_damage(20, BRUTE)
 	TEST_ASSERT_EQUAL(warrior.get_brute_loss(), 30, "Agility must increase incoming damage by 50%")
 	var/datum/action/cooldown/alien/banda/warrior_lunge/lunge = locate() in warrior.actions
 	TEST_ASSERT(lunge.PreActivate(victim), "Warrior could not lunge at an adjacent enemy")
 	TEST_ASSERT(!warrior.agility, "Lunge did not end agility")
+	TEST_ASSERT_NULL(warrior.has_movespeed_modifier(/datum/movespeed_modifier/warrior_agility), "Lunge did not remove the agility modifier")
 	TEST_ASSERT(warrior.cached_multiplicative_slowdown >= normal_move_delay, "Lunge retained the agility speed bonus")
 	TEST_ASSERT(warrior.lunging && warrior.get_warrior_grab_target() == victim, "Lunge did not grab its target")
 	TEST_ASSERT(victim.IsParalyzed(), "Lunge did not stun its target")
