@@ -138,7 +138,9 @@
 	..()
 	if(facehugger_state == FACEHUGGER_AWAKE)
 		icon_state = "[base_icon_state]"
-		leap_to(hit_atom, use_protection_charges = real && !sterile && istype(throwingdatum?.get_thrower(), /mob/living/carbon/alien/adult/banda/carrier)) // BANDASTATION EDIT
+		// BANDASTATION EDIT START
+		leap_to(hit_atom, use_protection_charges = real && !sterile && istype(throwingdatum?.get_thrower(), /mob/living/carbon/alien/adult/banda/carrier))
+		// BANDASTATION EDIT END
 
 /obj/item/clothing/mask/facehugger/proc/valid_to_attach(mob/living/hit_mob)
 	// valid targets: carbons except aliens and devils
@@ -151,7 +153,9 @@
 		return FALSE
 	var/mob/living/carbon/human/target = hit_mob
 	// gotta have a head to be implanted (no changelings or sentient plants)
-	if(!target.get_bodypart(BODY_ZONE_HEAD) || target.stat == DEAD || istype(target.get_organ_slot(ORGAN_SLOT_PARASITE_EGG), /obj/item/organ/body_egg/alien_embryo)) // BANDASTATION EDIT
+	// BANDASTATION EDIT START
+	if(!target.get_bodypart(BODY_ZONE_HEAD) || target.stat == DEAD || istype(target.get_organ_slot(ORGAN_SLOT_PARASITE_EGG), /obj/item/organ/body_egg/alien_embryo))
+	// BANDASTATION EDIT END
 		return FALSE
 	// gotta be able to have the xeno implanted
 	if(HAS_TRAIT(hit_mob, TRAIT_XENO_IMMUNE))
@@ -159,7 +163,9 @@
 	// carbon, has head, not an alien nor has an hivenode or embryo: valid
 	return TRUE
 
-/obj/item/clothing/mask/facehugger/proc/leap_to(mob/living/hit_mob, use_protection_charges = FALSE) // BANDASTATION EDIT
+// BANDASTATION EDIT START
+/obj/item/clothing/mask/facehugger/proc/leap_to(mob/living/hit_mob, use_protection_charges = FALSE)
+// BANDASTATION EDIT END
 	//check if not carbon/alien/has facehugger already/ect.
 	if(!valid_to_attach(hit_mob))
 		return FALSE
@@ -214,10 +220,14 @@
 	if(real && !sterile)
 		victim.Paralyze(1 SECONDS)
 		victim.adjust_confusion(20 SECONDS)
-		victim.Knockdown(14 SECONDS) // BANDASTATION EDIT
+		// BANDASTATION EDIT START
+		victim.Knockdown(14 SECONDS)
+		// BANDASTATION EDIT END
 	go_idle() //so it doesn't jump the people that tear it off
 
-	addtimer(CALLBACK(src, PROC_REF(impregnate_target), victim), real && !sterile ? MIN_IMPREGNATION_TIME : rand(MIN_IMPREGNATION_TIME, MAX_IMPREGNATION_TIME)) // BANDASTATION EDIT
+	// BANDASTATION EDIT START
+	addtimer(CALLBACK(src, PROC_REF(impregnate_target), victim), real && !sterile ? MIN_IMPREGNATION_TIME : rand(MIN_IMPREGNATION_TIME, MAX_IMPREGNATION_TIME))
+	// BANDASTATION EDIT END
 
 /obj/item/clothing/mask/facehugger/proc/detach()
 	attached = 0

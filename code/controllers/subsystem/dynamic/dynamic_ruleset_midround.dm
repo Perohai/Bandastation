@@ -464,7 +464,6 @@
 	config_tag = "Xenomorph"
 	preview_antag_datum = /datum/antagonist/xeno
 	midround_type = HEAVY_MIDROUND
-	false_alarm_able = TRUE
 	pref_flag = ROLE_ALIEN
 	ruleset_flags = RULESET_INVADER
 	weight = alist(
@@ -485,16 +484,6 @@
 
 /datum/dynamic_ruleset/midround/from_ghosts/xenomorph/can_be_selected()
 	return ..() && length(find_vent_spawns()) > 0
-
-/datum/dynamic_ruleset/midround/from_ghosts/xenomorph/execute()
-	. = ..()
-	addtimer(CALLBACK(src, PROC_REF(announce_xenos)), 15 MINUTES) // BANDASTATION EDIT
-
-/datum/dynamic_ruleset/midround/from_ghosts/xenomorph/proc/announce_xenos()
-	priority_announce("На станции обнаружена биологическая угроза.", "Биологическая угроза", ANNOUNCER_ALIENS) // BANDASTATION EDIT
-
-/datum/dynamic_ruleset/midround/from_ghosts/xenomorph/false_alarm()
-	announce_xenos()
 
 /datum/dynamic_ruleset/midround/from_ghosts/xenomorph/create_ruleset_body()
 	return new /mob/living/carbon/alien/larva

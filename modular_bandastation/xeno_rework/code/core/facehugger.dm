@@ -3,4 +3,3 @@
 		to_chat(user, span_warning("Только Носитель может метнуть живого лицехвата своей способностью."))
 		return null
 	return ..()
-

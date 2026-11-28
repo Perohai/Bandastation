@@ -1,6 +1,7 @@
 /** T2 support branch from Drone; native eggs and facehuggers retain TG infection rules. */
 /mob/living/carbon/alien/adult/banda/carrier
 	name = "alien carrier"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/drone
 	desc = "Носитель роя. Выращивает и переносит до четырёх лицехватов, бросает их в противников и поддерживает собратьев феромонами."
 	caste = "carrier"
 	shove_stamina_damage = 25

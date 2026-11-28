@@ -171,9 +171,13 @@ GLOBAL_LIST_INIT(turfs_pass_meteor, typecacheof(list(
 
 #define isaliensentinel(A) (istype(A, /mob/living/carbon/alien/adult/sentinel))
 
-#define isalienroyal(A) (istype(A, /mob/living/carbon/alien/adult/royal) || istype(A, /mob/living/carbon/alien/adult/banda/queen) || istype(A, /mob/living/carbon/alien/adult/banda/praetorian)) // BANDASTATION EDIT
+// BANDASTATION EDIT START
+#define isalienroyal(A) (istype(A, /mob/living/carbon/alien/adult/royal) || istype(A, /mob/living/carbon/alien/adult/banda/queen) || istype(A, /mob/living/carbon/alien/adult/banda/praetorian))
+// BANDASTATION EDIT END
 
-#define isalienqueen(A) (istype(A, /mob/living/carbon/alien/adult/royal/queen) || istype(A, /mob/living/carbon/alien/adult/banda/queen)) // BANDASTATION EDIT
+// BANDASTATION EDIT START
+#define isalienqueen(A) (istype(A, /mob/living/carbon/alien/adult/royal/queen) || istype(A, /mob/living/carbon/alien/adult/banda/queen))
+// BANDASTATION EDIT END
 
 //Silicon mobs
 #define issilicon(A) (istype(A, /mob/living/silicon))

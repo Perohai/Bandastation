@@ -2,6 +2,7 @@
 /** Чужой с ярко-красным, словно разъярённым, хитином и устрашающими клинковыми когтями вместо обычных рук. Острый хвост выглядит так, будто удар им будет крайне болезненным. */
 /mob/living/carbon/alien/adult/banda/ravager
 	name = "alien ravager"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/runner
 	desc = "Ксеноморф с багровым хитином и длинными режущими когтями."
 	caste = "ravager"
 	mob_size = MOB_SIZE_LARGE

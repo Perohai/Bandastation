@@ -2,6 +2,7 @@
 /** Чужой, выглядящий как нечто среднее между королевой и дроном — и, вероятно, именно так оно и есть. */
 /mob/living/carbon/alien/adult/banda/praetorian
 	name = "alien praetorian"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/spitter
 	desc = "Крупный ксеноморф с широким гребнем и кислотными железами."
 	caste = "praetorian"
 	mob_size = MOB_SIZE_LARGE

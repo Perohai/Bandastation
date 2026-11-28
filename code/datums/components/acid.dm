@@ -117,10 +117,17 @@ GLOBAL_DATUM_INIT(acid_overlay, /mutable_appearance, mutable_appearance('icons/e
 		atom_parent.update_appearance()
 
 /// Averages corrosive power and sums volume.
-/datum/component/acid/InheritComponent(datum/component/new_comp, i_am_original, acid_power, acid_volume)
+/datum/component/acid/InheritComponent(datum/component/acid/new_comp, i_am_original, acid_power = ACID_POWER_MELT_TURF, acid_volume = 50, acid_overlay = GLOB.acid_overlay, acid_particles = /particles/acid, turf_acid_ignores_mobs = FALSE)
 	if(!i_am_original)
 		return
-	acid_power = ((src.acid_power * src.acid_volume) + (acid_power * acid_volume)) / (src.acid_volume + acid_volume)
+	if(new_comp)
+		acid_power = new_comp.acid_power
+		acid_volume = new_comp.acid_volume
+		turf_acid_ignores_mobs = new_comp.turf_acid_ignores_mobs
+	if(acid_power <= 0 || acid_volume <= 0)
+		return
+	src.acid_power = ((src.acid_power * src.acid_volume) + (acid_power * acid_volume)) / (src.acid_volume + acid_volume)
+	src.turf_acid_ignores_mobs = src.turf_acid_ignores_mobs && turf_acid_ignores_mobs
 	set_volume(src.acid_volume + acid_volume)
 
 /// Sets the acid volume to a new value. Limits the acid volume by the amount allowed to exist on the parent atom.

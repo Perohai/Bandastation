@@ -2,6 +2,7 @@
 /** Исполинская тварь с устрашающей аурой. Пора действовать, а не глазеть. */
 /mob/living/carbon/alien/adult/banda/queen
 	name = "alien queen"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/drone
 	desc = "Крупная ксеноморфная матка. Управляет развитием улья и откладывает яйца."
 	caste = "queen"
 	mob_size = MOB_SIZE_LARGE
@@ -42,6 +43,16 @@
 	REMOVE_TRAIT(src, TRAIT_VENTCRAWLER_ALWAYS, INNATE_TRAIT)
 
 	add_movespeed_modifier(/datum/movespeed_modifier/alien_big)
+	AddComponent(/datum/component/queen_walk, \
+	possible_sounds = list(
+		'modular_bandastation/xeno_rework/sound/alien_footstep_large1.ogg',
+		'modular_bandastation/xeno_rework/sound/alien_footstep_large2.ogg',
+		'modular_bandastation/xeno_rework/sound/alien_footstep_large3.ogg'
+	), \
+		sound_volume = 100, \
+		sound_range = 7, \
+		ignore_walls = TRUE, \
+		sound_play_chance = 100)
 
 /mob/living/carbon/alien/adult/banda/queen/add_tts_component()
 	AddComponent(/datum/component/tts_component, /datum/tts_seed/silero/alexstraza)

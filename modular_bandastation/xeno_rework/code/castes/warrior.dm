@@ -2,6 +2,7 @@
 /** Если среди чужих и есть ходячие танки, то этот — один из них, с тяжёлой бронёй и мощными руками, подтверждающими этот статус. */
 /mob/living/carbon/alien/adult/banda/warrior
 	name = "alien warrior"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/defender
 	desc = "Тяжёлый ксеноморф с бронированными передними лапами."
 	caste = "warrior"
 	shove_stamina_damage = 25

@@ -1,15 +1,15 @@
 GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 
 /** Round-owned state: a replacement queen inherits the same hive. */
-/proc/get_xeno_hive()
+/proc/get_xeno_hive() as /datum/xeno_hive
 	if(!GLOB.xeno_hive)
 		GLOB.xeno_hive = new
 	return GLOB.xeno_hive
 
 /** Economy parameters are kept together for testmerge tuning through VV. */
 /datum/xeno_hive
-	/// Earned from prey, first occupation of station floors, and purchased generators.
-	var/biomass = 0
+	/// Starting reserve, replenished by prey, territory and generators.
+	var/biomass = 200
 	/// Shared spawn gate prevents observers bypassing the final minion cooldown.
 	var/next_baneling_at = 0
 	/// Time between successful baneling claims, independent of the claiming ghost.
@@ -65,6 +65,8 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 	QDEL_NULL(core)
 	QDEL_NULL(packed_core)
 	update_core_blockade()
+	for(var/obj/structure/xeno_biomass_generator/generator as anything in generators.Copy())
+		qdel(generator)
 	QDEL_NULL(hivemind_anchor)
 	QDEL_LIST_ASSOC_VAL(rally_points)
 	for(var/mob/living/carbon/alien/adult/banda/member as anything in members.Copy())
@@ -98,11 +100,11 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 
 /datum/xeno_hive/proc/queen_died(mob/living/carbon/alien/adult/banda/queen/source)
 	SIGNAL_HANDLER
-	biomass *= 0.5
+	biomass *= 0.85
 	purchase_interrupted = TRUE
 
 /datum/xeno_hive/proc/add_roster_member(mob/living/carbon/alien/member)
-	if(QDELETED(member) || member in roster_members)
+	if(QDELETED(member) || (member in roster_members))
 		return
 	roster_members += member
 	RegisterSignal(member, COMSIG_QDELETING, PROC_REF(remove_roster_member))
@@ -123,7 +125,7 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 			return successor
 	return null
 
-/** Shared crew definition with the evacuation finale; no client requirement for crew. */
+/** Brood growth uses surviving crew on all levels, including disconnected players. */
 /datum/xeno_hive/proc/count_crew()
 	var/count = 0
 	for(var/mob/living/member in GLOB.alive_mob_list)
@@ -169,6 +171,8 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 	var/paid = 0
 	/// Persistent idempotency keys for the physical body.
 	var/list/paid_stages = list()
+	/// Each body counts once toward the station infestation warning.
+	var/reported_infection = FALSE
 
 /datum/component/xeno_biomass_body/Initialize()
 	if(!ishuman(parent))
@@ -205,7 +209,14 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 /obj/item/organ/body_egg/alien_embryo/on_mob_insert(mob/living/carbon/egg_owner, special, movement_flags)
 	. = ..()
 	var/datum/component/xeno_biomass_body/body = get_xeno_biomass_body(egg_owner)
-	body?.pay("infection")
+	if(!body)
+		return
+	body.pay("infection")
+	if(!body.reported_infection && egg_owner.stat != DEAD && is_station_level(egg_owner.z) && (egg_owner.mind?.assigned_role?.job_flags & JOB_CREW_MEMBER))
+		body.reported_infection = TRUE
+		if(!GLOB.xeno_evacuation)
+			GLOB.xeno_evacuation = new
+		GLOB.xeno_evacuation.record_infection()
 
 /// Ban categories shared by birth and the later direct claim.
 #define HIVE_LARVA_BAN_TYPES list(ROLE_ALIEN, ROLE_SYNDICATE)
@@ -256,6 +267,9 @@ GLOBAL_DATUM(xeno_hive, /datum/xeno_hive)
 		return FALSE
 	var/mutable_appearance/burst_overlay = mutable_appearance('icons/mob/nonhuman-player/alien.dmi', "burst_lie")
 	host.add_overlay(burst_overlay)
+	if(host.stat != DEAD)
+		host.emote("scream", intentional = FALSE, forced = TRUE)
+	playsound(host, 'modular_bandastation/xeno_rework/sound/bloodyslice.ogg', 60, TRUE)
 	sleep(0.6 SECONDS)
 	var/ghost_ckey = ghost?.ckey
 	var/candidate_valid = can_claim_hive_larva(ghost) && !is_banned_from(ghost_ckey, HIVE_LARVA_BAN_TYPES)

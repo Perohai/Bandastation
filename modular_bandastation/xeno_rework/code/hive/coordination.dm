@@ -50,7 +50,7 @@
 /** The same stomach transport as before, with a channel instead of grab combinations. */
 /datum/action/cooldown/alien/hive_swallow
 	name = "Проглотить"
-	desc = "Заглатывает стоящую рядом живую жертву за 13,5 секунды. Движение жертвы, её смерть или потеря сознания ксеноморфа прерывают процесс."
+	desc = "Заглатывает стоящую рядом живую жертву за 6 секунд. Движение жертвы, её смерть или потеря сознания ксеноморфа прерывают процесс."
 	button_icon = 'modular_bandastation/xeno_rework/icons/actions/hive_abilities.dmi'
 	button_icon_state = "swallow"
 	click_to_activate = TRUE
@@ -58,7 +58,7 @@
 	/// Serializes overlapping requests before the channel yields.
 	var/swallowing = FALSE
 	/// Exposed for focused cancellation tests.
-	var/swallow_time = 13.5 SECONDS
+	var/swallow_time = 6 SECONDS
 
 /datum/action/cooldown/alien/hive_swallow/proc/can_swallow(mob/living/carbon/alien/adult/banda/eater, mob/living/prey, obj/item/organ/stomach/alien_banda/stomach)
 	return !QDELETED(src) && !QDELETED(eater) && owner == eater && !eater.incapacitated && !eater.resting && isturf(eater.loc) && !QDELETED(prey) && prey.stat != DEAD && !isalien(prey) && !prey.anchored && !prey.buckled && isturf(prey.loc) && eater.Adjacent(prey) && !QDELETED(stomach) && eater.get_organ_slot(ORGAN_SLOT_STOMACH) == stomach && !HAS_TRAIT(eater, TRAIT_PACIFISM)
@@ -85,6 +85,9 @@
 	log_combat(eater, prey, "swallowed using hive action")
 	StartCooldown()
 	return TRUE
+
+/mob/living/carbon/alien/adult/banda/devour_lad(atom/movable/candidate, devour_time = 6 SECONDS)
+	return ..(candidate, devour_time)
 
 /** The older grab/devour path must reject the same corpses as the dedicated action. */
 /mob/living/carbon/alien/adult/banda/can_consume(atom/movable/prey)

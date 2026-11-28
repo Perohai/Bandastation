@@ -2,6 +2,7 @@
 /** Довольно массивный чужой с выраженными кислотными железами, из его рта капает... то ли токсин, то ли кислота. */
 /mob/living/carbon/alien/adult/banda/spitter
 	name = "alien spitter"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/sentinel
 	desc = "Ксеноморф с выступающими кислотными железами. Из пасти капает кислота."
 	caste = "spitter"
 	evolution_tier = 2

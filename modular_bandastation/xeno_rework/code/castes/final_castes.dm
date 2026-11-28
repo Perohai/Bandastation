@@ -22,33 +22,30 @@
 /mob/living/carbon/alien/adult/banda/spitter
 	final_evolution = /mob/living/carbon/alien/adult/banda/final_caste/boiler
 
-/** Runner always has Hunter; a purchased Ravager adds a choice instead of replacing it. */
+/** Runner can evolve into Hunter at T2 or buy the Ravager branch. */
 /mob/living/carbon/alien/adult/banda/runner
 	final_evolution = /mob/living/carbon/alien/adult/banda/ravager
 
 /mob/living/carbon/alien/adult/banda/drone
 	final_evolution = /mob/living/carbon/alien/adult/banda/carrier
 
-/** Return the purchased specialization, or the ordinary branch if none is unlocked. */
-/mob/living/carbon/alien/adult/banda/proc/get_evolution_type()
+/// Any unlocked branch and the immediate predecessor of the current caste.
+/mob/living/carbon/alien/adult/banda/proc/get_evolution_options()
+	var/list/options = list()
+	var/list/purchases = GLOB.xeno_hive?.purchased
+	if(next_evolution)
+		var/mob/living/carbon/alien/adult/banda/next_caste = next_evolution
+		var/next_tier = initial(next_caste.evolution_tier)
+		if((next_tier != 2 || purchases?["claws"]) && (next_tier != 3 || purchases?["tier3"]))
+			options += next_evolution
 	var/static/list/unlocks = list(
 		/mob/living/carbon/alien/adult/banda/final_caste/crusher = "crusher",
 		/mob/living/carbon/alien/adult/banda/final_caste/boiler = "boiler",
 		/mob/living/carbon/alien/adult/banda/ravager = "ravager",
-		/mob/living/carbon/alien/adult/banda/carrier = "carrier",
+		/mob/living/carbon/alien/adult/banda/carrier = "claws",
 	)
-	if(final_evolution && GLOB.xeno_hive?.purchased[unlocks[final_evolution]])
-		return final_evolution
-	if(next_evolution == /mob/living/carbon/alien/adult/banda/final_caste/hunter && !GLOB.xeno_hive?.purchased["hunter"])
-		return null
-	return next_evolution
-
-/// The ordinary branch remains available when a specialization is bought.
-/mob/living/carbon/alien/adult/banda/proc/get_evolution_options()
-	var/list/options = list()
-	if(next_evolution && (next_evolution != /mob/living/carbon/alien/adult/banda/final_caste/hunter || GLOB.xeno_hive?.purchased["hunter"]))
-		options += next_evolution
-	var/purchased_branch = get_evolution_type()
-	if(purchased_branch)
-		options |= purchased_branch
+	if(final_evolution && purchases?[unlocks[final_evolution]])
+		options += final_evolution
+	if(previous_evolution)
+		options += previous_evolution
 	return options

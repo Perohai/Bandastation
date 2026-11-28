@@ -527,6 +527,15 @@
 #include "../../../modular_bandastation/species/code/tests/ipc_os_malware_tests.dm"
 #include "../../../modular_bandastation/species/code/tests/ipc_os_revision_tests.dm"
 
+#include "../../../modular_bandastation/xeno_rework/code/tests/combat.dm"
+#include "../../../modular_bandastation/xeno_rework/code/tests/hive.dm"
+#include "../../../modular_bandastation/xeno_rework/code/tests/feedback.dm"
+#include "../../../modular_bandastation/xeno_rework/code/tests/followup.dm"
+#include "../../../modular_bandastation/xeno_rework/code/tests/nov17.dm"
+#include "../../../modular_bandastation/xeno_rework/code/tests/territory.dm"
+#include "../../../modular_bandastation/xeno_rework/code/tests/fortifications.dm"
+#include "../../../modular_bandastation/xeno_rework/code/tests/hivemind.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

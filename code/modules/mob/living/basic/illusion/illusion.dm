@@ -72,15 +72,21 @@
 	appearance = original.appearance
 	setDir(original.dir)
 
-	if (!isnull(hp)) // BANDASTATION EDIT
+	// BANDASTATION EDIT START
+	if (!isnull(hp))
+	// BANDASTATION EDIT END
 		maxHealth = hp
 		updatehealth() // re-cap health to new value
 
-	if (!isnull(damage)) // BANDASTATION EDIT
+	// BANDASTATION EDIT START
+	if (!isnull(damage))
+	// BANDASTATION EDIT END
 		melee_damage_lower = damage
 		melee_damage_upper = damage
 
-	if (!isnull(replicate)) // BANDASTATION EDIT
+	// BANDASTATION EDIT START
+	if (!isnull(replicate))
+	// BANDASTATION EDIT END
 		multiply_chance = replicate
 
 	remove_faction(FACTION_NEUTRAL)

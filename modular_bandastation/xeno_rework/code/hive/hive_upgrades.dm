@@ -35,7 +35,7 @@
 	category = "Эволюция"
 	name = "Адаптация T1"
 	desc = "Все боевые касты T1 получают +15 здоровья и +2 к урону когтей. Королева и выводок не получают усиления."
-	cost = 150
+	cost = 100
 	icon = "dna"
 	target_tier = 1
 	health_bonus = 15
@@ -45,8 +45,8 @@
 	id = "claws"
 	category = "Эволюция"
 	name = "Адаптация T2"
-	desc = "Все касты T2 получают +25 здоровья и +3 к урону когтей."
-	cost = 200
+	desc = "Открывает Плевуна, Охотника и Носителя. Все касты T2 получают +25 здоровья и +3 к урону когтей."
+	cost = 150
 	icon = "shield-halved"
 	requires = list("carapace")
 	target_tier = 2
@@ -57,8 +57,8 @@
 	id = "tier3"
 	category = "Эволюция"
 	name = "Адаптация T3"
-	desc = "Все касты T3 получают +35 здоровья и +4 к урону когтей."
-	cost = 250
+	desc = "Открывает Воина и Преторианца. Все касты T3 получают +35 здоровья и +4 к урону когтей."
+	cost = 200
 	icon = "hand-fist"
 	requires = list("claws")
 	target_tier = 3
@@ -82,25 +82,16 @@
 	category = "Эволюция"
 	name = "Крушитель"
 	desc = "Открывает Воину эволюцию в Крушителя. В улье может быть один Крушитель."
-	cost = 300
+	cost = 250
 	icon = "meteor"
 	requires = list("tier3")
-
-/datum/xeno_hive_upgrade/hunter
-	id = "hunter"
-	category = "Эволюция"
-	name = "Охотник (T2)"
-	desc = "Открывает Бегуну эволюцию в Охотника. Базовый лимит — один Охотник."
-	cost = 200
-	icon = "eye"
-	requires = list("claws")
 
 /datum/xeno_hive_upgrade/boiler
 	id = "boiler"
 	category = "Эволюция"
 	name = "Кислотная артиллерия"
 	desc = "Позволяет плевуну эволюционировать в Бойлера. Одновременно может существовать только один."
-	cost = 350
+	cost = 250
 	icon = "flask"
 	requires = list("tier3")
 
@@ -109,7 +100,7 @@
 	category = "Эволюция"
 	name = "Разоритель (T4)"
 	desc = "Открывает Бегуну эволюцию в Разорителя. В улье может быть один Разоритель."
-	cost = 300
+	cost = 250
 	icon = "khanda"
 	requires = list("tier3")
 
@@ -184,7 +175,7 @@
 	category = "Выводок"
 	name = "Таран жука"
 	desc = "Жуки получают таранный рывок на четыре клетки: 15 урона и опрокидывание на секунду. Подготовка — 0,5 секунды, стоимость — 80 плазмы, перезарядка — 30 секунд. Максимум плазмы — 320, восстановление — 10."
-	cost = 120
+	cost = 50
 	icon = "angles-right"
 	requires = list("brood_vigor")
 
@@ -193,7 +184,7 @@
 	category = "Выводок"
 	name = "Взмах серпами богомола"
 	desc = "Богомолы получают удар по трём клеткам перед собой: 12 урона. Подготовка — 0,5 секунды, стоимость — 200 плазмы, перезарядка — 30 секунд. Максимум плазмы — 600, восстановление — 20."
-	cost = 120
+	cost = 50
 	icon = "fan"
 	requires = list("brood_mantis")
 
@@ -202,7 +193,7 @@
 	category = "Выводок"
 	name = "Плевок скорпиона"
 	desc = "Скорпионы получают плевок кислотой на расстояние до 7 клеток: 10 ожогового урона. Стоимость — 75 плазмы, перезарядка — 1,8 секунды. Улучшает базовый плевок с 5 до 10 урона. Максимум плазмы — 500, восстановление — 10."
-	cost = 120
+	cost = 50
 	icon = "droplet"
 	requires = list("brood_scorpion")
 
@@ -211,7 +202,7 @@
 	category = "Выводок"
 	name = "Банелинг"
 	desc = "Открывает банелинга — живую кислотную бомбу. Перед самоподрывом банелинг замирает на 1,5 секунды, мигает и рычит. Взрыв наносит 100/75/50/25 ожогового урона в зависимости от расстояния (до трёх клеток) и кислотной защиты. Одно появление каждые 120 секунд на весь улей; требуется свободное место в яйце."
-	cost = 350
+	cost = 150
 	icon = "burst"
 	requires = list("beetle_charge", "mantis_ravage", "scorpion_spit")
 
@@ -249,15 +240,6 @@
 	icon = "wind"
 	requires = list("coordination")
 
-/datum/xeno_hive_upgrade/carrier
-	id = "carrier"
-	category = "Эволюция"
-	name = "Носитель (T2)"
-	desc = "Открывает дрону эволюцию в носителя T2. Носитель выращивает, переносит и метает до четырёх лицехватов, а также откладывает яйца. Феромоны приобретаются отдельно. Носитель не возводит смоляные постройки и не выращивает траву. Базовый лимит — один Носитель."
-	cost = 200
-	icon = "bugs"
-	requires = list("claws")
-
 /datum/xeno_hive_upgrade/hunter_slot
 	id = "hunter_slot"
 	category = "Популяция"
@@ -268,7 +250,7 @@
 	max_level = 3
 	scaling_cost = TRUE
 	slot_type = /mob/living/carbon/alien/adult/banda/final_caste/hunter
-	requires = list("hunter")
+	requires = list("claws")
 
 /datum/xeno_hive_upgrade/carrier_slot
 	id = "carrier_slot"
@@ -280,13 +262,13 @@
 	max_level = 3
 	scaling_cost = TRUE
 	slot_type = /mob/living/carbon/alien/adult/banda/carrier
-	requires = list("carrier")
+	requires = list("claws")
 
 /datum/xeno_hive_upgrade/generator
 	id = "generator"
 	category = "Биоструктуры"
 	name = "Генератор биомассы"
-	desc = "Создаёт перед Королевой непроходимый генератор биомассы размером 2×2 клетки. Стоимость — 600 биомассы, производство — 1 в секунду, окупаемость — 10 минут. Прочность — 350. Генератор шумит, количество построек не ограничено. Для строительства нужны четыре свободные клетки."
+	desc = "Создаёт перед Королевой непроходимый генератор биомассы размером 2×2 клетки. Стоимость — 600 биомассы, производство — 1 в секунду, окупаемость — 10 минут. Прочность — 350. Генератор шумит, одновременно можно держать до двух генераторов. Для строительства нужны четыре свободные клетки."
 	cost = 600
 	icon = "industry"
 	max_level = INFINITY
@@ -325,7 +307,7 @@
 	name = "Укреплённая смола"
 	desc = "Открывает укреплённые стены с 300 прочности: 250 плазмы, 15 секунд строительства."
 	icon = "dungeon"
-	cost = 300
+	cost = 200
 	requires = list("construction")
 
 /datum/xeno_hive_upgrade/acid_turrets
@@ -334,7 +316,7 @@
 	name = "Кислотные турели"
 	desc = "Открывает турель со 150 прочности: 250 плазмы, 20 секунд. Раз в 2 секунды стреляет по незаражённым людям в радиусе 5 клеток, нанося 10 ожогового урона."
 	icon = "crosshairs"
-	cost = 450
+	cost = 300
 	requires = list("acid_mines", "reinforced_resin")
 
 /** Independent caste limits; purchasing access never creates or evolves a mob. */
@@ -458,7 +440,7 @@
 	biomass -= upgrade.price(purchased[id] || 0)
 	purchased[id] = (purchased[id] || 0) + 1
 	if(id == "generator")
-		new /obj/structure/xeno_biomass_generator(generator_origin)
+		new /obj/structure/xeno_biomass_generator(generator_origin, src)
 	if(id == "hivemind")
 		var/obj/structure/xeno_hivemind_anchor/anchor = new(hivemind_origin)
 		if(GLOB.ghost_role_flags & GHOSTROLE_SPAWNER)
@@ -486,7 +468,7 @@
 
 /datum/xeno_hive/proc/can_place_core(mob/living/carbon/alien/adult/banda/queen/queen)
 	var/turf/origin = hive_structure_location(queen)
-	return can_manage(queen) && !core && can_unfold_core(queen) && origin && (locate(/obj/structure/alien/weeds) in origin) && clear_structure_footprint(origin, floors_only = FALSE)
+	return can_manage(queen) && biomass >= core_install_cost && !core && can_unfold_core(queen) && origin && (locate(/obj/structure/alien/weeds) in origin) && clear_structure_footprint(origin, floors_only = FALSE)
 
 /datum/xeno_hive/proc/place_core(mob/living/carbon/alien/adult/banda/queen/queen)
 	var/turf/origin = hive_structure_location(queen)
@@ -498,6 +480,7 @@
 	var/obj/structure/xeno_hive_core/installed = new(origin)
 	if(QDELETED(installed) || core != installed)
 		return FALSE
+	biomass -= core_install_cost
 	if(relocating)
 		installed.update_integrity(relocating.get_integrity())
 		qdel(relocating)
@@ -564,8 +547,6 @@
 		"territoryPending" = territory_pending_tiles,
 		"territoryBatch" = territory_tiles_per_biomass,
 		"territoryEarned" = territory_biomass_earned,
-		"crew" = core?.cached_crew || 0,
-		"broodRate" = core?.is_installed() && living_queen() ? brood_rate(core.cached_crew) : 0,
 		"canDebug" = can_debug(user),
 		"debugUsed" = debug_used,
 		"broodPoints" = round(brood_points, 0.1),
@@ -575,6 +556,7 @@
 		"core" = !!core,
 		"packedCore" = !QDELETED(packed_core),
 		"busy" = purchase_busy,
+		"coreInstallCost" = core_install_cost,
 		"canPlace" = !purchase_busy && can_place_core(user),
 		"canPack" = !purchase_busy && core && core.next_to_core(user) && core.CheckReachableAdjacency(user, 1),
 		"nodeState" = node_state,

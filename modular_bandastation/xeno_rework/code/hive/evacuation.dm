@@ -2,9 +2,8 @@ GLOBAL_DATUM(xeno_evacuation, /datum/xeno_evacuation)
 
 /// Return the reason a station hive core blocks ordinary shuttle calls before the finale.
 /proc/xeno_shuttle_call_block_reason()
-	var/obj/structure/xeno_hive_core/hive_core = GLOB.xeno_hive?.core
-	if(!GLOB.xeno_evacuation?.active && !QDELETED(hive_core) && is_station_level(hive_core.z))
-		return "В вызове эвакуационного шаттла отказано. На станции обнаружена биологическая угроза."
+	if(GLOB.xeno_hive?.core_blockade_registered)
+		return "В вызове эвакуационного шаттла отказано. Стыковка со станцией пока невозможна."
 	return null
 
 ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запустить финал (тест)", "Начинает финальную эвакуацию роя, не проверяя его численность.", ADMIN_CATEGORY_DEBUG)
@@ -23,11 +22,15 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 
 /// One evacuation finale per round. Population checks are debounced off login/death events.
 /datum/xeno_evacuation
-	/// Broadcast the lower population warning only once per round.
-	var/spread_announced = FALSE
+	/// Cumulative unique station crew infections, deduplicated per body.
+	var/infections = 0
+	/// Broadcast the warning once, as soon as the third crew member is infected.
+	var/infection_warning_threshold = 3
+	/// Periodic recount catches movement and revival of station survivors without scanning every tick.
+	var/population_recount_timer
 	/// Duration of the docked defense phase, in deciseconds.
 	var/defense_duration = 10 MINUTES
-	/// Uninterrupted time needed for one navigation hacking stage.
+	/// Uninterrupted time needed for one navigation hacking channel.
 	var/hack_duration = 30 SECONDS
 	/// Launch countdown after the finale is decided.
 	var/departure_delay = 10 SECONDS
@@ -68,6 +71,7 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 	UnregisterSignal(SSdcs, list(COMSIG_GLOB_MOB_DEATH, COMSIG_GLOB_PLAYER_LOGIN, COMSIG_GLOB_PLAYER_LOGOUT))
 	LAZYREMOVE(SSticker.round_end_events, roundend_callback)
 	roundend_callback = null
+	deltimer(population_recount_timer)
 	clear_spawners()
 	return ..()
 
@@ -79,31 +83,33 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 	check_queued = TRUE
 	addtimer(CALLBACK(src, PROC_REF(check_population)), 1 SECONDS)
 
+/datum/xeno_evacuation/proc/record_infection()
+	infections++
+	if(infections == infection_warning_threshold)
+		priority_announce("Заражение распространяется. Сообщайте о ксеноморфах и защищайте пути эвакуации.", "Биологическая угроза", ANNOUNCER_ALIENS)
+
 /datum/xeno_evacuation/proc/finale_threshold(crew)
-	return CEILING(clamp(crew * 0.35, 6, 18), 1)
+	return max(1, crew)
 
 /datum/xeno_evacuation/proc/population_qualifies(xenos, crew)
 	return xenos >= finale_threshold(crew)
 
-/// A large crew must get its warning before the capped finale threshold.
-/datum/xeno_evacuation/proc/spread_threshold(crew)
-	return clamp(CEILING(crew * 0.2, 1), 1, finale_threshold(crew) - 1)
-
-/** Count connected station xenos and surviving crew before starting the finale. */
+/** Compare connected adult xenos and surviving crew on the same station Z-levels. */
 /datum/xeno_evacuation/proc/check_population()
 	check_queued = FALSE
 	if(active || starting || resolved || !SSticker.IsRoundInProgress())
 		return
+	deltimer(population_recount_timer)
+	population_recount_timer = addtimer(CALLBACK(src, PROC_REF(check_population)), 10 SECONDS, TIMER_STOPPABLE)
 	var/xenos = 0
 	var/crew = 0
 	for(var/mob/living/member in GLOB.alive_mob_list)
-		if(istype(member, /mob/living/carbon/alien/adult/banda) && member.client && is_station_level(member.z))
+		if(!is_station_level(member.z))
+			continue
+		if(istype(member, /mob/living/carbon/alien/adult/banda) && member.client)
 			xenos++
 		else if(!isalien(member) && (member.mind?.assigned_role?.job_flags & JOB_CREW_MEMBER))
 			crew++
-	if(!spread_announced && xenos >= spread_threshold(crew))
-		spread_announced = TRUE
-		priority_announce("Заражение распространяется. Сообщайте о ксеноморфах и защищайте пути эвакуации.", "Биологическая угроза")
 	if(population_qualifies(xenos, crew))
 		begin_evacuation()
 
@@ -180,24 +186,29 @@ ADMIN_VERB(start_xeno_evacuation_test, R_DEBUG, "Ксеноморфы: запу�
 /datum/xeno_evacuation/proc/can_hack(mob/living/carbon/alien/adult/banda/xeno, obj/machinery/computer/emergency_shuttle/console)
 	return active && defending && !resolved && istype(xeno) && !QDELETED(xeno) && !QDELETED(console) && !xeno.incapacitated && isturf(xeno.loc) && xeno.Adjacent(console) && SSshuttle.emergency?.mode == SHUTTLE_DOCKED && (get_area(console) in SSshuttle.emergency.shuttle_areas) && world.time < defense_deadline
 
-/** Channel one shared navigation stage and resolve a completed takeover. */
+/datum/xeno_evacuation/proc/hack_stages_for(mob/living/carbon/alien/adult/banda/xeno)
+	return istype(xeno, /mob/living/carbon/alien/adult/banda/queen) ? 2 : 1
+
+/** Channel at the console and apply shared navigation progress on success. */
 /datum/xeno_evacuation/proc/hack(mob/living/carbon/alien/adult/banda/xeno, obj/machinery/computer/emergency_shuttle/console)
 	if(hack_busy || !can_hack(xeno, console))
 		return FALSE
 	hack_busy = TRUE
+	var/stages = hack_stages_for(xeno)
 	xeno.add_filter("xeno_shuttle_hack", 2, drop_shadow_filter(size = 2, color = "#70428b"))
 	xeno.transition_filter_chain("xeno_shuttle_hack", INDEFINITE,
 		filter_chain_step(list("size" = 4), 0.5 SECONDS),
 		filter_chain_step(list("size" = 2), 0.5 SECONDS))
-	priority_announce("Ксеноморфы пытаются захватить управление шаттлом! Защитите навигационную консоль!", "Эвакуационная тревога")
-	to_chat(xeno, span_notice("Начат взлом навигации: этап [hack_stage + 1]/4. Не двигайтесь в течение 30 секунд."))
+	var/warning = stages > 1 ? "Королева взламывает навигационную консоль! Она завершит до двух этапов за раз. Остановите её!" : "Ксеноморфы пытаются захватить управление шаттлом! Защитите навигационную консоль!"
+	priority_announce(warning, "Эвакуационная тревога")
+	to_chat(xeno, span_notice("Начат взлом навигации. При успехе будет завершено [min(hack_stage + stages, 4)]/4 этапов. Не двигайтесь в течение [hack_duration / (1 SECONDS)] секунд."))
 	var/ready = do_after(xeno, hack_duration, target = console)
 	if(!QDELETED(xeno))
 		xeno.remove_filter("xeno_shuttle_hack")
 	hack_busy = FALSE
 	if(!ready || !can_hack(xeno, console))
 		return FALSE
-	hack_stage = istype(xeno, /mob/living/carbon/alien/adult/banda/queen) ? 4 : hack_stage + 1
+	hack_stage = min(hack_stage + stages, 4)
 	playsound(console, 'sound/machines/terminal/terminal_alert.ogg', 60, FALSE)
 	priority_announce("Взлом навигации шаттла: этап [hack_stage]/4. [hack_stage >= 4 ? "Управление потеряно! Отправление через 10 секунд." : "Остановите ксеноморфов у консоли!"]", "Эвакуационная тревога")
 	if(hack_stage >= 4)

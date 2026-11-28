@@ -1,6 +1,7 @@
 /** Siege caste with stockpiled corrosive/neurotoxin globs and stationary bombardment. */
 /mob/living/carbon/alien/adult/banda/final_caste/boiler
 	name = "alien boiler"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/spitter
 	desc = "Осадная каста ксеноморфов. Накапливает сгустки газа и обстреливает врагов из неподвижной позиции."
 	caste = "boiler"
 	inhand_caste = "sentinel"

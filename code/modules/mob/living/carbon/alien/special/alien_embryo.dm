@@ -124,7 +124,9 @@
 		return
 	// BANDASTATION EDIT END
 
-	if(!can_claim_hive_larva(ghost)) // BANDASTATION EDIT
+	// BANDASTATION EDIT START
+	if(!can_claim_hive_larva(ghost))
+	// BANDASTATION EDIT END
 		bursting = FALSE
 		stage = 5 // If no ghosts sign up for the Larva, let's regress our growth by one minute, we will try again!
 		addtimer(CALLBACK(src, PROC_REF(advance_embryo_stage)), growth_time)

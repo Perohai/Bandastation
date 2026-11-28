@@ -731,24 +731,30 @@
 	ADD_TRAIT(runner, TRAIT_MOVE_FLOATING, REF(src))
 	playsound(runner, 'modular_bandastation/xeno_rework/sound/pounce.ogg', 50, TRUE)
 	if(!runner.throw_at(destination, 7, 1, runner, spin = FALSE, diagonals_first = TRUE, callback = CALLBACK(src, PROC_REF(finish_pounce))))
-		finish_pounce()
+		finish_pounce(apply_miss_penalty = FALSE)
 		return FALSE
 	StartCooldown()
 	return TRUE
 
 /** End the runner leap and remove its temporary floating trait. */
-/datum/action/cooldown/alien/banda/pounce_runner/proc/finish_pounce()
+/datum/action/cooldown/alien/banda/pounce_runner/proc/finish_pounce(apply_miss_penalty = TRUE)
+	if(!pounce_active)
+		return
 	pounce_active = FALSE
-	if(owner)
+	if(!QDELETED(owner))
 		REMOVE_TRAIT(owner, TRAIT_MOVE_FLOATING, REF(src))
+		if(apply_miss_penalty)
+			var/mob/living/runner = owner
+			runner.Paralyze(0.5 SECONDS, ignore_canstun = TRUE)
 
 /datum/action/cooldown/alien/banda/pounce_runner/Remove(mob/living/remove_from)
-	finish_pounce()
+	finish_pounce(apply_miss_penalty = FALSE)
 	return ..()
 
 /mob/living/carbon/alien/adult/banda/runner/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
 	if(!pounce_ability?.pounce_active)
 		return ..()
+	var/missed = TRUE
 	if(isliving(hit_atom) && !isalien(hit_atom) && !incapacitated)
 		var/mob/living/victim = hit_atom
 		var/blocked = FALSE
@@ -757,16 +763,18 @@
 			blocked = human.deflect_xeno_attack(src, "прыжок ксеноморфа")
 		if(!blocked)
 			victim.Knockdown(1 SECONDS)
-		Paralyze(0.5 SECONDS)
-	pounce_ability.finish_pounce()
+			missed = FALSE
+	pounce_ability.finish_pounce(apply_miss_penalty = missed)
 
 // Evade
-/** Окно 0,15 секунды, строго один снаряд. Успех полностью сбрасывает перезарядку; промах — 8 секунд перезарядки и 1,5 секунды замедления. */
+/** Окно 0,3 секунды, строго один снаряд. Успех полностью сбрасывает перезарядку; промах — 8 секунд перезарядки и 1,5 секунды замедления. */
 /datum/action/cooldown/alien/banda/evade
 	name = "Уклонение"
-	desc = "Позволяет уклониться от одного снаряда в течение 0,15 секунды. Успешное уклонение мгновенно восстанавливает способность. При неудаче — перезарядка 8 секунд и замедление на 1,5 секунды."
+	desc = "Позволяет уклониться от одного снаряда в течение 0,3 секунды. Успешное уклонение мгновенно восстанавливает способность. При неудаче — перезарядка 8 секунд и замедление на 1,5 секунды."
 	button_icon_state = "evade"
 	cooldown_time = 8 SECONDS
+	/// How long one incoming projectile can be evaded.
+	var/window_duration = 0.3 SECONDS
 	/// Whether the evasion window is open.
 	var/evade_active = FALSE
 	/// Limits the activation to a single projectile evasion.
@@ -786,8 +794,8 @@
 	dodged_this_activation = FALSE
 	playsound(owner, 'sound/effects/magic/tail_swing.ogg', 40, TRUE)
 	StartCooldown()
-	window_expires = world.time + 0.15 SECONDS
-	window_timer = addtimer(CALLBACK(src, PROC_REF(end_evade)), 0.15 SECONDS, TIMER_STOPPABLE)
+	window_expires = world.time + window_duration
+	window_timer = addtimer(CALLBACK(src, PROC_REF(end_evade)), window_duration, TIMER_STOPPABLE)
 	return TRUE
 
 /** End evasion and release its expiry timer. */
@@ -845,25 +853,19 @@
 /** Позволяет нам эволюционировать в высшую касту нашего типа, если такая ещё не существует. */
 /datum/action/cooldown/alien/banda/generic_evolve
 	name = "Эволюция"
-	desc = "Эволюция в доступную высшую касту занимает 5 секунд. Линька прерывается при движении или потере сознания."
+	desc = "Смена касты занимает 5 секунд и требует полного запаса плазмы. Можно вернуться в предыдущую касту. Линька прерывается при движении или потере сознания."
 	button_icon_state = "evolution"
 	/// Locks requests after caste selection and before the channel yields.
 	var/evolving = FALSE
 	/// Matches larval preparation; the existing inter-evolution cooldown is separate.
 	var/evolution_time = 5 SECONDS
 
-/datum/action/cooldown/alien/banda/generic_evolve/Grant(mob/grant_to)
-	. = ..()
-	if(!isalien(owner))
-		return
-	var/mob/living/carbon/alien/target_alien = owner
-	plasma_cost = target_alien.get_max_plasma() //This ability should always require that a xeno be at their max plasma capacity to use
-
 /datum/action/cooldown/alien/banda/generic_evolve/IsAvailable(feedback = FALSE)
-	if(!..())
-		return FALSE
 	var/mob/living/carbon/alien/adult/banda/evolver = owner
-	if(!istype(evolver) || !evolver.get_evolution_type() || evolver.has_evolved_recently || !isturf(evolver.loc))
+	if(!istype(evolver))
+		return FALSE
+	plasma_cost = evolver.get_max_plasma()
+	if(plasma_cost <= 0 || !..() || evolver.has_evolved_recently || !isturf(evolver.loc) || !length(evolver.get_evolution_options()))
 		return FALSE
 	var/obj/item/organ/alien/hivenode/node = evolver.get_organ_slot(ORGAN_SLOT_XENO_HIVENODE)
 	return node && !node.recent_queen_death
@@ -873,11 +875,13 @@
 		return FALSE
 	var/mob/living/carbon/alien/adult/banda/evolver = owner
 	var/list/options = evolver.get_evolution_options()
-	var/evolution_type = evolver.get_evolution_type()
-	if(length(options) > 1)
+	var/evolution_type = options[1]
+	if(length(options) > 1 || evolution_type == evolver.previous_evolution)
 		var/list/choices = list()
 		for(var/mob/living/carbon/alien/adult/banda/caste_type as anything in options)
-			choices[initial(caste_type.name)] = caste_type
+			var/caste_name = initial(caste_type.name)
+			var/label = caste_type == evolver.previous_evolution ? "Снизить эволюцию: [caste_name]" : caste_name
+			choices[label] = caste_type
 		var/choice = tgui_input_list(evolver, "Выберите направление эволюции", "Эволюция", choices)
 		if(QDELETED(src) || QDELETED(evolver) || owner != evolver || !IsAvailable() || !(choice in choices))
 			return FALSE
@@ -916,7 +920,8 @@
 /// Each T3 and purchased specialization has its own simultaneous limit.
 /mob/living/carbon/alien/adult/banda/proc/can_evolve(evolution_target)
 	if(!evolution_target)
-		evolution_target = get_evolution_type()
+		var/list/options = get_evolution_options()
+		evolution_target = length(options) ? options[1] : null
 	if(!ispath(evolution_target, /mob/living/carbon/alien/adult/banda) || !isturf(loc) || has_evolved_recently)
 		return FALSE
 	if(!(evolution_target in get_evolution_options()))
@@ -924,6 +929,11 @@
 	var/obj/item/organ/alien/hivenode/node = get_organ_slot(ORGAN_SLOT_XENO_HIVENODE)
 	if(!node || node.recent_queen_death)
 		return FALSE
+	if(evolution_target == previous_evolution)
+		var/mob/living/carbon/alien/adult/banda/previous_caste = previous_evolution
+		if(initial(previous_caste.evolution_tier) >= 3)
+			return GLOB.xeno_hive.slot_available(previous_caste)
+		return TRUE
 	if(evolution_target == /mob/living/carbon/alien/adult/banda/queen)
 		for(var/mob/living/carbon/alien/other in GLOB.alive_mob_list)
 			if(istype(other, /mob/living/carbon/alien/adult/banda/queen) || istype(other, /mob/living/carbon/alien/adult/royal/queen))

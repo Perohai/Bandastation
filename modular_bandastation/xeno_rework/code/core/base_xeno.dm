@@ -22,6 +22,8 @@
 	var/evolution_tier = 1
 	/// Normal evolution branch, retained alongside purchased specializations.
 	var/next_evolution
+	/// The immediate predecessor available through voluntary caste regression.
+	var/previous_evolution
 	/// Optional branch unlocked by the matching hive purchase.
 	var/final_evolution
 	/// Donor hand sprite layout for imported castes without tg item overlays.
@@ -76,7 +78,7 @@
 	GRANT_ACTION(/datum/action/cooldown/alien/hive_roster)
 	RegisterSignal(src, COMSIG_LIVING_RESTING, PROC_REF(on_hive_rest))
 	RegisterSignal(src, COMSIG_LIVING_SET_BODY_POSITION, PROC_REF(on_hive_stand))
-	if(next_evolution || final_evolution)
+	if(next_evolution || final_evolution || previous_evolution)
 		GRANT_ACTION(/datum/action/cooldown/alien/banda/generic_evolve)
 
 	pixel_x = base_pixel_x

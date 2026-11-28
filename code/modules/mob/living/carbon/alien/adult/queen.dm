@@ -108,6 +108,7 @@
 	. = ..()
 	// BANDASTATION EDIT START
 	if(.)
+		playsound(owner, 'sound/effects/splat.ogg', 50, TRUE)
 		owner.visible_message(span_alertalien("[owner] откладывает яйцо!"))
 	// BANDASTATION EDIT END
 

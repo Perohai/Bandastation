@@ -333,6 +333,8 @@
 	/// The one physical core may be installed or carried.
 	var/obj/item/packed_xeno_hive_core/packed_core
 	var/core_blockade_registered = FALSE
+	/// Biomass charged once for each completed deployment.
+	var/core_install_cost = 100
 
 /datum/xeno_hive/proc/can_unfold_core(mob/living/carbon/alien/adult/banda/queen/queen)
 	if(QDELETED(packed_core))
@@ -345,9 +347,7 @@
 			SSshuttle.hostile_environments -= src
 		core_blockade_registered = FALSE
 		return
-	var/atom/current_core = QDELETED(core) ? packed_core : core
-	var/turf/core_location = get_turf(current_core)
-	var/should_block = !QDELETED(src) && !GLOB.xeno_evacuation?.active && core_location && is_station_level(core_location.z) && !isspaceturf(core_location)
+	var/should_block = !QDELETED(src) && !GLOB.xeno_evacuation?.active && !QDELETED(core) && core.is_installed() && is_station_level(core.z)
 	if(should_block == core_blockade_registered)
 		return
 	core_blockade_registered = should_block

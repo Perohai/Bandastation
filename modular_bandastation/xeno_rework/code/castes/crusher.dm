@@ -1,6 +1,7 @@
 /** Armoured breacher; momentum, stomp and crest toss follow TGMC's Crusher role. */
 /mob/living/carbon/alien/adult/banda/final_caste/crusher
 	name = "alien crusher"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/warrior
 	desc = "Тяжёлый ксеноморф с бронированным гребнем. Разгоняется по прямой и прорывает оборону противника."
 	caste = "crusher"
 	inhand_caste = "warrior"

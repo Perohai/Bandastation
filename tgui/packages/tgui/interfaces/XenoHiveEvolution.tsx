@@ -25,8 +25,6 @@ type Data = {
   territoryPending: number;
   territoryBatch: number;
   territoryEarned: number;
-  crew: number;
-  broodRate: number;
   canDebug: boolean;
   debugUsed: boolean;
   broodPoints: number;
@@ -37,6 +35,7 @@ type Data = {
   packedCore: boolean;
   busy: boolean;
   canPlace: boolean;
+  coreInstallCost: number;
   canPack: boolean;
   nodes: UpgradeDefinition[];
   nodeState: Record<string, UpgradeState>;
@@ -84,7 +83,7 @@ export function XenoHiveEvolution() {
                 <Box className="Hive-biomass">
                   <Icon name="leaf" /> {data.biomass} биомассы
                 </Box>
-                {data.canDebug && (
+                {!!data.canDebug && (
                   <Button.Checkbox
                     checked={data.debugUsed}
                     disabled={data.debugUsed}
@@ -97,11 +96,11 @@ export function XenoHiveEvolution() {
               </Stack.Item>
               <Stack.Item grow className="Hive-metrics">
                 <Box color="label" mt={0.5}>
-                  Выводок: {data.broodPoints} / {data.broodCost} · Мест в яйцах:{' '}
-                  {data.broodPlaces}
-                </Box>
-                <Box color="label" mt={0.5}>
-                  Рост: {data.broodRate} очков/мин · Живой экипаж: {data.crew}
+                  Выводок: {data.broodPoints} / {data.broodCost}
+                  {' · '}
+                  <Box as="span" nowrap>
+                    Мест в яйцах: {data.broodPlaces}
+                  </Box>
                 </Box>
                 <Box color="label" mt={0.5}>
                   Территория: {data.territoryTiles} клеток · Заработано:{' '}
@@ -119,10 +118,12 @@ export function XenoHiveEvolution() {
                 </Box>
                 <Button
                   icon="seedling"
+                  color="good"
+                  bold
                   disabled={!data.canPlace}
                   onClick={() => act('place_core')}
                 >
-                  Установить ядро
+                  Установить ядро · {data.coreInstallCost} биомассы
                 </Button>
                 <Button
                   icon="arrows-up-down-left-right"
@@ -135,14 +136,7 @@ export function XenoHiveEvolution() {
               </Stack.Item>
             </Stack>
           </Section>
-          {data.core && data.crew === 0 && (
-            <NoticeBox>
-              Доход выводка остановлен: среди живого экипажа нет существ,
-              учитываемых экономикой улья. Призраки и ксеноморфы на рост не
-              влияют.
-            </NoticeBox>
-          )}
-          {data.broodBlocked && (
+          {!!data.broodBlocked && (
             <NoticeBox>
               Рядом с ядром не осталось места для яиц. Накопленные очки
               сохранятся.

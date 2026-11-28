@@ -1,6 +1,7 @@
 /** Mobile ambusher with stealth, pounce, marked prey and disposable mirages. */
 /mob/living/carbon/alien/adult/banda/final_caste/hunter
 	name = "alien hunter"
+	previous_evolution = /mob/living/carbon/alien/adult/banda/runner
 	desc = "Охотник роя. Скрывается, выслеживает помеченную жертву и нападает из засады."
 	caste = "hunter"
 	evolution_tier = 2
@@ -50,9 +51,13 @@
 		victim.Paralyze(0.6 SECONDS)
 
 /** Ends the pounce on arrival or obstruction. */
-/mob/living/carbon/alien/adult/banda/final_caste/hunter/proc/end_pounce()
+/mob/living/carbon/alien/adult/banda/final_caste/hunter/proc/end_pounce(missed = TRUE)
+	if(!pouncing)
+		return
 	pouncing = FALSE
 	remove_status_effect(/datum/status_effect/xeno_hunter_stealth)
+	if(missed)
+		Paralyze(0.5 SECONDS, ignore_canstun = TRUE)
 
 /mob/living/carbon/alien/adult/banda/final_caste/hunter/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
 	if(pouncing && isliving(hit_atom) && !isalien(hit_atom) && !incapacitated)
@@ -64,7 +69,7 @@
 		if(!blocked)
 			victim.Knockdown(1.2 SECONDS)
 			victim.Paralyze(0.6 SECONDS)
-	end_pounce()
+			end_pounce(missed = FALSE)
 	return ..()
 
 /** Toggle camouflage; plasma upkeep follows movement rather than polling the map. */
@@ -163,7 +168,7 @@
 /** Leap using normal thrown-mob movement and collision. */
 /datum/action/cooldown/alien/banda/hunter_pounce
 	name = "Прыжок"
-	desc = "Прыгает на расстояние до семи клеток. Попадание сбивает жертву с ног на 1,2 секунды, парализует на 0,6 секунды и снимает маскировку."
+	desc = "Прыгает на расстояние до семи клеток. Попадание сбивает жертву с ног на 1,2 секунды и парализует на 0,6 секунды. Промах оглушает Охотника на 0,5 секунды. Прыжок снимает маскировку."
 	button_icon = 'modular_bandastation/xeno_rework/icons/actions/hive_abilities.dmi'
 	button_icon_state = "pounce"
 	plasma_cost = 75
@@ -177,7 +182,7 @@
 		return FALSE
 	hunter.pouncing = TRUE
 	if(!hunter.throw_at(destination, 7, 1, hunter, spin = FALSE, callback = CALLBACK(hunter, TYPE_PROC_REF(/mob/living/carbon/alien/adult/banda/final_caste/hunter, end_pounce))))
-		hunter.end_pounce()
+		hunter.end_pounce(missed = FALSE)
 		return FALSE
 	playsound(hunter, 'modular_bandastation/xeno_rework/sound/pounce.ogg', 60, TRUE)
 	StartCooldown()

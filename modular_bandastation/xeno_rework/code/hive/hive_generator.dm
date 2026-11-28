@@ -20,9 +20,13 @@
 	/// One local burst, followed by the ordinary short-lived acid pools.
 	var/burst_damage = 40
 	var/burst_radius = 2
+	/// The hive that owns this generator and receives its income.
+	var/datum/xeno_hive/hive
 
-/obj/structure/xeno_biomass_generator/Initialize(mapload)
+/obj/structure/xeno_biomass_generator/Initialize(mapload, datum/xeno_hive/hive)
 	. = ..()
+	src.hive = hive || get_xeno_hive()
+	src.hive.generators += src
 	soundloop = new(src)
 	soundloop.start()
 	add_filter("xeno_generator_breath", 1, color_matrix_filter(COLOR_WHITE))
@@ -32,6 +36,9 @@
 	START_PROCESSING(SSobj, src)
 
 /obj/structure/xeno_biomass_generator/Destroy()
+	if(hive)
+		hive.generators -= src
+		hive = null
 	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(soundloop)
 	return ..()
@@ -56,7 +63,6 @@
 	return ..()
 
 /obj/structure/xeno_biomass_generator/process(seconds_per_tick)
-	var/datum/xeno_hive/hive = get_xeno_hive()
 	hive.biomass += biomass_per_second * seconds_per_tick
 	if(COOLDOWN_FINISHED(src, vapor_cooldown))
 		new /obj/effect/temp_visual/xeno_generator_vapor(get_turf(src))
@@ -69,6 +75,10 @@
 	extra_range = 0
 	falloff_distance = 3
 
+/datum/xeno_hive
+	/// Live structures only; a destroyed generator frees a purchase slot.
+	var/list/obj/structure/xeno_biomass_generator/generators = list()
+
 /** Always place the 2x2 footprint entirely in front of the queen, not around her body. */
 /datum/xeno_hive/proc/hive_structure_location(mob/living/carbon/alien/adult/banda/queen/queen)
 	if(!can_manage(queen) || !(queen.dir in GLOB.cardinals))
@@ -79,7 +89,7 @@
 	return origin
 
 /datum/xeno_hive/proc/can_place_generator(mob/living/carbon/alien/adult/banda/queen/queen, turf/origin)
-	return can_manage(queen) && origin == hive_structure_location(queen) && clear_structure_footprint(origin)
+	return can_manage(queen) && length(generators) < 2 && origin == hive_structure_location(queen) && clear_structure_footprint(origin)
 
 /** Shared placement for the brood core, generators and one-tile Hivemind anchors. */
 /datum/xeno_hive/proc/clear_structure_footprint(turf/origin, width = 2, height = 2, floors_only = TRUE)
