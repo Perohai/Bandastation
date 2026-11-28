@@ -4,7 +4,7 @@ Imported from [BandaStation #2461](https://github.com/ss220club/BandaStation/pul
 
 - **Dark Star** sprites (`ds_dualsaber0`, `ds_dualsaberdarkstar1` in `icons/melee/legendary.dmi` and both `icons/melee/inhands` files): **Mooniverse**.
 - **Dark Star** and **Liar** sounds (`sound/melee/ds_saber_*.ogg`, `sound/melee/lz_saber_*.ogg`): **Fullonibus**.
-- **Liar** sprites (`lz_dualsaber0`, `lz_dualsaberliar1` in the same DMI files): **author not yet identified**. Attribution must be completed before this draft is merged.
+- **Liar** sprites (`lz_dualsaber0`, `lz_dualsaberliar1` in the same DMI files): [BandaStation #2461](https://github.com/ss220club/BandaStation/pull/2461), commit `df77130c6ede3bb27b1f55993e19118c18c703ca`.
 
 The known credits above were confirmed by Fullonibus on 2026-10-30. The source PR did not record the Liar sprite author.
 
@@ -33,6 +33,51 @@ The supplied recordings listed below are by **konu_shi**. Permission to use thes
 | `malice_recall_flight.ogg` | `kylohup1.mp3`, `kylohup2.mp3` and `kylohup3.mp3` |
 | `malice_recall_hit.ogg` | The existing `mid_saberhit.ogg`, `kylohit3.mp3` and `kylobounce2.mp3` |
 | `malice_recall_catch.ogg` | `kyloblock1.mp3` and `kylohup1.mp3` |
+
+## Light Sister
+
+The three action icons and the `sister_*` sprites in `icons/melee/` adapt Light Sister's Normandy blade (`norm_dualsabernormandy1`) and its in-hand sprites. The gauntlet grip, blade glint, dome, embedded blade and Dawn aura were drawn for these abilities. The artwork follows the repository's CC BY-SA 3.0 asset license.
+
+The dome and Silver Sting sound effects use the original Normandy ignition, power-down and impact recordings (`norm_saberon.ogg`, `norm_saberoff.ogg` and `norm_saberhit.ogg`). **mnvrse** is the author of the additional recording mixed into `sister_dome_open.ogg` and the three recordings used for `sister_dawn.ogg` (`saberon_savage.mp3`, `saberoff_savage.mp3` and `saberbodyhit3.mp3`).
+
+## Dark Star
+
+The button, target marker and impact in `icons/melee/dark_star_cut.dmi` are original pixel art for Dark Star's Judgment Cut. The swing in `icons/melee/dark_star_swing.dmi` animates Mooniverse's `ds_dualsaberdarkstar1` blade with a new violet trail. Both assets use the repository's CC BY-SA 3.0 license.
+
+The four summoned swords, their impact animation in `icons/melee/dark_star_blades.dmi`, and the Phantom Blades button in `icons/melee/dark_star_blades_action.dmi` are original pixel art for Dark Star. The command gesture in `icons/melee/dark_star_swing.dmi` adapts Mooniverse's Dark Star blade for both hands in eight directions. These assets use the repository's CC BY-SA 3.0 license.
+
+The crescent in `icons/melee/dark_star_void_slash.dmi` is original pixel art for Void Slash. Its button in `icons/melee/dark_star_void_action.dmi` combines that crescent with Mooniverse's `ds_dualsaberdarkstar1` sprite. The Void Slash pose in `icons/melee/dark_star_swing.dmi` adapts Mooniverse's original Dark Star blade. These assets use the repository's CC BY-SA 3.0 license.
+
+The violet spirals, wake and finishing slash in `icons/melee/dark_star_stinger.dmi` are original pixel art for «Чёрная комета» (inspired by Deep Stinger). The held animation in `icons/melee/dark_star_stinger_blade.dmi` uses Mooniverse's `ds_dualsaberdarkstar1` blade. The action icon in `icons/melee/dark_star_stinger_action.dmi` combines that blade with the spirals. These assets use the repository's CC BY-SA 3.0 license.
+
+The wall impact and violet sparks in `icons/melee/dark_star_stinger_impact.dmi` are original pixel art for «Чёрная комета», licensed under CC BY-SA 3.0.
+
+The Eclipse Double button in `icons/melee/dark_star_eclipse_action.dmi` and the tile warning, single cut and crossed cut in `icons/melee/dark_star_eclipse.dmi` are original pixel art. The double's sword in the same atlas recolors and retimes the Dark Star swing from `icons/melee/dark_star_swing.dmi`, based on Mooniverse's `ds_dualsaberdarkstar1` blade. Both Eclipse Double assets use the repository's CC BY-SA 3.0 license.
+
+The following Dark Star ability sounds in `sound/melee/` are edits of the supplied compilation `dark star sword sound.wav`. The recording was provided for this build.
+
+| Ability | Audio files | Edit |
+| --- | --- | --- |
+| Judgment Cut | `ds_judgment_cut.ogg` | A short cut from the sweeping strike near 7.8 seconds. |
+| Phantom Blades | `ds_phantom_volley.ogg` | Four staggered blade transients mixed into a single volley. |
+| Void Slash | `ds_void_open.ogg`, `ds_void_collapse.ogg` | The first sweep opens the rift. A reversed sweep and a shorter accent accompany its collapse. |
+| Чёрная комета | `ds_stinger_launch.ogg`, `ds_stinger_pulse.ogg`, `ds_stinger_wall.ogg` | Separate edits for launch, recurring contact and impact against a wall. |
+| Eclipse Double | `ds_eclipse_summon.ogg`, `ds_eclipse_echo.ogg`, `ds_eclipse_cross.ogg` | A layered summon, a short swung echo and two overlapping strikes for the final cross. |
+
+## Liar
+
+The Backstep, Last Lie and Four Faces buttons in `icons/melee/liar_abilities.dmi` use the active Liar sprite (`lz_dualsaberliar1`) from `icons/melee/legendary.dmi`. The additional trails and reflections were drawn for these buttons. The artwork uses the repository's CC BY-SA 3.0 asset license.
+
+The six Liar ability cues in `sound/melee/` were assembled from Fullonibus's Liar ignition, shutdown and impact recordings. Each cue is a mono edit for positional playback in the game.
+
+| Cue | Source and edit |
+| --- | --- |
+| `lz_backstep_jump.ogg` | A reversed `lz_saber_off.ogg` sweep runs into an accelerating edge from `lz_saber_on.ogg`. |
+| `lz_backstep_hit.ogg` | A shortened `lz_saber_hit.ogg` with a low copy of the impact and a bright ignition transient. |
+| `lz_last_lie_vanish.ogg` | A slowing `lz_saber_off.ogg` with a reversed, fading layer from the ignition sustain. |
+| `lz_last_lie_return.ogg` | The ignition returns with a higher reflection and a quiet reversed shutdown tail. |
+| `lz_four_faces_cast.ogg` | Four staggered cuts of `lz_saber_on.ogg` rise in pitch and diminish in level. |
+| `lz_four_faces_hit.ogg` | A central `lz_saber_hit.ogg` impact and three short, progressively lighter reflections. |
 
 # Legacy display revolvers
 

@@ -16,6 +16,8 @@
 	var/invert = FALSE
 	/// Whether the child is currently BT_RUNNING. This makes tick() skip check_condition() and delegate directly to child.tick().
 	var/child_active = FALSE
+	/// TRUE while the child is on the tick stack, including its first tick.
+	var/ticking_child = FALSE
 	/// Set to TRUE once register_observe_signals() has been called for this instance.
 	var/observers_registered = FALSE
 	/// Set to TRUE when register_observe_signals() registered at least one signal. If this is not true but we are observing; then we need to check the condition every tick; not efficient, but allows for reactivity.
@@ -91,27 +93,25 @@
 				is_polled = TRUE
 				LAZYADDASSOC(controller.polling_observers, src, TRUE)
 
-	var/child_ticked = FALSE
-	var/result
 	if(!child)
 		return BT_FAILURE
-	var/no_ticking_condition = observer_abort == BT_ABORT_NONE || has_observer_signals
-	if((no_ticking_condition || is_polled) && child_active)
-		child_ticked = TRUE
-		result = child.tick(controller, seconds_per_tick)
-	else if(!!check_condition(controller) == invert)
-		result = BT_FAILURE
-	else
-		child_ticked = TRUE
-		result = child.tick(controller, seconds_per_tick)
+	var/can_resume_child = observer_abort == BT_ABORT_NONE || has_observer_signals || is_polled
+	if(!(can_resume_child && child_active) && !!check_condition(controller) == invert)
+		return BT_FAILURE
+	if(controller.cancelled_during_tick)
+		return BT_FAILURE
+
+	ticking_child = TRUE
+	var/result = child.tick(controller, seconds_per_tick)
+	ticking_child = FALSE
 
 	if(controller.cancelled_during_tick)
 		child_active = FALSE
 		return BT_FAILURE
 
-	if(no_ticking_condition || is_polled)
+	if(can_resume_child)
 		child_active = (result == BT_RUNNING)
-		if(child_ticked && !child_active)
+		if(!child_active)
 			on_child_complete(controller, result)
 
 	return result
@@ -161,13 +161,12 @@
 	var/condition_result = evaluate_for_observer(controller)
 
 	if(!condition_result && (observer_abort & BT_ABORT_SELF))
-		var/active = controller.active_execution_index
-		if(!execution_index || (active >= execution_index && active <= last_execution_index))
+		if(child_active || ticking_child)
 			EVLOG_TEXT(controller, EVLOG_CATEGORY_AI_DECISIONMAKING, "[controller.pawn] [type]: ABORT_SELF on key=[key]  condition lost, replanning")
 			controller.cancel_current_plan()
 
 	if(condition_result && (observer_abort & BT_ABORT_LOWER_PRIORITY))
-		var/active = controller.active_execution_index
+		var/active = controller.ticking_execution_index || controller.active_execution_index
 		if(!execution_index || !active || active > last_execution_index)
 			EVLOG_TEXT(controller, EVLOG_CATEGORY_AI_DECISIONMAKING, "[controller.pawn] [type]: ABORT_LOWER on key=[key]  condition gained, replanning")
 			controller.cancel_current_plan()
@@ -183,6 +182,7 @@
 	last_poll_result = null
 	last_poll_time = 0
 	child_active = FALSE
+	ticking_child = FALSE
 	..()
 
 /datum/bt_node/decorator/assign_execution_indices(counter)

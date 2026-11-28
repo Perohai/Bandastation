@@ -7,6 +7,7 @@
 	var/datum/targeting_strategy/basic/strategy = GET_TARGETING_STRATEGY(/datum/targeting_strategy/basic)
 	var/datum/target_source/hearers/target_source = GET_TARGET_SOURCE(/datum/target_source/hearers)
 	TEST_ASSERT_NOTNULL(controller, "The native goliath did not have its real AI controller.")
+	controller.force_ai_off()
 	TEST_ASSERT(GLOB.target_interested_atoms[pod.type], "The pod is missing from the native AI target typecache.")
 	TEST_ASSERT((pod in GLOB.hostile_machines_by_z[origin.z]), "The pod did not register as a native hostile-machine candidate.")
 	var/list/candidates = target_source.collect_candidates(monster, controller, 9)
@@ -20,10 +21,11 @@
 	var/mob/living/carbon/human/consistent/passenger = allocate(__IMPLIED_TYPE__, get_step(origin, WEST))
 	TEST_ASSERT(pod.mob_enter(passenger, silent = TRUE), "The hostile passenger could not board the AI fixture.")
 	TEST_ASSERT(strategy.is_valid_target(monster, pod, 9, controller), "A hostile passenger did not make the occupied pod a valid target.")
-	var/datum/bt_node/ai_behavior/acquire_target/update_combat_targets/acquire = allocate(__IMPLIED_TYPE__)
-	acquire.owning_controller = controller
-	acquire.target_key = BB_CURRENT_TARGET
-	acquire.tick(controller, SSMOBS_DT)
+	controller.replace_behavior_nodes(list(
+		BT_DESC_TYPE = /datum/bt_node/ai_behavior/acquire_target/update_combat_targets,
+		"target_key" = BB_CURRENT_TARGET,
+	))
+	controller.SelectBehaviors(SSMOBS_DT)
 	TEST_ASSERT_EQUAL(controller.blackboard[BB_CURRENT_TARGET], pod, "The native acquisition behavior did not select the occupied pod.")
 	var/integrity_before = pod.get_integrity()
 	TEST_ASSERT(monster.melee_attack(pod), "The native basic-mob attack chain refused the pod.")
